@@ -6,6 +6,8 @@ The specification also describes how normalized market data drives the adaptive 
 
 **Derived artifact specification:** [E2E QuanTRAM Artifacts](E2E_QuanTRAM_ARTIFACTS.md)
 
+**Open design gaps:** [QuanTRAM Decision Integrity and Design Gap Analysis](QuanTRAM_DECISION_INTEGRITY_GAP_ANALYSIS_082826.md)
+
 This document is the parent architecture and functional basis for the E2E QuanTRAM artifact specification. Its integrated architecture, semantic system boundaries, component responsibilities, event-recording decisions, benchmark modes, and telemetry contracts provide the requirements from which the Go artifacts are derived. The child specification refines these requirements into ownership boundaries, Go interfaces, package candidates, gRPC service surfaces, processing semantics, and acceptance criteria; it does not supersede this architecture.
 
 ---
@@ -20,6 +22,8 @@ The integration is structured into four vertically stacked layers:
 4. **Execution & Harness Layer**
 
 Data flows top-down from redundant external feeds through normalization and OHLCV bar construction. The resulting continuous series drives model inference, risk-compliant order generation, and simultaneous live and paper execution for ongoing quality comparison.
+
+QuanTRAM v1 is limited to U.S. stocks, exchange-traded funds (ETFs), and published market indices. Stocks and ETFs may be eligible for order routing subject to instrument metadata and risk approval. Indices are calculated reference series used for analytics and regime context; they are not directly tradable and must not produce broker orders.
 
 ---
 

@@ -5,11 +5,15 @@
 **Implementation Language:** Go  
 **Parent Architecture:** [QuanTRAM System Specification](QuanTRAM_hi-level_design_082826.md)
 
+**Open Design Gaps:** [QuanTRAM Decision Integrity and Design Gap Analysis](QuanTRAM_DECISION_INTEGRITY_GAP_ANALYSIS_082826.md)
+
 ## 1. Overview and Purpose
 
 This document is the child artifact specification derived from the parent QuanTRAM System Specification. The parent provides the architectural and functional basis: the integrated flow, semantic system boundaries, component responsibilities, required live-event recording, optional benchmark behavior, and telemetry requirements. This document translates that basis into Go-oriented software artifacts, interfaces, package ownership, provisional gRPC surfaces, processing semantics, and acceptance criteria.
 
 The parent architecture remains authoritative for system intent and end-to-end behavior. This child specification is authoritative for the proposed artifact decomposition and Go contract surface. Changes that alter system behavior must first be reconciled with the parent architecture; implementation refinements that preserve that behavior are maintained here.
+
+QuanTRAM v1 supports U.S. stocks, ETFs, and published market indices. Stocks and ETFs may be tradable when reference data and risk policy permit. Indices are non-tradable calculated series that may inform features, signals, and market-regime context but cannot be routed as broker orders.
 
 The end-to-end QuanTRAM software artifacts are assigned to these semantic system ownership boundaries:
 
@@ -90,6 +94,7 @@ The proto file will not be split merely because it becomes long. Decomposition i
 - `AlpacaSIPAdapter`: Alpaca SIP WebSocket and REST implementation.
 - `DatabentoAdapter`: Databento real-time and historical implementation.
 - `ProviderMessageDecoder`: maps provider payloads into QuanTRAM ingress types.
+- `InstrumentClassifier`: assigns stock, ETF, or index type and resolves tradability metadata.
 - `FeedCredentialsProvider`: supplies credentials without exposing secrets to domain packages.
 
 ### 4.2 Go Contracts
@@ -109,6 +114,8 @@ type HistoricalBarSource interface {
 
 - Alpaca SIP is the primary real-time source.
 - Databento provides fallback real-time data and historical recovery data.
+- Accept only U.S. stocks, ETFs, and published market indices in the v1 market-data universe.
+- Preserve instrument type and tradability metadata on normalized market events and bars.
 - Provider adapters preserve source timestamps and assign local receipt timestamps.
 - Provider-specific schemas and reconnect mechanics remain inside their adapters.
 - Authentication material must not enter logs or domain events.
@@ -239,6 +246,7 @@ type FillSimulator interface {
 ### 7.3 Functional Requirements
 
 - Route every approved order to the configured live broker while live mode is active.
+- Permit direct order routing only for instruments classified as tradable stocks or ETFs; reject index order intents before broker submission.
 - Assign `order_id` and an optional `benchmark_id` before fan-out.
 - Send selected benchmark orders to paper execution at live submission time.
 - Do not wait for paper execution, correlation, storage, or dashboard processing.
@@ -367,6 +375,8 @@ The following identifiers propagate end to end where applicable:
 - `account_id`
 - `strategy_id`
 
+Shared classification contracts include `InstrumentType` with `STOCK`, `ETF`, and `INDEX` values, plus an explicit tradability indicator. These values belong in `quantram.proto` and map to equivalent Go domain values at the gRPC adapter boundary. An `INDEX` instrument is always non-tradable in QuanTRAM v1.
+
 Shared message contracts must be versioned. Go domain types may map to protobuf messages at the gRPC adapter boundary, but generated protobuf types must not become the internal domain model.
 
 ## 11. End-to-End Processing Semantics
@@ -390,6 +400,7 @@ Shared message contracts must be versioned. Go domain types may map to protobuf 
 - Benchmark processing is optional, asynchronous, and non-blocking.
 - The execution ledger is authoritative; benchmark telemetry is derived.
 - The dashboard may be a separate read-only gRPC client.
+- The v1 instrument universe is limited to U.S. stocks, ETFs, and published indices; indices are analytics-only and non-tradable.
 - All QuanTRAM v1 protobuf services, enums, and messages reside in `api/proto/quantram/v1/quantram.proto` by default; splitting requires demonstrated operational or ownership need.
 
 ### 12.2 Provisional
@@ -421,12 +432,14 @@ Shared message contracts must be versioned. Go domain types may map to protobuf 
 - `OFF`, `SAMPLED`, and `FULL` modes produce the specified paper-routing behavior.
 - The dashboard can query stored benchmark results through gRPC without write access to execution state.
 - Correlation IDs permit tracing from market input through decision, order, live event, ledger record, and benchmark result.
+- Market-data contracts classify every instrument as `STOCK`, `ETF`, or `INDEX`, and execution rejects direct orders for `INDEX` instruments.
 - The initial protobuf contract defines all QuanTRAM v1 services, enums, and messages in `api/proto/quantram/v1/quantram.proto`.
 
 ## 14. Change Log
 
 | Date | Version | Change |
 | :--- | :--- | :--- |
+| August 28, 2026 | 0.5 | Limited the QuanTRAM v1 universe to U.S. stocks, ETFs, and published indices; added instrument classification and prohibited direct index order routing. |
 | August 28, 2026 | 0.4 | Aligned the artifact specification, Go command names, protobuf path, package namespace, and parent reference with QuanTRAM naming. |
 | August 28, 2026 | 0.3 | Established a single-file protobuf policy for `quantram.v1`: services, enums, and messages remain in `api/proto/quantram/v1/quantram.proto` unless demonstrated review, build, ownership, or deployment friction justifies decomposition. |
 | August 28, 2026 | 0.2 | Added explicit parent-child provenance: the external market feed integration specification is the architecture and functional basis, while this document derives the Go artifacts, ownership boundaries, gRPC surfaces, and acceptance criteria. |
