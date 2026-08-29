@@ -3,7 +3,8 @@
 **Date:** August 28, 2026  
 **Status:** Open design-gap register  
 **Parent Architecture:** [QuanTRAM System Specification](QuanTRAM_hi-level_design_082826.md)  
-**Derived Artifact Specification:** [E2E QuanTRAM Artifacts](E2E_QuanTRAM_ARTIFACTS.md)
+**Derived Artifact Specification:** [E2E QuanTRAM Artifacts](E2E_QuanTRAM_ARTIFACTS.md)  
+**Process Model:** [QuanTRAM Process Model](QuanTRAM_PROCESS_MODEL_082926.md)
 
 ## 1. Purpose and Authority
 

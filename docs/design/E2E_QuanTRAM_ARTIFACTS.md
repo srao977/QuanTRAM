@@ -7,6 +7,8 @@
 
 **Open Design Gaps:** [QuanTRAM Decision Integrity and Design Gap Analysis](QuanTRAM_DECISION_INTEGRITY_GAP_ANALYSIS_082826.md)
 
+**Process Model:** [QuanTRAM Process Model](QuanTRAM_PROCESS_MODEL_082926.md) — runtime units, gRPC surfaces, local Alpaca-paper topology, and Azure scale-out. This document proposes a resolution for process decomposition; the parent architecture remains authoritative for behavior.
+
 ## 1. Overview and Purpose
 
 This document is the child artifact specification derived from the parent QuanTRAM System Specification. The parent provides the architectural and functional basis: the integrated flow, semantic system boundaries, component responsibilities, required live-event recording, optional benchmark behavior, and telemetry requirements. This document translates that basis into Go-oriented software artifacts, interfaces, package ownership, provisional gRPC surfaces, processing semantics, and acceptance criteria.
@@ -417,7 +419,7 @@ Shared message contracts must be versioned. Go domain types may map to protobuf 
 - Retry, checkpoint, and dead-letter policies.
 - Protobuf package and RPC method definitions.
 - Authentication, authorization, and transport security.
-- Process decomposition and independent scaling thresholds.
+- Process decomposition and independent scaling thresholds. Proposed in the [QuanTRAM Process Model](QuanTRAM_PROCESS_MODEL_082926.md); not yet accepted as a closed decision.
 - Paper matching model and L2 snapshot schema.
 - PnL accounting, fee, corporate-action, and trading-calendar conventions.
 - Retention and audit immutability requirements.

@@ -6,6 +6,8 @@ The specification also describes how normalized market data drives the adaptive 
 
 **Derived artifact specification:** [E2E QuanTRAM Artifacts](E2E_QuanTRAM_ARTIFACTS.md)
 
+**Process model:** [QuanTRAM Process Model](QuanTRAM_PROCESS_MODEL_082926.md)
+
 **Open design gaps:** [QuanTRAM Decision Integrity and Design Gap Analysis](QuanTRAM_DECISION_INTEGRITY_GAP_ANALYSIS_082826.md)
 
 This document is the parent architecture and functional basis for the E2E QuanTRAM artifact specification. Its integrated architecture, semantic system boundaries, component responsibilities, event-recording decisions, benchmark modes, and telemetry contracts provide the requirements from which the Go artifacts are derived. The child specification refines these requirements into ownership boundaries, Go interfaces, package candidates, gRPC service surfaces, processing semantics, and acceptance criteria; it does not supersede this architecture.
