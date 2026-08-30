@@ -1,0 +1,152 @@
+syntax = "proto3";
+
+package quantram.v1;
+
+option go_package = "quantram/gen/quantram/v1;quantramv1";
+
+// Increment 1 services. Later increments append to this file.
+
+enum InstrumentType {
+  INSTRUMENT_TYPE_UNSPECIFIED = 0;
+  INSTRUMENT_TYPE_STOCK = 1;
+  INSTRUMENT_TYPE_ETF = 2;
+  INSTRUMENT_TYPE_INDEX = 3;
+}
+
+enum QualityStatus {
+  QUALITY_STATUS_UNSPECIFIED = 0;
+  QUALITY_STATUS_COMPLETE = 1;
+  QUALITY_STATUS_DEGRADED = 2;
+  QUALITY_STATUS_STALE = 3;
+  QUALITY_STATUS_PARTIAL = 4;
+  QUALITY_STATUS_RECONSTRUCTED = 5;
+  QUALITY_STATUS_INVALID = 6;
+}
+
+enum FeedState {
+  FEED_STATE_UNSPECIFIED = 0;
+  FEED_STATE_HEALTHY = 1;
+  FEED_STATE_DEGRADED = 2;
+  FEED_STATE_FAILED = 3;
+  FEED_STATE_RECOVERING = 4;
+}
+
+enum ComponentState {
+  COMPONENT_STATE_UNSPECIFIED = 0;
+  COMPONENT_STATE_HEALTHY = 1;
+  COMPONENT_STATE_DEGRADED = 2;
+  COMPONENT_STATE_UNAVAILABLE = 3;
+}
+
+message Bar {
+  string symbol = 1;
+  string instrument_id = 2;
+  InstrumentType instrument_type = 3;
+  bool tradable = 4;
+  string interval = 5;
+  int64 interval_start_unix_ms = 6;
+  int64 interval_end_unix_ms = 7;
+  double open = 8;
+  double high = 9;
+  double low = 10;
+  double close = 11;
+  uint64 volume = 12;
+  uint32 event_count = 13;
+  // Exact provider timestamp text; QuanTRAM assigns no timing semantics.
+  string source_timestamp = 14;
+  int64 receipt_unix_ms = 15;
+  string source = 16;
+  QualityStatus quality_status = 17;
+  bool is_final = 18;
+  bool is_backfilled = 19;
+  bool source_transition = 20;
+  int64 data_age_ms = 21;
+  string market_snapshot_id = 22;
+}
+
+message GetFeedHealthRequest {}
+
+message FeedHealth {
+  string source_id = 1;
+  FeedState state = 2;
+  int64 last_message_unix_ms = 3;
+  int64 last_pong_rtt_ms = 4;
+  uint32 consecutive_heartbeat_failures = 5;
+  string last_error = 6;
+  repeated string subscribed_symbols = 7;
+}
+
+message GetActiveSourceRequest {}
+
+message ActiveSource {
+  string source_id = 1;
+  FeedState state = 2;
+}
+
+message StreamBarsRequest {
+  repeated string symbols = 1;
+  // Zero means stream until the client cancels.
+  uint32 max_bars = 2;
+}
+
+message GetBarWindowRequest {
+  string symbol = 1;
+  uint32 limit = 2;
+}
+
+message BarWindow {
+  string symbol = 1;
+  repeated Bar bars = 2;
+}
+
+message TriggerGapFillRequest {
+  string symbol = 1;
+  int64 from_unix_ms = 2;
+  int64 to_unix_ms = 3;
+}
+
+message GapFillResult {
+  string symbol = 1;
+  uint32 bars_fetched = 2;
+  uint32 bars_injected = 3;
+  uint32 bars_deduplicated = 4;
+  string message = 5;
+}
+
+message GetHealthRequest {}
+
+message ComponentHealth {
+  string name = 1;
+  ComponentState state = 2;
+  string detail = 3;
+}
+
+message HealthReport {
+  ComponentState state = 1;
+  repeated ComponentHealth components = 2;
+}
+
+message GetReadinessRequest {}
+
+message ReadinessReport {
+  bool ready = 1;
+  bool observe = 2;
+  bool infer = 3;
+  string message = 4;
+}
+
+service MarketFeedService {
+  rpc GetFeedHealth(GetFeedHealthRequest) returns (FeedHealth);
+  rpc GetActiveSource(GetActiveSourceRequest) returns (ActiveSource);
+}
+
+service IngestionService {
+  rpc StreamBars(StreamBarsRequest) returns (stream Bar);
+  rpc GetBarWindow(GetBarWindowRequest) returns (BarWindow);
+  rpc TriggerGapFill(TriggerGapFillRequest) returns (GapFillResult);
+}
+
+service OperationsService {
+  rpc GetHealth(GetHealthRequest) returns (HealthReport);
+  rpc GetReadiness(GetReadinessRequest) returns (ReadinessReport);
+}

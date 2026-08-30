@@ -6,6 +6,8 @@
 **Derived Artifact Specification:** [E2E QuanTRAM Artifacts](E2E_QuanTRAM_ARTIFACTS.md)  
 **Open Design Gaps:** [QuanTRAM Decision Integrity and Design Gap Analysis](QuanTRAM_DECISION_INTEGRITY_GAP_ANALYSIS_082826.md)
 
+**Increment 1 (P-01 / P-02):** [QuanTRAM Ingestion Increment 1](QuanTRAM_INGESTION_INCREMENT_1_083026.md)
+
 ## 1. Purpose and Authority
 
 This document translates the parent architecture diagram into a **process model**: named runtime units, their inputs and outputs, failure domains, scale axes, and gRPC contracts. It exists so QuanTRAM can define microservices and `quantram.proto` from process boundaries rather than from package folders.
@@ -698,18 +700,18 @@ RV-03 requires independent health domains. Until that gap closes, processes must
 
 This replaces “start coding services in diagram order” with a contract-first sequence that still matches the parent roadmap.
 
-| Step | Deliverable | Processes | Exit |
-| :--- | :--- | :--- | :--- |
-| S0 | `quantram.proto` services above + Go and Python stubs | contracts | Generated code compiles; golden messages round-trip |
-| S1 | Alpaca feed + aggregator + REST gap-fill; bar stream | P-01, P-02 | Reconnect backfills; bars match a recorded Alpaca interval within DI-01 once defined |
-| S2 | Python worker serves `Predict` on the CSV window contract | P-04 | Offline fixture equals sidecar output |
-| S3 | Model host assigns IDs and skips on quality/deadline | P-03 | No decision without snapshot id and quality |
-| S4 | Risk rules + kill switch; index intents rejected | P-05 | Auditable reject reasons |
-| S5 | Alpaca paper submit/cancel + event publish + ledger | P-06, P-07, P-08 | Paper fill appears in ledger; restart is idempotent |
-| S6 | Databento adapter and failover | P-01, P-02 | Only after DI-01/DI-03 policy exists |
-| S7 | Internal paper + correlation + dashboard client | P-09, P-10, C-01 | Benchmark stop does not affect paper-venue orders |
+| Step | Status | Deliverable | Processes | Exit |
+| :--- | :--- | :--- | :--- | :--- |
+| S0 | **Partial** | `quantram.proto` increment-1 services generated in Go. Risk, execution, ledger, benchmark, and Python stubs are not in the file yet. | contracts | Ingestion/ops RPCs compile. Full-file golden round-trip still open. |
+| S1 | **Partial** | Alpaca IEX/test WebSocket, REST historical client, CSV replay, thin reconnect, bar window, `StreamBars`. Full circuit breaker is **not completed** and is **deferred**. See [Increment 1](QuanTRAM_INGESTION_INCREMENT_1_083026.md). | P-01, P-02 | CSV and Alpaca test-feed bars received 2026-08-30. Near-term exit is IEX RTH. Failover, live gap-fill proof, and DI-01 qualification are later. |
+| S2 | Not started | Adaptive model as a Go black box (SADE_Go). Tiny Python residue only if RK45 stays outside Go. | P-03 | Frozen CSV replay matches the Python baseline. |
+| S3 | Not started | Model host assigns IDs and skips on quality/deadline | P-03 | No decision without snapshot id and quality |
+| S4 | Not started | Risk rules + kill switch; index intents rejected | P-05 | Auditable reject reasons |
+| S5 | Not started | Alpaca paper submit/cancel + event publish + ledger | P-06, P-07, P-08 | Paper fill appears in ledger; restart is idempotent |
+| S6 | Deferred | Databento adapter and **full circuit breaker** (failover, failback, production trip rules). Thin Alpaca reconnect in increment 1 does not count as done. | P-01, P-02 | Only after IEX E2E, the model/paper slice, and DI-01/DI-03 policy |
+| S7 | Not started | Internal paper + correlation + dashboard client | P-09, P-10, C-01 | Benchmark stop does not affect paper-venue orders |
 
-S1–S5 are the local paper-trading slice. S6–S7 are scale and measurement.
+S1–S5 are the local paper-trading slice. S6–S7 are scale and measurement. S2 no longer assumes a whole-pipeline Python sidecar; that decision is recorded in the SADE Go investigation and the 2026-08-29 review.
 
 ## 14. Mapping to Existing Documents
 
@@ -719,6 +721,7 @@ S1–S5 are the local paper-trading slice. S6–S7 are scale and measurement.
 | Go interfaces, packages, single proto file, acceptance criteria | E2E artifacts |
 | Unresolved correctness and production gaps | Gap analysis |
 | Runtime units, RPCs, local vs Azure topology, Python sidecar | This document |
+| Increment 1 ingestion implementation and Alpaca/CSV evidence | [Ingestion Increment 1](QuanTRAM_INGESTION_INCREMENT_1_083026.md) |
 
 This document **proposes** a resolution for the artifact specification’s open item “process decomposition and independent scaling thresholds.” It does not close P0/P1 gaps. Implementation of S1 decision-quality behavior still waits on Gate A (DI-01 through DI-07) for any path treated as a production decision contract. Provider adapters and the Python sidecar may be prototyped earlier if their outputs are labeled non-authoritative.
 
@@ -736,6 +739,7 @@ This document **proposes** a resolution for the artifact specification’s open 
 | Phase 0 packing | One Go server + Python worker |
 | Split rule | Contract-preserving adapters when a scale or isolation trigger fires |
 | Azure | Same processes; AKS + managed log + Postgres + Key Vault as the default sketch |
+| Full circuit breaker | **Not completed.** Deferred until after Alpaca live/IEX E2E and the model/paper slice. Increment 1 keeps thin reconnect only. |
 
 ## 16. Still Open (owned by the gap register)
 
@@ -757,4 +761,6 @@ Do not invent silent defaults for these in code that will drive money or promoti
 
 | Date | Version | Change |
 | :--- | :--- | :--- |
+| August 30, 2026 | 0.3 | Deferred full circuit breaker / Databento failover (S6); increment-1 reconnect is not treated as complete. |
+| August 30, 2026 | 0.2 | Marked S0/S1 partial after increment-1 ingestion implementation; linked the increment design; noted the adaptive model as a Go black box for S2. |
 | August 29, 2026 | 0.1 | Initial process model: ten server processes, Python inference sidecar, gRPC sketch, local Alpaca-paper topology, Azure scale-out mapping, and required versus optional planes. |

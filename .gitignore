@@ -1,0 +1,5 @@
+.env
+*.exe
+*.test
+bin/
+Alpaca Usage.pdf
