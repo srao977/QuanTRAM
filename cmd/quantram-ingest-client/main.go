@@ -24,6 +24,7 @@ func main() {
 	maxBars := flag.Uint("max-bars", 5, "maximum bars to receive; 0 streams until timeout")
 	timeout := flag.Duration("timeout", 45*time.Second, "request timeout")
 	limit := flag.Uint("limit", 8, "window size for window operation")
+	finalizedOnly := flag.Bool("finalized-only", false, "stream only finalized bars")
 	flag.Parse()
 
 	connection, err := grpc.NewClient(*address, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -91,8 +92,9 @@ func main() {
 			result.GetSymbol(), result.GetBarsFetched(), result.GetBarsInjected(), result.GetBarsDeduplicated(), result.GetMessage())
 	case "stream":
 		stream, err := ingest.StreamBars(ctx, &quantramv1.StreamBarsRequest{
-			Symbols: symbols,
-			MaxBars: uint32(*maxBars),
+			Symbols:       symbols,
+			MaxBars:       uint32(*maxBars),
+			FinalizedOnly: *finalizedOnly,
 		})
 		if err != nil {
 			log.Fatalf("stream bars: %v", err)

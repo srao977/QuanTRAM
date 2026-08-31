@@ -1,7 +1,7 @@
 # QuanTRAM Increment 1 — Data Ingestion
 
 **Date:** August 30, 2026  
-**Status:** Implemented and locally validated (CSV + Alpaca test feed). IEX RTH and REST gap-fill against a live disconnect are still open.  
+**Status:** Implemented and locally validated (CSV + Alpaca test feed). Live IEX RTH and P-02 quality gating are recorded in [P-02 Data Quality (August 31)](QuanTRAM_INGESTION_P02_DATA_QUALITY_083126.md). REST gap-fill against a live disconnect is still open.  
 **Scope:** P-01 Market Feed and P-02 Ingestion only  
 **Parent:** [QuanTRAM Process Model](QuanTRAM_PROCESS_MODEL_082926.md)  
 **Sequence:** Process-model steps **S0** (ingestion services only) and **S1** (partial)
@@ -92,7 +92,7 @@ Until that work is scheduled, a failed Alpaca session means reconnect-or-degrade
 | `go test ./...` | Pass (decode, breaker, gap-fill dedup, CSV, REST httptest) | 2026-08-30 |
 | CSV → gRPC | Five sample AAPL bars streamed; health `CSV` / `HEALTHY`; window catch-up works after replay ends | 2026-08-30 |
 | Alpaca `v2/test` + `FAKEPACA` | Auth and subscribe healthy; received bar `2026-08-30T16:50:00Z` OHLCV 132.65 / 136 / 132.12 / 134.65 / 205 | 2026-08-30 |
-| Alpaca IEX `AAPL` | Not run (Sunday / outside RTH) | — |
+| Alpaca IEX `AAPL` | Not run (Sunday / outside RTH). Closed on 2026-08-31; see the P-02 data-quality note. | — |
 | REST gap-fill after a live disconnect | Unit-tested against a fake HTTP server; not yet proven on a real IEX drop | — |
 
 Paper orders are not part of this validation. The test feed emits about one minute bar per minute; allow at least one minute per requested bar.
@@ -109,7 +109,8 @@ Lessons from the first live connect:
 
 ## 9. Remaining for S1 (near term)
 
-- IEX validation during regular hours (`QUANTRAM_FEED=iex`, `AAPL`).
+- IEX validation during regular hours — **done 2026-08-31**; see [P-02 Data Quality](QuanTRAM_INGESTION_P02_DATA_QUALITY_083126.md).
+- Live reconnect + REST gap-fill proof on IEX still open.
 - Local tick aggregation still deferred (DI-01).
 - No model, risk, or paper-order wiring.
 
@@ -145,3 +146,4 @@ Buf remote plugins match SDX (`buf.yaml`, `buf.gen.yaml`). Run book is in the re
 | August 30, 2026 | Initial increment design. |
 | August 30, 2026 | Recorded implementation: proto + Go server/client, CSV and Alpaca test-feed validation, handshake and `T`/`t` decode fixes. |
 | August 30, 2026 | Marked full circuit breaker not completed and deferred until after IEX E2E and the model/paper slice. |
+| August 31, 2026 | Pointed IEX RTH and P-02 quality work at `QuanTRAM_INGESTION_P02_DATA_QUALITY_083126.md`. |

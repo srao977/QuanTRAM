@@ -102,29 +102,56 @@ func barFromRaw(raw json.RawMessage, source string, receipt time.Time, backfille
 	if err != nil {
 		return domain.Bar{}, err
 	}
+	open, err := requiredFloat(fields, "o")
+	if err != nil {
+		return domain.Bar{}, err
+	}
+	high, err := requiredFloat(fields, "h")
+	if err != nil {
+		return domain.Bar{}, err
+	}
+	low, err := requiredFloat(fields, "l")
+	if err != nil {
+		return domain.Bar{}, err
+	}
+	closePx, err := requiredFloat(fields, "c")
+	if err != nil {
+		return domain.Bar{}, err
+	}
+	volume, err := requiredNumber(fields, "v")
+	if err != nil {
+		return domain.Bar{}, err
+	}
 	return barFromAlpaca(alpacaBar{
 		Type:      rawString(fields, "T"),
 		Symbol:    rawString(fields, "S"),
-		Open:      rawFloat(fields, "o"),
-		High:      rawFloat(fields, "h"),
-		Low:       rawFloat(fields, "l"),
-		Close:     rawFloat(fields, "c"),
-		Volume:    json.Number(rawNumber(fields, "v")),
+		Open:      open,
+		High:      high,
+		Low:       low,
+		Close:     closePx,
+		Volume:    volume,
 		Timestamp: rawString(fields, "t"),
 		Trades:    json.Number(rawNumber(fields, "n")),
 	}, source, receipt, backfilled)
 }
 
-func rawFloat(fields map[string]json.RawMessage, key string) float64 {
+func requiredFloat(fields map[string]json.RawMessage, key string) (float64, error) {
 	value, ok := fields[key]
 	if !ok {
-		return 0
+		return 0, fmt.Errorf("alpaca bar missing %s", key)
 	}
 	var parsed float64
 	if err := json.Unmarshal(value, &parsed); err != nil {
-		return 0
+		return 0, fmt.Errorf("alpaca bar unreadable %s", key)
 	}
-	return parsed
+	return parsed, nil
+}
+
+func requiredNumber(fields map[string]json.RawMessage, key string) (json.Number, error) {
+	if _, ok := fields[key]; !ok {
+		return "", fmt.Errorf("alpaca bar missing %s", key)
+	}
+	return json.Number(rawNumber(fields, key)), nil
 }
 
 func rawNumber(fields map[string]json.RawMessage, key string) string {
@@ -150,8 +177,8 @@ func barFromAlpaca(raw alpacaBar, source string, receipt time.Time, backfilled b
 	if err != nil {
 		return domain.Bar{}, fmt.Errorf("parse alpaca timestamp %q: %w", raw.Timestamp, err)
 	}
-	if raw.High < raw.Low {
-		return domain.Bar{}, fmt.Errorf("invalid alpaca bar high < low")
+	if err := validateOHLC(raw.Open, raw.High, raw.Low, raw.Close); err != nil {
+		return domain.Bar{}, err
 	}
 	volume, err := parseUint(raw.Volume)
 	if err != nil {
@@ -159,10 +186,7 @@ func barFromAlpaca(raw alpacaBar, source string, receipt time.Time, backfilled b
 	}
 	trades, _ := parseUint32(raw.Trades)
 	instrumentType, tradable := domain.ClassifyInstrument(raw.Symbol)
-	quality := domain.QualityComplete
-	if backfilled {
-		quality = domain.QualityReconstructed
-	}
+	quality, isFinal := classifyAlpacaBar(raw.Type, backfilled)
 	return domain.Bar{
 		Symbol:           raw.Symbol,
 		InstrumentID:     raw.Symbol,
@@ -181,10 +205,32 @@ func barFromAlpaca(raw alpacaBar, source string, receipt time.Time, backfilled b
 		ReceiptTime:      receipt,
 		Source:           source,
 		QualityStatus:    quality,
-		IsFinal:          raw.Type == "b" || raw.Type == "",
+		IsFinal:          isFinal,
 		IsBackfilled:     backfilled,
 		MarketSnapshotID: domain.SnapshotID(raw.Symbol, source, raw.Timestamp, raw.Open, raw.High, raw.Low, raw.Close, volume),
 	}, nil
+}
+
+func validateOHLC(open, high, low, close float64) error {
+	for _, value := range []float64{open, high, low, close} {
+		if value <= 0 || value != value {
+			return fmt.Errorf("alpaca bar incomplete ohlc")
+		}
+	}
+	if high < low || high < open || high < close || low > open || low > close {
+		return fmt.Errorf("alpaca bar inconsistent ohlc")
+	}
+	return nil
+}
+
+func classifyAlpacaBar(messageType string, backfilled bool) (domain.QualityStatus, bool) {
+	if backfilled {
+		return domain.QualityReconstructed, true
+	}
+	if messageType == "u" {
+		return domain.QualityPartial, false
+	}
+	return domain.QualityComplete, true
 }
 
 func parseUint(value json.Number) (uint64, error) {

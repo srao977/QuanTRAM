@@ -26,6 +26,14 @@ func TestCircuitBreakerHealthyAndFailed(t *testing.T) {
 	if state != domain.FeedFailed {
 		t.Fatalf("expected failed, got %s", state)
 	}
+
+	state = breaker.Observe(domain.FeedHealth{
+		State:       domain.FeedHealthy,
+		LastMessage: now.Add(-5 * time.Second),
+	}, now)
+	if state != domain.FeedHealthy {
+		t.Fatalf("quiet data interval must not fail the feed, got %s", state)
+	}
 }
 
 func TestCircuitBreakerRTT(t *testing.T) {

@@ -13,6 +13,11 @@ import (
 	"quantram/internal/marketfeed"
 )
 
+type subscriber struct {
+	ch            chan domain.Bar
+	finalizedOnly bool
+}
+
 type Pipeline struct {
 	live       marketfeed.LiveBarSource
 	historical marketfeed.HistoricalBarSource
@@ -22,7 +27,7 @@ type Pipeline struct {
 	symbols    []string
 
 	mu          sync.Mutex
-	subscribers map[uint64]chan domain.Bar
+	subscribers map[uint64]subscriber
 	nextSub     uint64
 	inferReady  atomic.Bool
 	filling     atomic.Bool
@@ -36,7 +41,7 @@ func NewPipeline(live marketfeed.LiveBarSource, historical marketfeed.Historical
 		window:      NewWindowStore(config.WindowLimit),
 		sourceID:    sourceID,
 		symbols:     symbols,
-		subscribers: make(map[uint64]chan domain.Bar),
+		subscribers: make(map[uint64]subscriber),
 	}
 }
 
@@ -68,10 +73,13 @@ func (p *Pipeline) Run(ctx context.Context) error {
 		case bar := <-incoming:
 			p.accept(bar)
 			p.breaker.Observe(p.live.Health(), time.Now())
+			p.refreshInfer(time.Now().UTC())
 		case <-ticker.C:
 			state := p.breaker.Observe(p.live.Health(), time.Now())
-			if state == domain.FeedFailed {
+			if state == domain.FeedFailed || state == domain.FeedRecovering {
 				p.inferReady.Store(false)
+			} else {
+				p.refreshInfer(time.Now().UTC())
 			}
 			if state == domain.FeedRecovering {
 				p.startRecovery(ctx)
@@ -97,53 +105,81 @@ func (p *Pipeline) accept(bar domain.Bar) {
 	}
 	if p.breaker.State() == domain.FeedRecovering && !bar.IsBackfilled {
 		p.breaker.MarkHealthy()
-		p.inferReady.Store(true)
 	}
-	if p.breaker.State() == domain.FeedHealthy {
-		p.inferReady.Store(true)
-	}
+	p.refreshInfer(time.Now().UTC())
 	p.fanout(bar)
+}
+
+func (p *Pipeline) refreshInfer(now time.Time) {
+	if p.breaker.State() != domain.FeedHealthy {
+		p.inferReady.Store(false)
+		return
+	}
+	for _, symbol := range p.symbols {
+		if !domain.InferReady(p.window.Window(symbol, 0), now) {
+			p.inferReady.Store(false)
+			return
+		}
+	}
+	p.inferReady.Store(true)
 }
 
 func (p *Pipeline) fanout(bar domain.Bar) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	for id, ch := range p.subscribers {
+	for id, sub := range p.subscribers {
+		if sub.finalizedOnly && !bar.IsFinal {
+			continue
+		}
 		select {
-		case ch <- bar:
+		case sub.ch <- bar:
 		default:
 			select {
-			case <-ch:
+			case <-sub.ch:
 			default:
 			}
 			select {
-			case ch <- bar:
+			case sub.ch <- bar:
 			default:
-				log.Printf("drop bar for slow subscriber %d symbol=%s", id, bar.Symbol)
+				if sub.finalizedOnly {
+					p.inferReady.Store(false)
+				}
+				log.Printf("drop bar for slow subscriber %d symbol=%s final=%t", id, bar.Symbol, bar.IsFinal)
 			}
 		}
 	}
 }
 
 func (p *Pipeline) Subscribe(buffer int) (uint64, <-chan domain.Bar) {
+	return p.subscribe(buffer, false)
+}
+
+func (p *Pipeline) SubscribeFinalized(buffer int) (uint64, <-chan domain.Bar) {
+	if buffer <= 0 {
+		buffer = config.ConsumerQueue
+	}
+	return p.subscribe(buffer, true)
+}
+
+func (p *Pipeline) subscribe(buffer int, finalizedOnly bool) (uint64, <-chan domain.Bar) {
 	if buffer <= 0 {
 		buffer = config.SubscriberQueue
 	}
 	id := atomic.AddUint64(&p.nextSub, 1)
 	ch := make(chan domain.Bar, buffer)
 	p.mu.Lock()
-	p.subscribers[id] = ch
+	p.subscribers[id] = subscriber{ch: ch, finalizedOnly: finalizedOnly}
 	p.mu.Unlock()
 	return id, ch
 }
 
 func (p *Pipeline) Unsubscribe(id uint64) {
 	p.mu.Lock()
-	ch, ok := p.subscribers[id]
+	sub, ok := p.subscribers[id]
 	delete(p.subscribers, id)
 	p.mu.Unlock()
 	if ok {
-		close(ch)
+		close(sub.ch)
 	}
 }
 
@@ -185,7 +221,7 @@ func (p *Pipeline) GapFill(ctx context.Context, symbol string, from, to time.Tim
 		}
 	}
 	p.breaker.MarkHealthy()
-	p.inferReady.Store(true)
+	p.refreshInfer(time.Now().UTC())
 	return fetched, injected, deduped, nil
 }
 
@@ -202,6 +238,7 @@ func (p *Pipeline) startRecovery(ctx context.Context) {
 func (p *Pipeline) RecoverAfterReconnect(ctx context.Context) {
 	if p.historical == nil {
 		p.breaker.MarkHealthy()
+		p.refreshInfer(time.Now().UTC())
 		return
 	}
 	now := time.Now().UTC()
@@ -252,11 +289,14 @@ func (p *Pipeline) Health() domain.HealthReport {
 func (p *Pipeline) Readiness() domain.Readiness {
 	state := p.breaker.State()
 	observe := state == domain.FeedHealthy || state == domain.FeedDegraded || state == domain.FeedRecovering
-	infer := p.inferReady.Load() && state == domain.FeedHealthy
+	p.refreshInfer(time.Now().UTC())
+	infer := p.inferReady.Load()
 	ready := observe
 	message := string(state)
 	if !ready {
 		message = "feed not ready"
+	} else if !infer {
+		message = "observable; inference gated on data quality"
 	}
 	return domain.Readiness{Ready: ready, Observe: observe, Infer: infer, Message: message}
 }

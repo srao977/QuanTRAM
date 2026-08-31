@@ -21,8 +21,10 @@ const (
 	HeartbeatMaxMisses  = 3
 	ReconnectBase       = 100 * time.Millisecond
 	ReconnectCap        = 30 * time.Second
+	StreamReadIdle      = 90 * time.Second
 	WindowLimit         = 64
 	SubscriberQueue     = 16
+	ConsumerQueue       = 2
 )
 
 type Config struct {

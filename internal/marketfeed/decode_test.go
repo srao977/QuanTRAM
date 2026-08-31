@@ -31,6 +31,29 @@ func TestBarFromAlpaca(t *testing.T) {
 	if bar.IntervalEnd.Sub(bar.IntervalStart) != time.Minute {
 		t.Fatalf("interval width %s", bar.IntervalEnd.Sub(bar.IntervalStart))
 	}
+	if bar.QualityStatus != "COMPLETE" {
+		t.Fatalf("quality %s", bar.QualityStatus)
+	}
+}
+
+func TestBarFromAlpacaUpdatedIsPartial(t *testing.T) {
+	raw := alpacaBar{
+		Type:      "u",
+		Symbol:    "AAPL",
+		Open:      313.64,
+		High:      313.70,
+		Low:       313.62,
+		Close:     313.65,
+		Volume:    json.Number("100"),
+		Timestamp: "2026-08-31T16:52:00Z",
+	}
+	bar, err := barFromAlpaca(raw, "ALPACA_IEX", time.Date(2026, 8, 31, 16, 52, 20, 0, time.UTC), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bar.IsFinal || bar.QualityStatus != "PARTIAL" {
+		t.Fatalf("updated bar should be partial: %+v", bar)
+	}
 }
 
 func TestBarFromRawDoesNotConfuseTypeAndTimestamp(t *testing.T) {
@@ -41,6 +64,37 @@ func TestBarFromRawDoesNotConfuseTypeAndTimestamp(t *testing.T) {
 	}
 	if bar.SourceTimestamp != "2026-08-30T16:48:00Z" || bar.Symbol != "FAKEPACA" || bar.Volume != 10 {
 		t.Fatalf("%+v", bar)
+	}
+}
+
+func TestBarFromRawSkipsIncompleteOrUnreadable(t *testing.T) {
+	receipt := time.Unix(0, 0).UTC()
+	cases := []string{
+		`{"T":"b","S":"AAPL","h":2,"l":1,"c":1.5,"v":10,"t":"2026-08-31T16:52:00Z"}`,
+		`{"T":"b","S":"AAPL","o":"x","h":2,"l":1,"c":1.5,"v":10,"t":"2026-08-31T16:52:00Z"}`,
+		`{"T":"b","S":"AAPL","o":0,"h":2,"l":1,"c":1.5,"v":10,"t":"2026-08-31T16:52:00Z"}`,
+		`{"T":"b","S":"AAPL","o":1.5,"h":1,"l":1.2,"c":1.3,"v":10,"t":"2026-08-31T16:52:00Z"}`,
+	}
+	for _, raw := range cases {
+		if _, err := barFromRaw(json.RawMessage(raw), "ALPACA_IEX", receipt, false); err == nil {
+			t.Fatalf("expected skip for %s", raw)
+		}
+	}
+}
+
+func TestBarFromAlpacaRejectsIncompleteOHLC(t *testing.T) {
+	raw := alpacaBar{
+		Type:      "b",
+		Symbol:    "AAPL",
+		Open:      0,
+		High:      313.7,
+		Low:       313.6,
+		Close:     313.65,
+		Volume:    json.Number("100"),
+		Timestamp: "2026-08-31T16:52:00Z",
+	}
+	if _, err := barFromAlpaca(raw, "ALPACA_IEX", time.Time{}, false); err == nil {
+		t.Fatal("expected incomplete ohlc to be rejected")
 	}
 }
 

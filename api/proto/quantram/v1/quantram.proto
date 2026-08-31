@@ -87,6 +87,9 @@ message StreamBarsRequest {
   repeated string symbols = 1;
   // Zero means stream until the client cancels.
   uint32 max_bars = 2;
+  // When true, only finalized bars are streamed. Partial updates remain
+  // on the default observe path.
+  bool finalized_only = 3;
 }
 
 message GetBarWindowRequest {

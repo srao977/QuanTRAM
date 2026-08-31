@@ -37,8 +37,7 @@ func (b *CircuitBreaker) Observe(health domain.FeedHealth, now time.Time) domain
 		b.state = domain.FeedFailed
 		return b.state
 	}
-	stale := !health.LastMessage.IsZero() && now.Sub(health.LastMessage) > time.Duration(config.HeartbeatMaxMisses)*config.HeartbeatInterval
-	if health.ConsecutiveHeartbeatFailures >= uint32(config.HeartbeatMaxMisses) || stale {
+	if health.ConsecutiveHeartbeatFailures >= uint32(config.HeartbeatMaxMisses) {
 		b.misses = health.ConsecutiveHeartbeatFailures
 		b.state = domain.FeedFailed
 		return b.state

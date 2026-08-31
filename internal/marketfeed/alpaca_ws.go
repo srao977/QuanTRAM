@@ -103,6 +103,7 @@ func (s *AlpacaStream) session(ctx context.Context, symbols []string, out chan<-
 		if rtt < 0 {
 			rtt = 0
 		}
+		s.armReadDeadline(conn)
 		s.recordPong(rtt)
 		if rtt > config.HeartbeatMaxRTT {
 			return fmt.Errorf("pong rtt %s exceeds %s", rtt, config.HeartbeatMaxRTT)
@@ -219,7 +220,7 @@ func (s *AlpacaStream) readLoop(ctx context.Context, conn *websocket.Conn, out c
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		_ = conn.SetReadDeadline(time.Now().Add(45 * time.Second))
+		s.armReadDeadline(conn)
 		_, raw, err := conn.ReadMessage()
 		if err != nil {
 			return fmt.Errorf("read alpaca stream: %w", err)
@@ -250,6 +251,10 @@ func (s *AlpacaStream) readLoop(ctx context.Context, conn *websocket.Conn, out c
 			}
 		}
 	}
+}
+
+func (s *AlpacaStream) armReadDeadline(conn *websocket.Conn) {
+	_ = conn.SetReadDeadline(time.Now().Add(config.StreamReadIdle))
 }
 
 func (s *AlpacaStream) setState(state domain.FeedState, lastError string) {

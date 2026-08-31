@@ -41,12 +41,21 @@ func (s *Server) StreamBars(request *quantramv1.StreamBarsRequest, stream quantr
 	if err != nil {
 		return err
 	}
-	id, bars := s.pipeline.Subscribe(0)
+	var id uint64
+	var bars <-chan domain.Bar
+	if request.GetFinalizedOnly() {
+		id, bars = s.pipeline.SubscribeFinalized(0)
+	} else {
+		id, bars = s.pipeline.Subscribe(0)
+	}
 	defer s.pipeline.Unsubscribe(id)
 
 	var sent uint32
 	for _, symbol := range catchUpSymbols(wanted, request.GetSymbols(), s.pipeline.Symbols()) {
 		for _, bar := range s.pipeline.Window(symbol, 0) {
+			if request.GetFinalizedOnly() && !bar.IsFinal {
+				continue
+			}
 			if err := stream.Send(toProtoBar(bar)); err != nil {
 				return err
 			}

@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"quantram/internal/domain"
 )
 
 func TestAlpacaRESTBars(t *testing.T) {
@@ -35,5 +37,8 @@ func TestAlpacaRESTBars(t *testing.T) {
 	}
 	if len(bars) != 1 || !bars[0].IsBackfilled || bars[0].Close != 143.49 {
 		t.Fatalf("bars %+v", bars)
+	}
+	if bars[0].QualityStatus != domain.QualityReconstructed || !bars[0].IsFinal {
+		t.Fatalf("expected reconstructed final bar, got %+v", bars[0])
 	}
 }

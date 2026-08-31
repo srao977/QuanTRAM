@@ -674,7 +674,10 @@ type StreamBarsRequest struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	Symbols []string               `protobuf:"bytes,1,rep,name=symbols,proto3" json:"symbols,omitempty"`
 	// Zero means stream until the client cancels.
-	MaxBars       uint32 `protobuf:"varint,2,opt,name=max_bars,json=maxBars,proto3" json:"max_bars,omitempty"`
+	MaxBars uint32 `protobuf:"varint,2,opt,name=max_bars,json=maxBars,proto3" json:"max_bars,omitempty"`
+	// When true, only finalized bars are streamed. Partial updates remain
+	// on the default observe path.
+	FinalizedOnly bool `protobuf:"varint,3,opt,name=finalized_only,json=finalizedOnly,proto3" json:"finalized_only,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -721,6 +724,13 @@ func (x *StreamBarsRequest) GetMaxBars() uint32 {
 		return x.MaxBars
 	}
 	return 0
+}
+
+func (x *StreamBarsRequest) GetFinalizedOnly() bool {
+	if x != nil {
+		return x.FinalizedOnly
+	}
+	return false
 }
 
 type GetBarWindowRequest struct {
@@ -1259,10 +1269,11 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	"\x16GetActiveSourceRequest\"Y\n" +
 	"\fActiveSource\x12\x1b\n" +
 	"\tsource_id\x18\x01 \x01(\tR\bsourceId\x12,\n" +
-	"\x05state\x18\x02 \x01(\x0e2\x16.quantram.v1.FeedStateR\x05state\"H\n" +
+	"\x05state\x18\x02 \x01(\x0e2\x16.quantram.v1.FeedStateR\x05state\"o\n" +
 	"\x11StreamBarsRequest\x12\x18\n" +
 	"\asymbols\x18\x01 \x03(\tR\asymbols\x12\x19\n" +
-	"\bmax_bars\x18\x02 \x01(\rR\amaxBars\"C\n" +
+	"\bmax_bars\x18\x02 \x01(\rR\amaxBars\x12%\n" +
+	"\x0efinalized_only\x18\x03 \x01(\bR\rfinalizedOnly\"C\n" +
 	"\x13GetBarWindowRequest\x12\x16\n" +
 	"\x06symbol\x18\x01 \x01(\tR\x06symbol\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\rR\x05limit\"I\n" +
