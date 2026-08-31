@@ -30,7 +30,7 @@ param(
     [ValidateSet("iex", "test")]
     [string]$Feed = "test",
 
-    [string]$Symbols = "",
+    [string[]]$Symbols = @(),
 
     [string]$CsvPath = "AAPL_1min_firstratedata.csv",
 
@@ -57,14 +57,22 @@ if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
 
 if (-not $Symbols) {
     if ($Source -eq "csv") {
-        $Symbols = "AAPL"
+        $Symbols = @("AAPL")
     }
     elseif ($Feed -eq "test") {
-        $Symbols = "FAKEPACA"
+        $Symbols = @("FAKEPACA")
     }
     else {
-        $Symbols = "AAPL"
+        $Symbols = @("AAPL")
     }
+}
+
+$symbolsCsv = (($Symbols -join ",") -split "," |
+    ForEach-Object { $_.Trim() } |
+    Where-Object { $_ }) -join ","
+
+if (-not $symbolsCsv) {
+    throw "Symbols must contain at least one non-empty symbol."
 }
 
 if ($Source -eq "alpaca") {
@@ -78,11 +86,11 @@ if ($Source -eq "alpaca") {
 
 $env:QUANTRAM_SOURCE = $Source
 $env:QUANTRAM_FEED = $Feed
-$env:QUANTRAM_SYMBOLS = $Symbols
+$env:QUANTRAM_SYMBOLS = $symbolsCsv
 $env:QUANTRAM_CSV_PATH = $CsvPath
 $env:GRPC_PORT = $Port
 
-Write-Host "QuanTRAM ingestion  source=$Source  feed=$Feed  symbols=$Symbols  port=$Port"
+Write-Host "QuanTRAM ingestion  source=$Source  feed=$Feed  symbols=$symbolsCsv  port=$Port"
 
 function Invoke-IngestClient {
     param(
@@ -93,7 +101,7 @@ function Invoke-IngestClient {
     & go run ./cmd/quantram-ingest-client `
         -address "localhost:$Port" `
         -operation $ClientOperation `
-        -symbols $Symbols `
+        -symbols $symbolsCsv `
         -max-bars $ClientMaxBars `
         -timeout $ClientTimeout
     if ($LASTEXITCODE -ne 0) {
@@ -104,7 +112,7 @@ function Invoke-IngestClient {
 if (-not $SmokeTest) {
     Write-Host "Starting server (Ctrl+C to stop). In another terminal run:"
     Write-Host "  go run ./cmd/quantram-ingest-client -operation source"
-    Write-Host "  go run ./cmd/quantram-ingest-client -operation stream -symbols $Symbols -max-bars $MaxBars -timeout $Timeout"
+    Write-Host "  go run ./cmd/quantram-ingest-client -operation stream -symbols $symbolsCsv -max-bars $MaxBars -timeout $Timeout"
     & go run ./cmd/quantram-server
     exit $LASTEXITCODE
 }
