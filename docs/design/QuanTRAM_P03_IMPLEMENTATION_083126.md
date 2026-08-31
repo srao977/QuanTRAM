@@ -1,8 +1,9 @@
 # QuanTRAM P-03 — Implementation Increment
 
 **Date:** August 31, 2026  
-**Status:** Ready to implement. Depends on current P-02 quality gate.  
+**Status:** Phases A–C complete (Go adaptive box + Unit Run 001 equivalence). Phase D blocked until the model-consumer path exists (no silent drop-oldest). `quantram-server` / proto remain unwired.  
 **Design:** [P-03 Adaptive Model Host](QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md)  
+**Review:** [P03_feedback_083126.md](../../P03_feedback_083126.md)  
 **Python reference (do not import at runtime):** `C:\Users\chino\SADE`
 
 ## 1. Increment goal
@@ -11,14 +12,14 @@ Add a collocated Go adaptive engine that:
 
 1. Subscribes to P-02 finalized bars.
 2. Steps SADE D01 → D02 → D04 → emitter mathematics in Go, one symbol at a time.
-3. Emits `DecisionVector` or skip.
+3. Emits one `DecisionEvent` per considered bar (decision or typed skip).
 4. Proves numerical agreement with SADE Unit Run 001 **without SDX**.
 
 Out of scope **for this coding increment:** risk, orders, the unfinished APTF→SADE RK45 migration, joining adaptive output to PriceEngine, Python `Predict` worker, dashboard decision UI.
 
 Those pricing items are the **next scientific increment**, not a discarded design. The destination remains: PriceEngine decisions on RK45 trajectories. See the design doc §2.1.
 
-## 2. Package layout (proposed)
+## 2. Package layout
 
 Stay in this repo. Domain packages do not import `gen/`.
 
@@ -49,20 +50,24 @@ internal/adaptive/
 
 internal/adaptive/*_test.go
   Equivalence tests that load testdata bars, not gRPC.
+  testdata/unit_run_001_observations.csv (+ origin + SHA-256)
 
-internal/modelhost/
-  host.go            SubscribeFinalized, infer gate, per-symbol engines, skip/deadline
-  host_test.go
+internal/modelhost/          (not started — Phase D)
+  host.go            keyed per-symbol workers, FinalizedBarConsumer, cold start
+  host_test.go       overflow, gap, timeout atomicity, infer pause, panic isolation
 
 internal/domain/decision.go
-  DecisionVector, SkipReason  (no proto)
+  DecisionEvent, Decision, Skip, SkipReason  (no proto; freeze before Phase E)
 
-internal/server/     (later in this increment or next)
-  Map DecisionVector to proto; register ModelService
+internal/server/     (not started — Phase E)
+  Map DecisionEvent to proto; register ModelService
 
 cmd/quantram-server/main.go
   Construct host after pipeline; Run host in a goroutine
+  (unchanged; QUANTRAM_MODEL unused)
 ```
+
+**Present (31 Aug):** `internal/domain/decision.go` and `internal/adaptive/` as listed. **Not present:** `internal/modelhost/`, proto, server wiring.
 
 Do **not** create `internal/sade` or a Go module that imports the Python tree. Copy constants and equations; cite SADE paths in comments sparingly.
 
@@ -70,121 +75,104 @@ Suggested config flags (startup env, same style as increment 1):
 
 | Variable | Default | Meaning |
 | :--- | :--- | :--- |
-| `QUANTRAM_MODEL` | `off` | `off` or `adaptive`. Keep current ingest-only runs working. |
-| `QUANTRAM_MODEL_DEADLINE` | `200ms` | Skip if a step exceeds this. |
+| `QUANTRAM_MODEL` | `off` | `off` or `adaptive`. Unknown values: **fail startup**. |
+| `QUANTRAM_MODEL_DEADLINE` | `200ms` | Reject `<= 0` or unreasonably large (e.g. `> 2s`). |
+
+When `adaptive` is requested but fingerprints/config fail: model component **unavailable**, do **not** silently fall back to `off`. Ingestion stays up. When `off`, do not subscribe the model path.
 
 ## 3. Port order (science first, host second)
 
 Implement against **unit tests that call the engine with `domain.Bar`**, then wire the host.
 
-### Phase A — Observation mapper and config
+### Phase A — Observation mapper and config — **done (31 Aug)**
 
-- `mapper.go`: Bar → Observation using §5 of the design doc.
+- `mapper.go`: Bar → Observation using design §5.3. **`event_time` = `IntervalStart`.**
 - Offline helper: CSV row `{timestamp,open,high,low,close,volume}` → `domain.Bar` (final, COMPLETE) for tests. This is a **test adapter**, not a revival of SDX.
-- Copy `D01V02Config` defaults and fingerprints verbatim.
+- `D01V02Config` defaults and SADE baseline fingerprints copied verbatim (`config.go`, `fingerprints.go`). Config SHA-256 matches CPython `D01V02Config().sha256()`.
+- `internal/domain/decision.go`: `DecisionEvent` / `Decision` / `Skip` / `SkipReason` (no proto).
 
-**Exit:** mapper tests; no engine yet.
+**Exit:** mapper tests green (`event_time` is `IntervalStart`, not `SourceTimestamp`).
 
-### Phase B — D01
+### Phase B — D01 — **done (31 Aug)**
 
-Port `sade/d01/v02/` function-for-function. Preserve clamp bounds, `epsilon = 1e-8`, and operation order in `D01V02Model.step`.
+Ported `sade/d01/v02/` function-for-function. Clamp bounds, `epsilon = 1e-8`, and `D01V02Model.step` operation order preserved. `Step` is copy-compute-commit (failed causal / non-finite steps do not mutate committed state).
 
-Suggested test method: for a short synthetic close/volume series, compare Go vs a thin Python subprocess **or** (preferred for CI) checked-in expected JSON from a one-off SADE script. If a subprocess is used, keep it in `testdata` / an optional `SADE_PYTHON` env so default `go test ./...` does not require SADE on PATH.
+CI uses checked-in Unit Run 001 expectations (Phase C). No Python subprocess and no `SADE_PYTHON` dependency.
 
-**Exit:** D01 state trajectory matches Python within documented tolerance on a ≥50-step series.
+**Exit:** D01 unit tests plus the 100-bar frozen trajectory (Phase C).
 
-### Phase C — D02 + D04 + engine
+### Phase C — D02 + D04 + engine — **done (31 Aug)**
 
 - `build_return_shape` including 8 samples and `**1.8` / `2^(−τ/hl)`.
-- Capturability: `Pow(x, 1.0/3.0)` for structural quality.
+- Capturability: `Pow(x, 1.0/3.0)` for structural quality (**not** `math.Cbrt`).
 - Engine: 15-deque, INITIALIZING vs ACTIONABLE, `_decide` and `_adaptive_properties` from `emitter.py`.
-- Position: BUY→LONG, SELL→SHORT, HOLD keeps state.
+- `emitter_position_state`: BUY→LONG, SELL→SHORT, HOLD keeps prior.
+- `Step` is copy-compute-commit. Validate outputs; non-finite → skip / no commit.
+- Domain types in `internal/domain/decision.go` (`DecisionEvent`) **before** proto.
 
-**Exit:** Full emission compare on Unit Run 001 sequence (100 AAPL bars). `position_decision` exact; scores within tolerance.
+**Exit (met):** Frozen Unit Run 001 compare. Fixture: `internal/adaptive/testdata/unit_run_001_observations.csv` reconstructed from `SADE/output/unit_runs/001/observations.csv`. SHA-256 `6c98e15df41f71d4369c22d4211f3fd651eda829a5046371faa38c426381f33a`. Origin note in `testdata/unit_run_001.origin.txt`.
+
+Result: 100 AAPL bars → 15 `INITIALIZING`, 8 BUY / 10 SELL / 67 HOLD. Exact `model_status`, `path_direction`, `side`, `H`; scores within the Phase C tolerance table (`1e-12` abs or 16 ulp). First-divergence report on mismatch. `go test ./...` green. `go test -race` not run on this workstation (cgo unavailable).
+
+### Phase D0 — P-02 model-consumer path (required before live host)
+
+Do **not** call `SubscribeFinalized(2)` for P-03. Add `FinalizedBarConsumer` / `SubscribeModelBars`:
+
+- no silent drop-oldest
+- overflow or gap → `QUEUE_OVERFLOW` / `INPUT_GAP` and mark symbol discontinuous
+- observe path unchanged
+
+**Exit:** Forced stall + three finalized bars: all processed in order **or** discontinuous before any later evaluate.
 
 ### Phase D — Model host
 
-- `Host.Run(ctx)`:
-  - `id, ch := pipeline.SubscribeFinalized(2)`
-  - on bar: if `!Readiness().Infer` or `!bar.ModelEligible()` → skip
-  - `engine := engines[bar.Symbol]` (create on first bar)
-  - if `bar.IntervalStart` ≤ last → skip (duplicate/regression)
-  - `decision, err := engine.Step(bar)` with deadline
-  - fan-out to in-process subscribers / later proto stream
-- Depth 2; on overflow skip and log (same policy as P-02 finalized consumer).
-- `GetHealth` gains a `model` component: healthy / degraded / unavailable without taking down ingestion.
+- Keyed worker per symbol; global serial is not required.
+- Cold start only (no window seed).
+- Phase 0: global `infer` pauses all evaluation, does not reset state.
+- Deadline: compute on a state copy; commit only if finished in 200 ms.
+- Health: design §8.2.
+- Config validation at startup (design / this table).
 
-**Exit:** `QUANTRAM_MODEL=adaptive` + live IEX: after ~16 eligible minutes, host logs ACTIONABLE or HOLD/BUY/SELL; `infer=false` produces skips only.
+**Exit tests:** overflow, missing interval, duplicate/regression, `infer` pause-not-reset, timeout unchanged hash, AAPL panic does not stop MSFT or P-02, shutdown without send-on-closed, reconstructed head never evaluates, `u` never reaches host, cold-start `INITIALIZING n/16`.
 
-### Phase E — Proto (can trail Phase D)
+Live acceptance (regular hours): warm-up crosses 16 accepted eligible minutes; outcomes are `DecisionEvent`s with `model_status=ACTIONABLE` and `side` in {BUY,SELL,HOLD} **or** typed skips — assert fields, not log text. Measure p50/p95/p99 step latency on the frozen corpus plus one live run.
 
-Append to `api/proto/quantram/v1/quantram.proto` (do not split the file):
+### Phase E — Proto (after domain freeze)
 
-```text
-enum DecisionSide { ... UNSPECIFIED, BUY, SELL, HOLD }
-enum SkipReason { ... GATE, INITIALIZING, TIMEOUT, ERROR, INFER_OFF }
+Append to `quantram.proto`. Stream `DecisionEvent` (decision | skip oneof), not `DecisionVector` with `skipped` bool. Include H, Q_G, Q_S, Q_R, path_direction, `emitter_position_state`, skip reason enum, hashes, versions.
 
-message DecisionVector {
-  string symbol = 1;
-  string signal_id = 2;
-  string decision_id = 3;
-  string market_snapshot_id = 4;
-  DecisionSide side = 5;
-  double confidence = 6;
-  string model_version = 7;
-  int64 interval_start_unix_ms = 8;
-  bool skipped = 9;
-  SkipReason skip_reason = 10;
-  double capturability = 11;
-  uint32 hard_eligibility = 12;
-}
+`Evaluate` and `ModelInferenceService` wait for pricing/RK45.
 
-service ModelService {
-  rpc StreamDecisions(StreamDecisionsRequest) returns (stream DecisionVector);
-  rpc GetModelInfo(GetModelInfoRequest) returns (ModelInfo);
-}
-```
-
-`Evaluate` (push snapshot) can wait. `ModelInferenceService` waits for pricing/RK45.
-
-Regenerate with `buf generate`. Dashboard may ignore the new RPCs until a later viewer increment.
+Regenerate with `buf generate`.
 
 ## 4. SADE file → Go file map
 
 Use this as the port checklist. Skip anything marked **do not port**.
 
-| SADE path | Go target | Port? |
-| :--- | :--- | :--- |
-| `d01/v02/observations.py` | `observation.go` | Yes |
-| `d01/v02/config.py` | `config.go` | Yes |
-| `d01/v02/state.py` | `state.go` | Yes |
-| `d01/v02/model.py` | `d01.go` | Yes |
-| `d01/v02/reference.py` … `forward.py` | matching `*.go` | Yes |
-| `d02/v02/builder.py`, `models.py` | `d02.go` | Yes |
-| `d04/envelope/capturability_model.py` | `d04.go` | Yes |
-| `d04/models/*` | types in `d04.go` or `types.go` | Yes (no pydantic) |
-| `adaptive_emitter/emitter.py` | `engine.go` | Yes, minus audit lists |
-| `adaptive_emitter/normalizer.py` | `mapper.go` | Yes, from `domain.Bar` |
-| `configuration/scientific_baseline.py` | `fingerprints.go` | Yes |
-| `adaptive_pipeline/pipeline.py` | — | **No** |
-| `input/sdx_client.py` | — | **No** |
-| `input/generated/**` | — | **No** |
-| `pricing_pipeline/**` | — | **No** (later increment) |
-| `unit_run/**`, `__main__.py` | testdata / optional cmd | Offline harness only |
+| SADE path | Go target | Port? | Status |
+| :--- | :--- | :--- | :--- |
+| `d01/v02/observations.py` | `observation.go` | Yes | Done |
+| `d01/v02/config.py` | `config.go` | Yes | Done |
+| `d01/v02/state.py` | `state.go` | Yes | Done |
+| `d01/v02/model.py` | `d01.go` | Yes | Done |
+| `d01/v02/reference.py` … `forward.py` | matching `*.go` | Yes | Done |
+| `d02/v02/builder.py`, `models.py` | `d02.go` | Yes | Done |
+| `d04/envelope/capturability_model.py` | `d04.go` | Yes | Done |
+| `d04/models/*` | types in `d04.go` | Yes (no pydantic) | Done |
+| `adaptive_emitter/emitter.py` | `engine.go` | Yes, minus audit lists | Done |
+| `adaptive_emitter/normalizer.py` | `mapper.go` | Yes, from `domain.Bar` | Done |
+| `configuration/scientific_baseline.py` | `fingerprints.go` | Yes | Done |
+| `adaptive_pipeline/pipeline.py` | — | **No** | — |
+| `input/sdx_client.py` | — | **No** | — |
+| `input/generated/**` | — | **No** | — |
+| `pricing_pipeline/**` | — | **No** (later increment) | — |
+| `unit_run/**`, `__main__.py` | testdata | Offline harness only | Fixture checked in |
 
 ## 5. Offline equivalence without SDX
 
 Unit Run 001 consumed SDX `MarketVector`s from CSV. Recreate that **sequence of OHLCV**, not the gRPC hop.
 
-Options (pick one in Phase C):
-
-1. Check in `testdata/sade_unit_run_001_aapl.csv` copied from the SDX/SADE source that produced the run (header `timestamp,open,high,low,close,volume` or SADE observation columns).
-2. Reconstruct bars from `SADE/output/unit_runs/001/observations.csv` (`source_timestamp`, `open`, `high`, `low`, `close`, `volume`, `source_row_index`).
-
-Feed those bars through `mapper` → `AdaptiveEngine`. Compare to:
-
-- checked-in expected decisions JSON generated once from Python, or
-- `SADE/output/unit_runs/001/observations.csv` columns `position_decision`, `H`, `C`, `status`.
+**Chosen (Phase C):** option 2. Reconstruct bars from a checked-in copy of `SADE/output/unit_runs/001/observations.csv` (`source_timestamp`, OHLCV, `source_row_index`). Feed through `mapper` → `Engine.Step`. Compare to the same file’s `status`, `path_direction`, `position_decision`, `H`, `Q_G`, `Q_S`, `Q_R`, `C`, and related scores.
 
 Do not start `sdx-server` or `python -m sade run` as part of QuanTRAM CI.
 
@@ -201,7 +189,7 @@ go host.Run(ctx)
 
 When `off` (default): server behavior is identical to August 31 ingestion.
 
-P-02 APIs stay unchanged. P-03 is a subscriber.
+P-02 **observe** APIs stay unchanged. P-03 requires the new model-consumer path (Phase D0). Default `QUANTRAM_MODEL=off` until D0 tests are green. Phase C is green; server still does not read `QUANTRAM_MODEL`.
 
 ## 7. What not to copy from SADE (scale blockers)
 
@@ -215,25 +203,35 @@ The investigation is explicit. Do not reintroduce:
 
 ## 8. Validation plan
 
-| Test | When |
-| :--- | :--- |
-| `go test ./internal/adaptive/...` mapper + D01/D02/D04/engine | Every phase |
-| Frozen 100-bar decision compare | Phase C exit |
-| `go test ./internal/modelhost/...` infer/skip/timeout | Phase D |
-| `go test ./...` full repo | Before merge |
-| Live IEX, `QUANTRAM_MODEL=adaptive`, one symbol | Manual; market hours |
-| Multi-symbol isolation (AAPL step must not move MSFT state) | Phase D unit test |
+| Test | When | Status |
+| :--- | :--- | :--- |
+| Mapper + `IntervalStart` event time | Phase A | Done |
+| D01/D02/D04/engine + I/O validation | Phases B–C | Done |
+| Frozen 100-bar compare + SHA-256 fixtures + tolerance table | Phase C exit | Done |
+| `SubscribeModelBars` overflow / gap | Phase D0 | Not started |
+| Host: infer pause, timeout atomicity, panic isolation, cold start | Phase D | Not started |
+| `go test ./...` | Before merge | Green (31 Aug) |
+| `go test -race ./...` | Before merge | Blocked here (cgo); retry on host |
+| Live IEX field-level DecisionEvents + latency | Manual; regular hours | Wait for open |
+| Config reject unknown mode / bad deadline | Phase D | Not started |
+
+First coding session (fixtures + `decision.go` + mapper + D01–D04 + engine) is complete. Do not wire `quantram-server` or proto until D0 is green.
 
 Paper orders remain forbidden in this increment.
 
-## 9. Suggested first coding session
+## 9. Suggested first coding session — **done (31 Aug)**
 
-1. Add `internal/domain/decision.go` and `internal/adaptive/mapper.go` + tests.
-2. Port D01 clamps and `step` with a 20-bar fixture.
-3. Do not touch proto or `quantram-server` until Phase C is green.
+1. Check in Unit Run 001 fixtures (SHA-256) and `internal/domain/decision.go` (`DecisionEvent`).
+2. Mapper with `event_time = IntervalStart`.
+3. Port D01 `Step` as copy-compute-commit.
+4. Do not call `SubscribeFinalized` or add proto until Phase C and D0 are green.
+
+**Next session:** Phase D0 (`SubscribeModelBars` / no silent drop), then Phase D host. Live IEX DecisionEvent acceptance after the open. Still do not call `SubscribeFinalized` for P-03.
 
 ## 10. Change log
 
 | Date | Change |
 | :--- | :--- |
 | August 31, 2026 | Implementation increment written after SADE + P-02 review. |
+| August 31, 2026 | Incorporated P-03 feedback: Phase D0 model-consumer path, DecisionEvent, transactional Step, race/overflow tests, cold start. |
+| August 31, 2026 | Phases A–C implemented in-repo: `internal/domain/decision.go`, `internal/adaptive/` (D01→D02→D04→emitter), Unit Run 001 fixture + equivalence (15 / 8 / 10 / 67). Server and proto unwired. Phase D0 not started. |

@@ -1,0 +1,8 @@
+Origin: C:\Users\chino\SADE\output\unit_runs\001\observations.csv
+Entity: AAPL
+Vectors: 100
+SADE generated_at_utc: 2026-08-25T19:15:28.888569+00:00
+Rule fingerprint: c4c5bbf36ab97b3e7fc4628dfe11708947f996bcd79901a9d19b6a0f2049e9e2
+Implementation fingerprint: e8b736dfba03b454633831585222d5270c18b7f8eae510b34ee19dc1f5c58410
+SHA-256 (lowercase hex): 6c98e15df41f71d4369c22d4211f3fd651eda829a5046371faa38c426381f33a
+Note: Offline OHLCV equivalence only. Do not start SDX or python -m sade in CI.
