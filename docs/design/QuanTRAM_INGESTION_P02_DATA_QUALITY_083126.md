@@ -174,7 +174,7 @@ Default script feed is still `test` / `FAKEPACA`. Use `-Feed iex` for regular-ho
 
 - Live reconnect plus REST gap-fill **proof** on a real IEX drop (helper exists; not demonstrated today).
 - DI-01 canonical bars from ticks, if ever required instead of provider aggregates.
-- Wire P-03 to `infer` + finalized window as the next increment.
+- Wire P-03 to `infer` + finalized window — design and implementation notes: [P-03 Adaptive Model Host](QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md), [P-03 Implementation](QuanTRAM_P03_IMPLEMENTATION_083126.md).
 
 ## 12. Change log
 
