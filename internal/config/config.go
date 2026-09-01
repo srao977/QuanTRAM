@@ -7,37 +7,49 @@ import (
 	"time"
 )
 
+type ModelMode string
+
 const (
-	DefaultGRPCPort     = "50051"
-	DefaultSource       = "alpaca"
-	DefaultFeed         = "iex"
-	DefaultInterval     = "1Min"
-	MaxSymbolsBasicPlan = 30
-	IEXStreamURL        = "wss://stream.data.alpaca.markets/v2/iex"
-	TestStreamURL       = "wss://stream.data.alpaca.markets/v2/test"
-	DataRESTURL         = "https://data.alpaca.markets"
-	HeartbeatInterval   = time.Second
-	HeartbeatMaxRTT     = 1500 * time.Millisecond
-	HeartbeatMaxMisses  = 3
-	ReconnectBase       = 100 * time.Millisecond
-	ReconnectCap        = 30 * time.Second
-	StreamReadIdle      = 90 * time.Second
-	WindowLimit         = 64
-	SubscriberQueue     = 16
-	ConsumerQueue       = 2
+	ModelOff      ModelMode = "off"
+	ModelAdaptive ModelMode = "adaptive"
+)
+
+const (
+	DefaultGRPCPort      = "50051"
+	DefaultSource        = "alpaca"
+	DefaultFeed          = "iex"
+	DefaultInterval      = "1Min"
+	MaxSymbolsBasicPlan  = 30
+	IEXStreamURL         = "wss://stream.data.alpaca.markets/v2/iex"
+	TestStreamURL        = "wss://stream.data.alpaca.markets/v2/test"
+	DataRESTURL          = "https://data.alpaca.markets"
+	HeartbeatInterval    = time.Second
+	HeartbeatMaxRTT      = 1500 * time.Millisecond
+	HeartbeatMaxMisses   = 3
+	ReconnectBase        = 100 * time.Millisecond
+	ReconnectCap         = 30 * time.Second
+	StreamReadIdle       = 90 * time.Second
+	WindowLimit          = 64
+	SubscriberQueue      = 16
+	ConsumerQueue        = 2
+	DefaultModelMode     = ModelOff
+	DefaultModelDeadline = 200 * time.Millisecond
+	MaxModelDeadline     = 2 * time.Second
 )
 
 type Config struct {
-	GRPCPort  string
-	Source    string
-	Feed      string
-	StreamURL string
-	DataREST  string
-	APIKey    string
-	APISecret string
-	Symbols   []string
-	CSVPath   string
-	Interval  string
+	GRPCPort      string
+	Source        string
+	Feed          string
+	StreamURL     string
+	DataREST      string
+	APIKey        string
+	APISecret     string
+	Symbols       []string
+	CSVPath       string
+	Interval      string
+	Model         ModelMode
+	ModelDeadline time.Duration
 }
 
 func Load() (Config, error) {
@@ -54,17 +66,28 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("Basic plan allows at most %d symbols, got %d", MaxSymbolsBasicPlan, len(symbols))
 	}
 
+	mode, err := ParseModelMode(environmentOrDefault("QUANTRAM_MODEL", string(DefaultModelMode)))
+	if err != nil {
+		return Config{}, err
+	}
+	deadline, err := ParseModelDeadline(environmentOrDefault("QUANTRAM_MODEL_DEADLINE", DefaultModelDeadline.String()))
+	if err != nil {
+		return Config{}, err
+	}
+
 	cfg := Config{
-		GRPCPort:  environmentOrDefault("GRPC_PORT", DefaultGRPCPort),
-		Source:    source,
-		Feed:      feed,
-		StreamURL: streamURL(feed),
-		DataREST:  environmentOrDefault("ALPACA_DATA_REST", DataRESTURL),
-		APIKey:    trimCredential(firstEnv("ALPACA_API_KEY")),
-		APISecret: trimCredential(firstEnv("ALPACA_API_SECRET", "ALPACA_SECRET_KEY")),
-		Symbols:   symbols,
-		CSVPath:   environmentOrDefault("QUANTRAM_CSV_PATH", "AAPL_1min_firstratedata.csv"),
-		Interval:  environmentOrDefault("QUANTRAM_INTERVAL", DefaultInterval),
+		GRPCPort:      environmentOrDefault("GRPC_PORT", DefaultGRPCPort),
+		Source:        source,
+		Feed:          feed,
+		StreamURL:     streamURL(feed),
+		DataREST:      environmentOrDefault("ALPACA_DATA_REST", DataRESTURL),
+		APIKey:        trimCredential(firstEnv("ALPACA_API_KEY")),
+		APISecret:     trimCredential(firstEnv("ALPACA_API_SECRET", "ALPACA_SECRET_KEY")),
+		Symbols:       symbols,
+		CSVPath:       environmentOrDefault("QUANTRAM_CSV_PATH", "AAPL_1min_firstratedata.csv"),
+		Interval:      environmentOrDefault("QUANTRAM_INTERVAL", DefaultInterval),
+		Model:         mode,
+		ModelDeadline: deadline,
 	}
 	if source == "alpaca" && (cfg.APIKey == "" || cfg.APISecret == "") {
 		return Config{}, fmt.Errorf("ALPACA_API_KEY and ALPACA_API_SECRET (or ALPACA_SECRET_KEY) are required for source=alpaca")
@@ -73,6 +96,28 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("QUANTRAM_SOURCE must be alpaca or csv")
 	}
 	return cfg, nil
+}
+
+func ParseModelMode(value string) (ModelMode, error) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "", string(ModelOff):
+		return ModelOff, nil
+	case string(ModelAdaptive):
+		return ModelAdaptive, nil
+	default:
+		return "", fmt.Errorf("QUANTRAM_MODEL must be off or adaptive, got %q", value)
+	}
+}
+
+func ParseModelDeadline(value string) (time.Duration, error) {
+	deadline, err := time.ParseDuration(strings.TrimSpace(value))
+	if err != nil {
+		return 0, fmt.Errorf("QUANTRAM_MODEL_DEADLINE: %w", err)
+	}
+	if deadline <= 0 || deadline > MaxModelDeadline {
+		return 0, fmt.Errorf("QUANTRAM_MODEL_DEADLINE must be > 0 and <= %s, got %s", MaxModelDeadline, deadline)
+	}
+	return deadline, nil
 }
 
 func streamURL(feed string) string {

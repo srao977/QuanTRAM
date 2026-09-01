@@ -14,6 +14,7 @@ import (
 	"quantram/internal/config"
 	"quantram/internal/ingestion"
 	"quantram/internal/marketfeed"
+	"quantram/internal/modelhost"
 	"quantram/internal/server"
 
 	"google.golang.org/grpc"
@@ -30,16 +31,39 @@ func main() {
 		log.Fatalf("create pipeline: %v", err)
 	}
 
+	host, hostErr := modelhost.New(pipeline, cfg.Symbols, modelhost.Options{
+		Mode:     cfg.Model,
+		Deadline: cfg.ModelDeadline,
+	})
+	modelUnavailable := false
+	if hostErr != nil {
+		if !errors.Is(hostErr, modelhost.ErrUnavailable) {
+			log.Fatalf("model host: %v", hostErr)
+		}
+		log.Printf("model component unavailable: %v", hostErr)
+		modelUnavailable = true
+		host = nil
+	}
+
 	listener, err := net.Listen("tcp", ":"+cfg.GRPCPort)
 	if err != nil {
 		log.Fatalf("listen on port %s: %v", cfg.GRPCPort, err)
 	}
 
 	grpcServer := grpc.NewServer()
-	quantramServer := server.New(pipeline)
+	var quantramServer *server.Server
+	switch {
+	case modelUnavailable:
+		quantramServer = server.New(pipeline, modelhost.Unavailable{})
+	case host != nil:
+		quantramServer = server.New(pipeline, host)
+	default:
+		quantramServer = server.New(pipeline, nil)
+	}
 	quantramv1.RegisterMarketFeedServiceServer(grpcServer, quantramServer)
 	quantramv1.RegisterIngestionServiceServer(grpcServer, quantramServer)
 	quantramv1.RegisterOperationsServiceServer(grpcServer, quantramServer)
+	quantramv1.RegisterModelServiceServer(grpcServer, quantramServer)
 
 	ctx, stopSignals := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stopSignals()
@@ -49,10 +73,17 @@ func main() {
 			log.Printf("ingestion pipeline stopped: %v", err)
 		}
 	}()
+	if host != nil {
+		go func() {
+			if err := host.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
+				log.Printf("model host stopped: %v", err)
+			}
+		}()
+	}
 
 	serveResult := make(chan error, 1)
 	go func() {
-		log.Printf("starting QuanTRAM ingestion gRPC server (port=%s source=%s feed=%s symbols=%v)", cfg.GRPCPort, cfg.Source, cfg.Feed, cfg.Symbols)
+		log.Printf("starting QuanTRAM ingestion gRPC server (port=%s source=%s feed=%s symbols=%v model=%s)", cfg.GRPCPort, cfg.Source, cfg.Feed, cfg.Symbols, cfg.Model)
 		serveResult <- grpcServer.Serve(listener)
 	}()
 

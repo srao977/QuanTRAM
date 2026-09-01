@@ -1,7 +1,8 @@
 # QuanTRAM P-03 Adaptive Model Host — Design
 
 **Date:** August 31, 2026  
-**Status:** Scientific port (Phases A–C) complete — Go adaptive box matches Unit Run 001 offline. Live host integration (Phase D) is **not** complete until finalized delivery, startup, deadline/atomicity, and DecisionEvent contracts below are implemented.  
+**Last updated:** September 1, 2026  
+**Status:** Scientific port (Phases A–C), model-consumer path (D0), live host (D), and `ModelService.StreamDecisions` (E) are complete in-process (1 Sep). Default `QUANTRAM_MODEL=off`. Live IEX DecisionEvents observed 1 Sep. Adaptive Pipeline viewer is in `quantram-dashboard` (copied proto). EXPM / orders remain outstanding.  
 **Scope:** Collocated Go adaptive host that consumes P-02 finalized bars.  
 **Parents:** [Process Model](QuanTRAM_PROCESS_MODEL_082926.md), [P-02 Data Quality](QuanTRAM_INGESTION_P02_DATA_QUALITY_083126.md)  
 **Review:** [P03_feedback_083126.md](../../P03_feedback_083126.md) (incorporated 31 Aug)  
@@ -386,7 +387,7 @@ Do **not** require live IEX prices to match Unit Run 001.
 - Health distinguishes off / initializing / ready / paused / discontinuous / failed.
 - `QUANTRAM_MODEL=off` leaves ingestion unchanged.
 - `go test ./...` and `go test -race ./...` pass.
-- A regular-hours live run crosses warm-up and records decisions/skips with latency — pass on domain fields (`model_status`, `side` or `skip_reason`), not a log substring.
+- A regular-hours live run crosses warm-up and records decisions/skips with latency — pass on domain fields (`model_status`, `side` or `skip_reason`), not a log substring. **Observed 1 Sep** on IEX (HOLD then BUY; Adaptive Pipeline in `quantram-dashboard`).
 - No P-03 output is connected to orders.
 
 ## 10. Explicitly out of increment
@@ -395,7 +396,7 @@ Do **not** require live IEX prices to match Unit Run 001.
 - Joining adaptive output to PriceEngine; implementing Go EXPM / F4 / policy (next scientific increment). Oracle is SADE `solve_cover_rk45_reference`, not a live sidecar and not an APTF checkout.
 - Databento, SIP, tick aggregation
 - Azure / AKS sharding
-- Dashboard decision views until `ModelService` is registered (optional northbound can follow the first green equivalence test)
+- Dashboard BUY/SELL candlestick markers and durable decision history (the Adaptive Pipeline **process viewer** landed 1 Sep in `quantram-dashboard`; it consumes `StreamDecisions` and is not this repo)
 
 ## 11. Change log
 
@@ -408,3 +409,7 @@ Do **not** require live IEX prices to match Unit Run 001.
 | August 31, 2026 | Phases A–C landed: collocated Go D01→D02→D04→emitter, `DecisionEvent` domain types, Unit Run 001 equivalence. Phase D0 / host / proto still open. |
 | August 31, 2026 | Superseded RK45-as-destination: Go production PriceEngine uses EXPM only (`time_term == false`; reject `true`). Frozen Python RK45 is the Gold Nugget validation oracle, not a Go runtime or called solver. Finding 001: 55 solves / 605 points; downstream equivalence passed. |
 | August 31, 2026 | RK45 lineage recorded: APTF `run_test_013b_qqq_validation.py::solve_cover` → SADE `projection.py::solve_cover_rk45_reference`. Go validation uses the SADE frozen reference only; no APTF repository dependency. |
+| September 1, 2026 | Phase D0: `Pipeline.SubscribeModelBars` is the P-03 input. Overflow/gap mark the symbol discontinuous; observe `SubscribeFinalized` remains lossy. |
+| September 1, 2026 | Phase D: keyed `internal/modelhost`, 200 ms `PrepareStep`/`Commit` deadline, infer pause-not-reset, panic isolation, config validation, `GetHealth` model component. Default `off`. Proto still Phase E. |
+| September 1, 2026 | Phase E: `ModelService.StreamDecisions` (`oneof` decision \| skip). |
+| September 1, 2026 | Live mailbox fix: eligible-only model fan-out, depth 64. Live IEX DecisionEvents observed. Adaptive Pipeline process viewer landed in `quantram-dashboard` (own proto copy). |

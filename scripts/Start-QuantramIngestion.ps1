@@ -38,7 +38,7 @@ param(
 
     [switch]$SmokeTest,
 
-    [ValidateSet("stream", "health", "ready", "source", "window", "gapfill")]
+    [ValidateSet("stream", "decisions", "health", "ready", "source", "window", "gapfill")]
     [string]$Operation = "stream",
 
     [int]$MaxBars = 1,

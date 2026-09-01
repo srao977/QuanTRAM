@@ -1,7 +1,8 @@
 # QuanTRAM P-03 — Implementation Increment
 
 **Date:** August 31, 2026  
-**Status:** Phases A–C complete (Go adaptive box + Unit Run 001 equivalence). Phase D blocked until the model-consumer path exists (no silent drop-oldest). `quantram-server` / proto remain unwired.  
+**Last updated:** September 1, 2026  
+**Status:** Phases A–E complete in-process (Go adaptive box + host + `ModelService.StreamDecisions`). Default `QUANTRAM_MODEL=off`. Live IEX DecisionEvents observed 1 Sep (HOLD then BUY on IEX; Adaptive Pipeline viewer in `quantram-dashboard`). EXPM / paper orders remain out of scope.  
 **Design:** [P-03 Adaptive Model Host](QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md)  
 **Review:** [P03_feedback_083126.md](../../P03_feedback_083126.md)  
 **Python reference (do not import at runtime):** `C:\Users\chino\SADE`
@@ -15,7 +16,7 @@ Add a collocated Go adaptive engine that:
 3. Emits one `DecisionEvent` per considered bar (decision or typed skip).
 4. Proves numerical agreement with SADE Unit Run 001 **without SDX**.
 
-Out of scope **for this coding increment:** risk, orders, Go EXPM / F4 / PriceEngine, joining adaptive output to PriceEngine, Python `Predict` worker, dashboard decision UI.
+Out of scope **for this coding increment:** risk, orders, Go EXPM / F4 / PriceEngine, joining adaptive output to PriceEngine, Python `Predict` worker. Adaptive Pipeline decision UI lives in `quantram-dashboard` (landed 1 Sep); this repo does not host frontend.
 
 Those pricing items are the **next scientific increment**, not a discarded design. **Go production destination:** PriceEngine decisions on EXPM trajectories (`time_term == false` only). Offline Gold Nugget oracle is SADE `sade/pricing_pipeline/projection.py::solve_cover_rk45_reference` (frozen copy of APTF `diagnostics/run_test_013b_qqq_validation.py::solve_cover`). Do not port RK45, do not wire it, and do not make QuanTRAM depend on the APTF repo. See the design doc §2.1.
 
@@ -52,22 +53,21 @@ internal/adaptive/*_test.go
   Equivalence tests that load testdata bars, not gRPC.
   testdata/unit_run_001_observations.csv (+ origin + SHA-256)
 
-internal/modelhost/          (not started — Phase D)
-  host.go            keyed per-symbol workers, FinalizedBarConsumer, cold start
+internal/modelhost/          (Phase D — done 1 Sep)
+  host.go            keyed per-symbol workers, SubscribeModelBars, cold start
   host_test.go       overflow, gap, timeout atomicity, infer pause, panic isolation
 
 internal/domain/decision.go
-  DecisionEvent, Decision, Skip, SkipReason  (no proto; freeze before Phase E)
+  DecisionEvent, Decision, Skip, SkipReason  (domain freeze; proto on ModelService)
 
-internal/server/     (not started — Phase E)
-  Map DecisionEvent to proto; register ModelService
+internal/server/
+  GetHealth model component; StreamDecisions maps domain → proto oneof
 
 cmd/quantram-server/main.go
-  Construct host after pipeline; Run host in a goroutine
-  (unchanged; QUANTRAM_MODEL unused)
+  Construct host after pipeline; register ModelService; Run host when adaptive
 ```
 
-**Present (31 Aug):** `internal/domain/decision.go` and `internal/adaptive/` as listed. **Not present:** `internal/modelhost/`, proto, server wiring.
+**Present (1 Sep):** `internal/domain/decision.go`, `internal/adaptive/`, `SubscribeModelBars`, `internal/modelhost/`, `QUANTRAM_MODEL`, `ModelService.StreamDecisions`. Adaptive Pipeline viewer in `quantram-dashboard` (own proto copy + `ModelService` client). **Not present:** `Evaluate` / `ModelInferenceService`, EXPM.
 
 Do **not** create `internal/sade` or a Go module that imports the Python tree. Copy constants and equations; cite SADE paths in comments sparingly.
 
@@ -114,36 +114,42 @@ CI uses checked-in Unit Run 001 expectations (Phase C). No Python subprocess and
 
 Result: 100 AAPL bars → 15 `INITIALIZING`, 8 BUY / 10 SELL / 67 HOLD. Exact `model_status`, `path_direction`, `side`, `H`; scores within the Phase C tolerance table (`1e-12` abs or 16 ulp). First-divergence report on mismatch. `go test ./...` green. `go test -race` not run on this workstation (cgo unavailable).
 
-### Phase D0 — P-02 model-consumer path (required before live host)
+### Phase D0 — P-02 model-consumer path — **done (1 Sep)**
 
-Do **not** call `SubscribeFinalized(2)` for P-03. Add `FinalizedBarConsumer` / `SubscribeModelBars`:
+Do **not** call `SubscribeFinalized(2)` for P-03. `FinalizedBarConsumer` / `SubscribeModelBars` is in `internal/ingestion/model_path.go`:
 
-- no silent drop-oldest
-- overflow or gap → `QUEUE_OVERFLOW` / `INPUT_GAP` and mark symbol discontinuous
-- observe path unchanged
+- finalized-only; no silent drop-oldest
+- mailbox overflow → `QUEUE_OVERFLOW`; non-adjacent `IntervalStart` → `INPUT_GAP`; symbol stays discontinuous until `ResetModelPath`
+- later bars for that symbol are not delivered (so they cannot be evaluated)
+- `Subscribe` / `SubscribeFinalized` remain lossy observe hooks
 
-**Exit:** Forced stall + three finalized bars: all processed in order **or** discontinuous before any later evaluate.
+**Exit (met):** stall consumer, depth-2 mailbox, three finalized minutes: in-order prefix `[N, N+1]` retained; N+2 marks `QUEUE_OVERFLOW` and is not substituted for N. Adjacent-gap test marks `INPUT_GAP` and does not deliver the jumped bar. Partials still reach observe only.
 
-### Phase D — Model host
+### Phase D — Model host — **done (1 Sep)**
 
-- Keyed worker per symbol; global serial is not required.
-- Cold start only (no window seed).
+- Keyed worker per symbol (`internal/modelhost`); mailbox depth = window (64), not 2. `SubscribeModelBars` same depth. Model path is **live eligible only** (no REST backfill).
+- Cold start only (no window seed). First 15 accepted eligible minutes emit `INITIALIZING`; 16th is `ACTIONABLE`.
 - Phase 0: global `infer` pauses all evaluation, does not reset state.
-- Deadline: compute on a state copy; commit only if finished in 200 ms.
-- Health: design §8.2.
-- Config validation at startup (design / this table).
+- Deadline: `PrepareStep` on a clone; `Commit` only if finished within `QUANTRAM_MODEL_DEADLINE` (default 200 ms). Timeout / panic / skip leave committed scientific state unchanged.
+- Health: design §8.2 (`off` / `cold` / `initializing` / `ready` / `paused` / `discontinuous` / `error`). `GetHealth` appends a model component. Adaptive requested but fingerprints fail → `unavailable`, not silent `off`.
+- Config: unknown `QUANTRAM_MODEL` or bad deadline **fails startup**. Default remains `off` (ingestion unchanged).
 
-**Exit tests:** overflow, missing interval, duplicate/regression, `infer` pause-not-reset, timeout unchanged hash, AAPL panic does not stop MSFT or P-02, shutdown without send-on-closed, reconstructed head never evaluates, `u` never reaches host, cold-start `INITIALIZING n/16`.
+**Exit tests (met):** overflow, missing interval, duplicate/regression, `infer` pause-not-reset, timeout unchanged hash, AAPL panic does not stop MSFT or P-02 observe, shutdown without send-on-closed, reconstructed head never evaluates, partial `u` never reaches host, cold-start `INITIALIZING n/16`. `go test ./...` green. `go test -race` not run on this workstation (cgo unavailable).
 
-Live acceptance (regular hours): warm-up crosses 16 accepted eligible minutes; outcomes are `DecisionEvent`s with `model_status=ACTIONABLE` and `side` in {BUY,SELL,HOLD} **or** typed skips — assert fields, not log text. Measure p50/p95/p99 step latency on the frozen corpus plus one live run.
+Live acceptance (regular hours, observed 1 Sep on IEX AAPL/MSFT/NVDA after mailbox/backfill fix): set `QUANTRAM_MODEL=adaptive`, warm-up crosses 16 accepted eligible minutes; outcomes are `ModelService.StreamDecisions` events with `model_status=ACTIONABLE` and `side` in {BUY,SELL,HOLD} **or** typed skips — assert proto fields, not log text. Dashboard Adaptive Pipeline is the operator view of the same stream.
 
-### Phase E — Proto (after domain freeze)
+### Phase E — Proto — **done (1 Sep)**
 
-Append to `quantram.proto`. Stream `DecisionEvent` (decision | skip oneof), not `DecisionVector` with `skipped` bool. Include H, Q_G, Q_S, Q_R, path_direction, `emitter_position_state`, skip reason enum, hashes, versions.
+`quantram.proto` `ModelService.StreamDecisions` streams `DecisionEvent` with `oneof outcome { Decision, Skip }`. HOLD is a decision. Includes H, Q_G, Q_S, Q_R, path_direction, `emitter_position_state`, skip reason, hashes, versions. Host fan-out via `SubscribeEvents`. Last-per-symbol catch-up on connect (no durable history). Off → `FailedPrecondition`; unavailable → `Unavailable`.
 
 `Evaluate` and `ModelInferenceService` wait for the pricing increment (Go EXPM + PriceEngine join).
 
-Regenerate with `buf generate`.
+```powershell
+$env:QUANTRAM_MODEL = "adaptive"
+.\scripts\Start-QuantramIngestion.ps1 -Feed iex -Symbols AAPL,MSFT,NVDA
+# other terminal:
+go run ./cmd/quantram-ingest-client -operation decisions -symbols AAPL -max-bars 0 -timeout 6h
+```
 
 ## 4. SADE file → Go file map
 
@@ -182,14 +188,19 @@ When `QUANTRAM_MODEL=adaptive`:
 
 ```text
 pipeline := ...
-host := modelhost.New(pipeline, symbols)
+host := modelhost.New(pipeline, symbols, Options{Mode, Deadline})
 go host.Run(ctx)
-// existing gRPC serve
+// existing gRPC serve; GetHealth includes model
 ```
 
-When `off` (default): server behavior is identical to August 31 ingestion.
+When `off` (default): `modelhost.New` returns `(nil, nil)`; no model-path subscribe; observe APIs stay unchanged. Startup log includes `model=off|adaptive`.
 
-P-02 **observe** APIs stay unchanged. P-03 requires the new model-consumer path (Phase D0). Default `QUANTRAM_MODEL=off` until D0 tests are green. Phase C is green; server still does not read `QUANTRAM_MODEL`.
+P-02 **observe** APIs stay unchanged. P-03 uses `SubscribeModelBars`. Default remains `off` until a regular-hours live DecisionEvent run is accepted. To enable:
+
+```powershell
+$env:QUANTRAM_MODEL = "adaptive"
+.\scripts\Start-QuantramIngestion.ps1 -Feed iex -Symbols AAPL,MSFT,NVDA
+```
 
 ## 7. What not to copy from SADE (scale blockers)
 
@@ -208,16 +219,15 @@ The investigation is explicit. Do not reintroduce:
 | Mapper + `IntervalStart` event time | Phase A | Done |
 | D01/D02/D04/engine + I/O validation | Phases B–C | Done |
 | Frozen 100-bar compare + SHA-256 fixtures + tolerance table | Phase C exit | Done |
-| `SubscribeModelBars` overflow / gap | Phase D0 | Not started |
-| Host: infer pause, timeout atomicity, panic isolation, cold start | Phase D | Not started |
-| `go test ./...` | Before merge | Green (31 Aug) |
+| `SubscribeModelBars` overflow / gap | Phase D0 | Done (1 Sep) |
+| Host: infer pause, timeout atomicity, panic isolation, cold start | Phase D | Done (1 Sep) |
+| `go test ./...` | Before merge | Green (1 Sep) |
 | `go test -race ./...` | Before merge | Blocked here (cgo); retry on host |
-| Live IEX field-level DecisionEvents + latency | Manual; regular hours | Wait for open |
-| Config reject unknown mode / bad deadline | Phase D | Not started |
+| Live IEX field-level DecisionEvents + latency | Manual; regular hours | Observed 1 Sep (`QUANTRAM_MODEL=adaptive` + `StreamDecisions`; Adaptive Pipeline in `quantram-dashboard`) |
+| Config reject unknown mode / bad deadline | Phase D | Done (1 Sep) |
+| `ModelService.StreamDecisions` oneof + off/unavailable | Phase E | Done (1 Sep) |
 
-First coding session (fixtures + `decision.go` + mapper + D01–D04 + engine) is complete. Do not wire `quantram-server` or proto until D0 is green.
-
-Paper orders remain forbidden in this increment.
+Phases A–E are green in-process. Adaptive Pipeline landed in `quantram-dashboard` (1 Sep; proto copy + `StreamDecisions` SSE). Paper orders remain forbidden. Do not start EXPM / RK45.
 
 ## 9. Suggested first coding session — **done (31 Aug)**
 
@@ -226,7 +236,7 @@ Paper orders remain forbidden in this increment.
 3. Port D01 `Step` as copy-compute-commit.
 4. Do not call `SubscribeFinalized` or add proto until Phase C and D0 are green.
 
-**Next session:** Phase D0 (`SubscribeModelBars` / no silent drop), then Phase D host. Live IEX DecisionEvent acceptance after the open. Still do not call `SubscribeFinalized` for P-03.
+**Next session:** paper/risk/orders still forbidden. Do not start EXPM / RK45. Still do not call `SubscribeFinalized` for P-03. Candlestick BUY/SELL markers and durable decision history are dashboard follow-ups, not this repo.
 
 ## 10. Change log
 
@@ -237,3 +247,8 @@ Paper orders remain forbidden in this increment.
 | August 31, 2026 | Phases A–C implemented in-repo: `internal/domain/decision.go`, `internal/adaptive/` (D01→D02→D04→emitter), Unit Run 001 fixture + equivalence (15 / 8 / 10 / 67). Server and proto unwired. Phase D0 not started. |
 | August 31, 2026 | Pricing destination amended: next increment is Go EXPM (`time_term == false`; reject `true`), validated against Python EXPM and frozen RK45. No RK45 Go port or Python RK45 wiring. |
 | August 31, 2026 | Oracle path named: SADE `solve_cover_rk45_reference` (from APTF `run_test_013b_qqq_validation.py::solve_cover`). Go validation must not import or depend on the APTF repository. |
+| September 1, 2026 | Phase D0: `SubscribeModelBars` / `FinalizedBarConsumer`. No silent drop-oldest; overflow→`QUEUE_OVERFLOW`, gap→`INPUT_GAP`. Observe `SubscribeFinalized` unchanged. Host (Phase D) not started. |
+| September 1, 2026 | Phase D: `internal/modelhost` keyed workers, `PrepareStep`/`Commit` deadline, infer pause-not-reset, panic isolation, `QUANTRAM_MODEL` validation, `GetHealth` model component. Default still `off`. Proto deferred to Phase E. |
+| September 1, 2026 | Phase E: `ModelService.StreamDecisions`, domain→proto oneof, host `SubscribeEvents` fan-out, ingest-client `-operation decisions`. Default still `off`. |
+| September 1, 2026 | Live fix: model path ignores backfill; mailbox 64. Restored gap-fill/reconnect no longer permanently pauses P-03 while P-02 observe stays healthy. |
+| September 1, 2026 | Live IEX DecisionEvents observed (HOLD then BUY). Adaptive Pipeline viewer landed in `quantram-dashboard` (copied proto + `ModelService` client). This repo still has no frontend. |

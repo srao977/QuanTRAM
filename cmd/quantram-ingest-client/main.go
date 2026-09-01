@@ -19,7 +19,7 @@ import (
 
 func main() {
 	address := flag.String("address", "localhost:50051", "QuanTRAM gRPC address")
-	operation := flag.String("operation", "stream", "operation: stream, health, ready, source, window, gapfill")
+	operation := flag.String("operation", "stream", "operation: stream, decisions, health, ready, source, window, gapfill")
 	symbolsFlag := flag.String("symbols", "AAPL", "comma-separated symbols")
 	maxBars := flag.Uint("max-bars", 5, "maximum bars to receive; 0 streams until timeout")
 	timeout := flag.Duration("timeout", 45*time.Second, "request timeout")
@@ -40,6 +40,7 @@ func main() {
 	feed := quantramv1.NewMarketFeedServiceClient(connection)
 	ingest := quantramv1.NewIngestionServiceClient(connection)
 	ops := quantramv1.NewOperationsServiceClient(connection)
+	model := quantramv1.NewModelServiceClient(connection)
 
 	switch *operation {
 	case "health":
@@ -112,6 +113,27 @@ func main() {
 			count++
 		}
 		fmt.Printf("received=%d\n", count)
+	case "decisions":
+		stream, err := model.StreamDecisions(ctx, &quantramv1.StreamDecisionsRequest{
+			Symbols:   symbols,
+			MaxEvents: uint32(*maxBars),
+		})
+		if err != nil {
+			log.Fatalf("stream decisions: %v", err)
+		}
+		count := 0
+		for {
+			ev, err := stream.Recv()
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			if err != nil {
+				log.Fatalf("receive decision: %v", err)
+			}
+			printDecision(ev)
+			count++
+		}
+		fmt.Printf("received=%d\n", count)
 	default:
 		fmt.Fprintf(os.Stderr, "unsupported operation %q\n", *operation)
 		os.Exit(2)
@@ -133,6 +155,41 @@ func printBar(bar *quantramv1.Bar) {
 		bar.GetQualityStatus(),
 		trimID(bar.GetMarketSnapshotId()),
 	)
+}
+
+func printDecision(ev *quantramv1.DecisionEvent) {
+	switch out := ev.GetOutcome().(type) {
+	case *quantramv1.DecisionEvent_Decision:
+		d := out.Decision
+		fmt.Printf("symbol=%s interval_ms=%d side=%s status=%s H=%d QG=%.4f QS=%.4f QR=%.4f C=%.4f path=%s emitter=%s snapshot=%s event=%s\n",
+			ev.GetSymbol(),
+			ev.GetIntervalStartUnixMs(),
+			d.GetSide(),
+			d.GetModelStatus(),
+			d.GetH(),
+			d.GetQG(),
+			d.GetQS(),
+			d.GetQR(),
+			d.GetConfidence(),
+			d.GetPathDirection(),
+			d.GetEmitterPositionState(),
+			trimID(ev.GetMarketSnapshotId()),
+			trimID(ev.GetEventId()),
+		)
+	case *quantramv1.DecisionEvent_Skip:
+		s := out.Skip
+		fmt.Printf("symbol=%s interval_ms=%d skip=%s status=%s detail=%q snapshot=%s event=%s\n",
+			ev.GetSymbol(),
+			ev.GetIntervalStartUnixMs(),
+			s.GetReason(),
+			s.GetModelStatus(),
+			s.GetDetail(),
+			trimID(ev.GetMarketSnapshotId()),
+			trimID(ev.GetEventId()),
+		)
+	default:
+		fmt.Printf("symbol=%s interval_ms=%d outcome=empty event=%s\n", ev.GetSymbol(), ev.GetIntervalStartUnixMs(), trimID(ev.GetEventId()))
+	}
 }
 
 func trimID(value string) string {

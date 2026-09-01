@@ -2,6 +2,7 @@ package config
 
 import (
 	"testing"
+	"time"
 )
 
 func TestSplitSymbolsAndCap(t *testing.T) {
@@ -31,6 +32,40 @@ func TestLoadCSVDoesNotRequireKeys(t *testing.T) {
 		t.Fatal(err)
 	}
 	if cfg.Source != "csv" || cfg.Symbols[0] != "AAPL" {
+		t.Fatalf("%+v", cfg)
+	}
+	if cfg.Model != ModelOff {
+		t.Fatalf("default model %s", cfg.Model)
+	}
+}
+
+func TestLoadRejectsUnknownModel(t *testing.T) {
+	t.Setenv("QUANTRAM_SOURCE", "csv")
+	t.Setenv("QUANTRAM_SYMBOLS", "AAPL")
+	t.Setenv("QUANTRAM_MODEL", "sidecar")
+	if _, err := Load(); err == nil {
+		t.Fatal("unknown model must fail startup")
+	}
+}
+
+func TestLoadRejectsBadDeadline(t *testing.T) {
+	t.Setenv("QUANTRAM_SOURCE", "csv")
+	t.Setenv("QUANTRAM_SYMBOLS", "AAPL")
+	t.Setenv("QUANTRAM_MODEL", "adaptive")
+	t.Setenv("QUANTRAM_MODEL_DEADLINE", "0s")
+	if _, err := Load(); err == nil {
+		t.Fatal("zero deadline must fail")
+	}
+	t.Setenv("QUANTRAM_MODEL_DEADLINE", "5s")
+	if _, err := Load(); err == nil {
+		t.Fatal("deadline above max must fail")
+	}
+	t.Setenv("QUANTRAM_MODEL_DEADLINE", "200ms")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Model != ModelAdaptive || cfg.ModelDeadline != 200*time.Millisecond {
 		t.Fatalf("%+v", cfg)
 	}
 }

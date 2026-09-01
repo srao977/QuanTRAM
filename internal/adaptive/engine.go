@@ -119,19 +119,34 @@ func (e *Engine) adopt(src *Engine) {
 
 // Step runs D01→D02→D04→decide on a copy and commits only if the full path succeeds.
 func (e *Engine) Step(bar domain.Bar) domain.DecisionEvent {
-	started := time.Now()
-	working := e.clone()
-	event, commit := working.stepLocked(bar, started)
+	event, working, commit := e.PrepareStep(bar)
 	if commit {
-		e.adopt(working)
+		e.Commit(working)
 	}
-	event.CompletedAt = time.Now()
-	event.Latency = event.CompletedAt.Sub(started)
 	return event
 }
 
-func (e *Engine) stepLocked(bar domain.Bar, started time.Time) (domain.DecisionEvent, bool) {
+// PrepareStep evaluates on a clone. The caller must Commit only if the deadline still holds.
+func (e *Engine) PrepareStep(bar domain.Bar) (domain.DecisionEvent, *Engine, bool) {
+	started := time.Now()
 	e.eventSeq++
+	working := e.clone()
+	event, commit := working.stepLocked(bar, started)
+	event.CompletedAt = time.Now()
+	event.Latency = event.CompletedAt.Sub(started)
+	if !commit {
+		return event, nil, false
+	}
+	return event, working, true
+}
+
+func (e *Engine) Commit(working *Engine) {
+	if working != nil {
+		e.adopt(working)
+	}
+}
+
+func (e *Engine) stepLocked(bar domain.Bar, started time.Time) (domain.DecisionEvent, bool) {
 	eventID := fmt.Sprintf("%s:evt:%d", e.entityID, e.eventSeq)
 	base := domain.DecisionEvent{
 		EventID:          eventID,

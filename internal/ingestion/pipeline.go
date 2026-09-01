@@ -28,6 +28,9 @@ type Pipeline struct {
 
 	mu          sync.Mutex
 	subscribers map[uint64]subscriber
+	modelSubs   map[uint64]chan domain.Bar
+	modelLast   map[string]time.Time
+	modelDisc   map[string]domain.SkipReason
 	nextSub     uint64
 	inferReady  atomic.Bool
 	filling     atomic.Bool
@@ -42,6 +45,9 @@ func NewPipeline(live marketfeed.LiveBarSource, historical marketfeed.Historical
 		sourceID:    sourceID,
 		symbols:     symbols,
 		subscribers: make(map[uint64]subscriber),
+		modelSubs:   make(map[uint64]chan domain.Bar),
+		modelLast:   make(map[string]time.Time),
+		modelDisc:   make(map[string]domain.SkipReason),
 	}
 }
 
@@ -108,6 +114,16 @@ func (p *Pipeline) accept(bar domain.Bar) {
 	}
 	p.refreshInfer(time.Now().UTC())
 	p.fanout(bar)
+	p.fanoutModel(bar)
+}
+
+func (p *Pipeline) InjectBar(bar domain.Bar) {
+	p.accept(bar)
+}
+
+func (p *Pipeline) MarkFeedHealthy() {
+	p.breaker.MarkHealthy()
+	p.refreshInfer(time.Now().UTC())
 }
 
 func (p *Pipeline) refreshInfer(now time.Time) {
@@ -175,12 +191,19 @@ func (p *Pipeline) subscribe(buffer int, finalizedOnly bool) (uint64, <-chan dom
 
 func (p *Pipeline) Unsubscribe(id uint64) {
 	p.mu.Lock()
-	sub, ok := p.subscribers[id]
-	delete(p.subscribers, id)
-	p.mu.Unlock()
-	if ok {
+	if sub, ok := p.subscribers[id]; ok {
+		delete(p.subscribers, id)
+		p.mu.Unlock()
 		close(sub.ch)
+		return
 	}
+	if ch, ok := p.modelSubs[id]; ok {
+		delete(p.modelSubs, id)
+		p.mu.Unlock()
+		close(ch)
+		return
+	}
+	p.mu.Unlock()
 }
 
 func (p *Pipeline) Symbols() []string {
@@ -216,6 +239,7 @@ func (p *Pipeline) GapFill(ctx context.Context, symbol string, from, to time.Tim
 		if p.window.Add(bar) {
 			injected++
 			p.fanout(bar)
+			p.fanoutModel(bar)
 		} else {
 			deduped++
 		}

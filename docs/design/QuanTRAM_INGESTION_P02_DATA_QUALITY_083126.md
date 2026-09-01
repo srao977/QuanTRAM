@@ -145,13 +145,13 @@ REST gap-fill after a **real** IEX disconnect is still only unit-tested against 
 
 ## 9. Explicitly not done (unchanged deferrals)
 
-- P-03 model host, P-04 inference, risk, paper/live orders, ledger
+- P-04 inference, risk, paper/live orders, ledger
 - Durable bar history or restart recovery of the window
 - Local tick aggregation (DI-01)
 - Session / calendar / halt semantics (DI-04)
 - Full circuit breaker, Databento, mid-bar source reconciliation (DI-03)
 - Using `QUALITY_STATUS_INVALID` as a stored bar state (rejected Alpaca messages never enter the window)
-- In-process non-lossy P-03 subscription distinct from gRPC (only `SubscribeFinalized` depth 2 exists as a hook)
+- In-process non-lossy P-03 subscription (`SubscribeModelBars`) — **done 1 Sep**. Observe `SubscribeFinalized` remains the lossy hook. Phase D host — **done 1 Sep** (default `QUANTRAM_MODEL=off`).
 
 ## 10. How to run the live path
 
@@ -174,10 +174,14 @@ Default script feed is still `test` / `FAKEPACA`. Use `-Feed iex` for regular-ho
 
 - Live reconnect plus REST gap-fill **proof** on a real IEX drop (helper exists; not demonstrated today).
 - DI-01 canonical bars from ticks, if ever required instead of provider aggregates.
-- Wire P-03 via a **model-consumer** path that cannot silently drop finalized bars (`SubscribeFinalized` remains the lossy observe hook). See [P-03 Adaptive Model Host](QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md) §5.1 and [P-03 Implementation](QuanTRAM_P03_IMPLEMENTATION_083126.md) Phase D0.
+- Durable bar history for the dashboard chart (observe path). Adaptive Pipeline process viewer is in `quantram-dashboard` (1 Sep). P-03 live IEX DecisionEvents were observed the same day (`QUANTRAM_MODEL=adaptive` + `StreamDecisions`).
 
 ## 12. Change log
 
 | Date | Change |
 | :--- | :--- |
 | August 31, 2026 | P-02 quality gate: last-write-wins, `infer` from contiguous complete live bars, skip incomplete Alpaca OHLC, IEX quiet-minute reconnect fix, live IEX RTH validation. |
+| September 1, 2026 | P-03 D0: `SubscribeModelBars` (no silent drop). `SubscribeFinalized` unchanged. |
+| September 1, 2026 | P-03 Phase D host wired; ingest default remains `QUANTRAM_MODEL=off`. |
+| September 1, 2026 | P-03 Phase E: `ModelService.StreamDecisions` on `:50051`. |
+| September 1, 2026 | Live IEX DecisionEvents observed; Adaptive Pipeline viewer in `quantram-dashboard`. Model path does not consume REST backfill (eligible-only mailbox, depth 64). |

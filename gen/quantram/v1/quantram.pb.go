@@ -241,6 +241,287 @@ func (ComponentState) EnumDescriptor() ([]byte, []int) {
 	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{3}
 }
 
+type Side int32
+
+const (
+	Side_SIDE_UNSPECIFIED Side = 0
+	Side_SIDE_BUY         Side = 1
+	Side_SIDE_SELL        Side = 2
+	Side_SIDE_HOLD        Side = 3
+)
+
+// Enum value maps for Side.
+var (
+	Side_name = map[int32]string{
+		0: "SIDE_UNSPECIFIED",
+		1: "SIDE_BUY",
+		2: "SIDE_SELL",
+		3: "SIDE_HOLD",
+	}
+	Side_value = map[string]int32{
+		"SIDE_UNSPECIFIED": 0,
+		"SIDE_BUY":         1,
+		"SIDE_SELL":        2,
+		"SIDE_HOLD":        3,
+	}
+)
+
+func (x Side) Enum() *Side {
+	p := new(Side)
+	*p = x
+	return p
+}
+
+func (x Side) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Side) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[4].Descriptor()
+}
+
+func (Side) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[4]
+}
+
+func (x Side) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Side.Descriptor instead.
+func (Side) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{4}
+}
+
+type PathDirection int32
+
+const (
+	PathDirection_PATH_DIRECTION_UNSPECIFIED PathDirection = 0
+	PathDirection_PATH_DIRECTION_UPWARD      PathDirection = 1
+	PathDirection_PATH_DIRECTION_DOWNWARD    PathDirection = 2
+	PathDirection_PATH_DIRECTION_FLAT        PathDirection = 3
+)
+
+// Enum value maps for PathDirection.
+var (
+	PathDirection_name = map[int32]string{
+		0: "PATH_DIRECTION_UNSPECIFIED",
+		1: "PATH_DIRECTION_UPWARD",
+		2: "PATH_DIRECTION_DOWNWARD",
+		3: "PATH_DIRECTION_FLAT",
+	}
+	PathDirection_value = map[string]int32{
+		"PATH_DIRECTION_UNSPECIFIED": 0,
+		"PATH_DIRECTION_UPWARD":      1,
+		"PATH_DIRECTION_DOWNWARD":    2,
+		"PATH_DIRECTION_FLAT":        3,
+	}
+)
+
+func (x PathDirection) Enum() *PathDirection {
+	p := new(PathDirection)
+	*p = x
+	return p
+}
+
+func (x PathDirection) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PathDirection) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[5].Descriptor()
+}
+
+func (PathDirection) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[5]
+}
+
+func (x PathDirection) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PathDirection.Descriptor instead.
+func (PathDirection) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{5}
+}
+
+type EmitterPosition int32
+
+const (
+	EmitterPosition_EMITTER_POSITION_UNSPECIFIED EmitterPosition = 0
+	EmitterPosition_EMITTER_POSITION_FLAT        EmitterPosition = 1
+	EmitterPosition_EMITTER_POSITION_LONG        EmitterPosition = 2
+	EmitterPosition_EMITTER_POSITION_SHORT       EmitterPosition = 3
+)
+
+// Enum value maps for EmitterPosition.
+var (
+	EmitterPosition_name = map[int32]string{
+		0: "EMITTER_POSITION_UNSPECIFIED",
+		1: "EMITTER_POSITION_FLAT",
+		2: "EMITTER_POSITION_LONG",
+		3: "EMITTER_POSITION_SHORT",
+	}
+	EmitterPosition_value = map[string]int32{
+		"EMITTER_POSITION_UNSPECIFIED": 0,
+		"EMITTER_POSITION_FLAT":        1,
+		"EMITTER_POSITION_LONG":        2,
+		"EMITTER_POSITION_SHORT":       3,
+	}
+)
+
+func (x EmitterPosition) Enum() *EmitterPosition {
+	p := new(EmitterPosition)
+	*p = x
+	return p
+}
+
+func (x EmitterPosition) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (EmitterPosition) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[6].Descriptor()
+}
+
+func (EmitterPosition) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[6]
+}
+
+func (x EmitterPosition) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use EmitterPosition.Descriptor instead.
+func (EmitterPosition) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{6}
+}
+
+type ModelStatus int32
+
+const (
+	ModelStatus_MODEL_STATUS_UNSPECIFIED  ModelStatus = 0
+	ModelStatus_MODEL_STATUS_INITIALIZING ModelStatus = 1
+	ModelStatus_MODEL_STATUS_ACTIONABLE   ModelStatus = 2
+)
+
+// Enum value maps for ModelStatus.
+var (
+	ModelStatus_name = map[int32]string{
+		0: "MODEL_STATUS_UNSPECIFIED",
+		1: "MODEL_STATUS_INITIALIZING",
+		2: "MODEL_STATUS_ACTIONABLE",
+	}
+	ModelStatus_value = map[string]int32{
+		"MODEL_STATUS_UNSPECIFIED":  0,
+		"MODEL_STATUS_INITIALIZING": 1,
+		"MODEL_STATUS_ACTIONABLE":   2,
+	}
+)
+
+func (x ModelStatus) Enum() *ModelStatus {
+	p := new(ModelStatus)
+	*p = x
+	return p
+}
+
+func (x ModelStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ModelStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[7].Descriptor()
+}
+
+func (ModelStatus) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[7]
+}
+
+func (x ModelStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ModelStatus.Descriptor instead.
+func (ModelStatus) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{7}
+}
+
+type SkipReason int32
+
+const (
+	SkipReason_SKIP_REASON_UNSPECIFIED             SkipReason = 0
+	SkipReason_SKIP_REASON_INFER_OFF               SkipReason = 1
+	SkipReason_SKIP_REASON_NOT_MODEL_ELIGIBLE      SkipReason = 2
+	SkipReason_SKIP_REASON_INITIALIZING            SkipReason = 3
+	SkipReason_SKIP_REASON_DUPLICATE_OR_REGRESSION SkipReason = 4
+	SkipReason_SKIP_REASON_INPUT_GAP               SkipReason = 5
+	SkipReason_SKIP_REASON_QUEUE_OVERFLOW          SkipReason = 6
+	SkipReason_SKIP_REASON_TIMEOUT                 SkipReason = 7
+	SkipReason_SKIP_REASON_INVALID_INPUT           SkipReason = 8
+	SkipReason_SKIP_REASON_ENGINE_ERROR            SkipReason = 9
+	SkipReason_SKIP_REASON_ENGINE_PANIC            SkipReason = 10
+	SkipReason_SKIP_REASON_STATE_DISCONTINUOUS     SkipReason = 11
+)
+
+// Enum value maps for SkipReason.
+var (
+	SkipReason_name = map[int32]string{
+		0:  "SKIP_REASON_UNSPECIFIED",
+		1:  "SKIP_REASON_INFER_OFF",
+		2:  "SKIP_REASON_NOT_MODEL_ELIGIBLE",
+		3:  "SKIP_REASON_INITIALIZING",
+		4:  "SKIP_REASON_DUPLICATE_OR_REGRESSION",
+		5:  "SKIP_REASON_INPUT_GAP",
+		6:  "SKIP_REASON_QUEUE_OVERFLOW",
+		7:  "SKIP_REASON_TIMEOUT",
+		8:  "SKIP_REASON_INVALID_INPUT",
+		9:  "SKIP_REASON_ENGINE_ERROR",
+		10: "SKIP_REASON_ENGINE_PANIC",
+		11: "SKIP_REASON_STATE_DISCONTINUOUS",
+	}
+	SkipReason_value = map[string]int32{
+		"SKIP_REASON_UNSPECIFIED":             0,
+		"SKIP_REASON_INFER_OFF":               1,
+		"SKIP_REASON_NOT_MODEL_ELIGIBLE":      2,
+		"SKIP_REASON_INITIALIZING":            3,
+		"SKIP_REASON_DUPLICATE_OR_REGRESSION": 4,
+		"SKIP_REASON_INPUT_GAP":               5,
+		"SKIP_REASON_QUEUE_OVERFLOW":          6,
+		"SKIP_REASON_TIMEOUT":                 7,
+		"SKIP_REASON_INVALID_INPUT":           8,
+		"SKIP_REASON_ENGINE_ERROR":            9,
+		"SKIP_REASON_ENGINE_PANIC":            10,
+		"SKIP_REASON_STATE_DISCONTINUOUS":     11,
+	}
+)
+
+func (x SkipReason) Enum() *SkipReason {
+	p := new(SkipReason)
+	*p = x
+	return p
+}
+
+func (x SkipReason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SkipReason) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[8].Descriptor()
+}
+
+func (SkipReason) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[8]
+}
+
+func (x SkipReason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SkipReason.Descriptor instead.
+func (SkipReason) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{8}
+}
+
 type Bar struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	Symbol              string                 `protobuf:"bytes,1,opt,name=symbol,proto3" json:"symbol,omitempty"`
@@ -1225,6 +1506,485 @@ func (x *ReadinessReport) GetMessage() string {
 	return ""
 }
 
+type Decision struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	Side                 Side                   `protobuf:"varint,1,opt,name=side,proto3,enum=quantram.v1.Side" json:"side,omitempty"`
+	Confidence           float64                `protobuf:"fixed64,2,opt,name=confidence,proto3" json:"confidence,omitempty"`
+	H                    int32                  `protobuf:"varint,3,opt,name=h,proto3" json:"h,omitempty"`
+	QG                   float64                `protobuf:"fixed64,4,opt,name=q_g,json=qG,proto3" json:"q_g,omitempty"`
+	QS                   float64                `protobuf:"fixed64,5,opt,name=q_s,json=qS,proto3" json:"q_s,omitempty"`
+	QR                   float64                `protobuf:"fixed64,6,opt,name=q_r,json=qR,proto3" json:"q_r,omitempty"`
+	PathDirection        PathDirection          `protobuf:"varint,7,opt,name=path_direction,json=pathDirection,proto3,enum=quantram.v1.PathDirection" json:"path_direction,omitempty"`
+	ModelStatus          ModelStatus            `protobuf:"varint,8,opt,name=model_status,json=modelStatus,proto3,enum=quantram.v1.ModelStatus" json:"model_status,omitempty"`
+	EmitterPositionState EmitterPosition        `protobuf:"varint,9,opt,name=emitter_position_state,json=emitterPositionState,proto3,enum=quantram.v1.EmitterPosition" json:"emitter_position_state,omitempty"`
+	RulePath             string                 `protobuf:"bytes,10,opt,name=rule_path,json=rulePath,proto3" json:"rule_path,omitempty"`
+	Strength             float64                `protobuf:"fixed64,11,opt,name=strength,proto3" json:"strength,omitempty"`
+	Coherence            float64                `protobuf:"fixed64,12,opt,name=coherence,proto3" json:"coherence,omitempty"`
+	Persistence          float64                `protobuf:"fixed64,13,opt,name=persistence,proto3" json:"persistence,omitempty"`
+	Uncertainty          float64                `protobuf:"fixed64,14,opt,name=uncertainty,proto3" json:"uncertainty,omitempty"`
+	Reversal             float64                `protobuf:"fixed64,15,opt,name=reversal,proto3" json:"reversal,omitempty"`
+	TerminalDisplacement float64                `protobuf:"fixed64,16,opt,name=terminal_displacement,json=terminalDisplacement,proto3" json:"terminal_displacement,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *Decision) Reset() {
+	*x = Decision{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Decision) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Decision) ProtoMessage() {}
+
+func (x *Decision) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Decision.ProtoReflect.Descriptor instead.
+func (*Decision) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *Decision) GetSide() Side {
+	if x != nil {
+		return x.Side
+	}
+	return Side_SIDE_UNSPECIFIED
+}
+
+func (x *Decision) GetConfidence() float64 {
+	if x != nil {
+		return x.Confidence
+	}
+	return 0
+}
+
+func (x *Decision) GetH() int32 {
+	if x != nil {
+		return x.H
+	}
+	return 0
+}
+
+func (x *Decision) GetQG() float64 {
+	if x != nil {
+		return x.QG
+	}
+	return 0
+}
+
+func (x *Decision) GetQS() float64 {
+	if x != nil {
+		return x.QS
+	}
+	return 0
+}
+
+func (x *Decision) GetQR() float64 {
+	if x != nil {
+		return x.QR
+	}
+	return 0
+}
+
+func (x *Decision) GetPathDirection() PathDirection {
+	if x != nil {
+		return x.PathDirection
+	}
+	return PathDirection_PATH_DIRECTION_UNSPECIFIED
+}
+
+func (x *Decision) GetModelStatus() ModelStatus {
+	if x != nil {
+		return x.ModelStatus
+	}
+	return ModelStatus_MODEL_STATUS_UNSPECIFIED
+}
+
+func (x *Decision) GetEmitterPositionState() EmitterPosition {
+	if x != nil {
+		return x.EmitterPositionState
+	}
+	return EmitterPosition_EMITTER_POSITION_UNSPECIFIED
+}
+
+func (x *Decision) GetRulePath() string {
+	if x != nil {
+		return x.RulePath
+	}
+	return ""
+}
+
+func (x *Decision) GetStrength() float64 {
+	if x != nil {
+		return x.Strength
+	}
+	return 0
+}
+
+func (x *Decision) GetCoherence() float64 {
+	if x != nil {
+		return x.Coherence
+	}
+	return 0
+}
+
+func (x *Decision) GetPersistence() float64 {
+	if x != nil {
+		return x.Persistence
+	}
+	return 0
+}
+
+func (x *Decision) GetUncertainty() float64 {
+	if x != nil {
+		return x.Uncertainty
+	}
+	return 0
+}
+
+func (x *Decision) GetReversal() float64 {
+	if x != nil {
+		return x.Reversal
+	}
+	return 0
+}
+
+func (x *Decision) GetTerminalDisplacement() float64 {
+	if x != nil {
+		return x.TerminalDisplacement
+	}
+	return 0
+}
+
+type Skip struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Reason        SkipReason             `protobuf:"varint,1,opt,name=reason,proto3,enum=quantram.v1.SkipReason" json:"reason,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	ModelStatus   ModelStatus            `protobuf:"varint,3,opt,name=model_status,json=modelStatus,proto3,enum=quantram.v1.ModelStatus" json:"model_status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Skip) Reset() {
+	*x = Skip{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Skip) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Skip) ProtoMessage() {}
+
+func (x *Skip) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Skip.ProtoReflect.Descriptor instead.
+func (*Skip) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *Skip) GetReason() SkipReason {
+	if x != nil {
+		return x.Reason
+	}
+	return SkipReason_SKIP_REASON_UNSPECIFIED
+}
+
+func (x *Skip) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+func (x *Skip) GetModelStatus() ModelStatus {
+	if x != nil {
+		return x.ModelStatus
+	}
+	return ModelStatus_MODEL_STATUS_UNSPECIFIED
+}
+
+type DecisionEvent struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	EventId             string                 `protobuf:"bytes,1,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
+	SignalId            string                 `protobuf:"bytes,2,opt,name=signal_id,json=signalId,proto3" json:"signal_id,omitempty"`
+	DecisionId          string                 `protobuf:"bytes,3,opt,name=decision_id,json=decisionId,proto3" json:"decision_id,omitempty"`
+	Symbol              string                 `protobuf:"bytes,4,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	IntervalStartUnixMs int64                  `protobuf:"varint,5,opt,name=interval_start_unix_ms,json=intervalStartUnixMs,proto3" json:"interval_start_unix_ms,omitempty"`
+	MarketSnapshotId    string                 `protobuf:"bytes,6,opt,name=market_snapshot_id,json=marketSnapshotId,proto3" json:"market_snapshot_id,omitempty"`
+	SourceTimestamp     string                 `protobuf:"bytes,7,opt,name=source_timestamp,json=sourceTimestamp,proto3" json:"source_timestamp,omitempty"`
+	AcceptedSequence    uint64                 `protobuf:"varint,8,opt,name=accepted_sequence,json=acceptedSequence,proto3" json:"accepted_sequence,omitempty"`
+	ReceivedAtUnixMs    int64                  `protobuf:"varint,9,opt,name=received_at_unix_ms,json=receivedAtUnixMs,proto3" json:"received_at_unix_ms,omitempty"`
+	CompletedAtUnixMs   int64                  `protobuf:"varint,10,opt,name=completed_at_unix_ms,json=completedAtUnixMs,proto3" json:"completed_at_unix_ms,omitempty"`
+	LatencyMs           int64                  `protobuf:"varint,11,opt,name=latency_ms,json=latencyMs,proto3" json:"latency_ms,omitempty"`
+	ModelVersion        string                 `protobuf:"bytes,12,opt,name=model_version,json=modelVersion,proto3" json:"model_version,omitempty"`
+	SchemaVersion       string                 `protobuf:"bytes,13,opt,name=schema_version,json=schemaVersion,proto3" json:"schema_version,omitempty"`
+	PreStateHash        string                 `protobuf:"bytes,14,opt,name=pre_state_hash,json=preStateHash,proto3" json:"pre_state_hash,omitempty"`
+	PostStateHash       string                 `protobuf:"bytes,15,opt,name=post_state_hash,json=postStateHash,proto3" json:"post_state_hash,omitempty"`
+	// Types that are valid to be assigned to Outcome:
+	//
+	//	*DecisionEvent_Decision
+	//	*DecisionEvent_Skip
+	Outcome       isDecisionEvent_Outcome `protobuf_oneof:"outcome"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DecisionEvent) Reset() {
+	*x = DecisionEvent{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DecisionEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DecisionEvent) ProtoMessage() {}
+
+func (x *DecisionEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DecisionEvent.ProtoReflect.Descriptor instead.
+func (*DecisionEvent) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *DecisionEvent) GetEventId() string {
+	if x != nil {
+		return x.EventId
+	}
+	return ""
+}
+
+func (x *DecisionEvent) GetSignalId() string {
+	if x != nil {
+		return x.SignalId
+	}
+	return ""
+}
+
+func (x *DecisionEvent) GetDecisionId() string {
+	if x != nil {
+		return x.DecisionId
+	}
+	return ""
+}
+
+func (x *DecisionEvent) GetSymbol() string {
+	if x != nil {
+		return x.Symbol
+	}
+	return ""
+}
+
+func (x *DecisionEvent) GetIntervalStartUnixMs() int64 {
+	if x != nil {
+		return x.IntervalStartUnixMs
+	}
+	return 0
+}
+
+func (x *DecisionEvent) GetMarketSnapshotId() string {
+	if x != nil {
+		return x.MarketSnapshotId
+	}
+	return ""
+}
+
+func (x *DecisionEvent) GetSourceTimestamp() string {
+	if x != nil {
+		return x.SourceTimestamp
+	}
+	return ""
+}
+
+func (x *DecisionEvent) GetAcceptedSequence() uint64 {
+	if x != nil {
+		return x.AcceptedSequence
+	}
+	return 0
+}
+
+func (x *DecisionEvent) GetReceivedAtUnixMs() int64 {
+	if x != nil {
+		return x.ReceivedAtUnixMs
+	}
+	return 0
+}
+
+func (x *DecisionEvent) GetCompletedAtUnixMs() int64 {
+	if x != nil {
+		return x.CompletedAtUnixMs
+	}
+	return 0
+}
+
+func (x *DecisionEvent) GetLatencyMs() int64 {
+	if x != nil {
+		return x.LatencyMs
+	}
+	return 0
+}
+
+func (x *DecisionEvent) GetModelVersion() string {
+	if x != nil {
+		return x.ModelVersion
+	}
+	return ""
+}
+
+func (x *DecisionEvent) GetSchemaVersion() string {
+	if x != nil {
+		return x.SchemaVersion
+	}
+	return ""
+}
+
+func (x *DecisionEvent) GetPreStateHash() string {
+	if x != nil {
+		return x.PreStateHash
+	}
+	return ""
+}
+
+func (x *DecisionEvent) GetPostStateHash() string {
+	if x != nil {
+		return x.PostStateHash
+	}
+	return ""
+}
+
+func (x *DecisionEvent) GetOutcome() isDecisionEvent_Outcome {
+	if x != nil {
+		return x.Outcome
+	}
+	return nil
+}
+
+func (x *DecisionEvent) GetDecision() *Decision {
+	if x != nil {
+		if x, ok := x.Outcome.(*DecisionEvent_Decision); ok {
+			return x.Decision
+		}
+	}
+	return nil
+}
+
+func (x *DecisionEvent) GetSkip() *Skip {
+	if x != nil {
+		if x, ok := x.Outcome.(*DecisionEvent_Skip); ok {
+			return x.Skip
+		}
+	}
+	return nil
+}
+
+type isDecisionEvent_Outcome interface {
+	isDecisionEvent_Outcome()
+}
+
+type DecisionEvent_Decision struct {
+	Decision *Decision `protobuf:"bytes,16,opt,name=decision,proto3,oneof"`
+}
+
+type DecisionEvent_Skip struct {
+	Skip *Skip `protobuf:"bytes,17,opt,name=skip,proto3,oneof"`
+}
+
+func (*DecisionEvent_Decision) isDecisionEvent_Outcome() {}
+
+func (*DecisionEvent_Skip) isDecisionEvent_Outcome() {}
+
+type StreamDecisionsRequest struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Symbols []string               `protobuf:"bytes,1,rep,name=symbols,proto3" json:"symbols,omitempty"`
+	// Zero means stream until the client cancels.
+	MaxEvents     uint32 `protobuf:"varint,2,opt,name=max_events,json=maxEvents,proto3" json:"max_events,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StreamDecisionsRequest) Reset() {
+	*x = StreamDecisionsRequest{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StreamDecisionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StreamDecisionsRequest) ProtoMessage() {}
+
+func (x *StreamDecisionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StreamDecisionsRequest.ProtoReflect.Descriptor instead.
+func (*StreamDecisionsRequest) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *StreamDecisionsRequest) GetSymbols() []string {
+	if x != nil {
+		return x.Symbols
+	}
+	return nil
+}
+
+func (x *StreamDecisionsRequest) GetMaxEvents() uint32 {
+	if x != nil {
+		return x.MaxEvents
+	}
+	return 0
+}
+
 var File_quantram_v1_quantram_proto protoreflect.FileDescriptor
 
 const file_quantram_v1_quantram_proto_rawDesc = "" +
@@ -1307,7 +2067,57 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	"\x05ready\x18\x01 \x01(\bR\x05ready\x12\x18\n" +
 	"\aobserve\x18\x02 \x01(\bR\aobserve\x12\x14\n" +
 	"\x05infer\x18\x03 \x01(\bR\x05infer\x12\x18\n" +
-	"\amessage\x18\x04 \x01(\tR\amessage*\x80\x01\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage\"\xd2\x04\n" +
+	"\bDecision\x12%\n" +
+	"\x04side\x18\x01 \x01(\x0e2\x11.quantram.v1.SideR\x04side\x12\x1e\n" +
+	"\n" +
+	"confidence\x18\x02 \x01(\x01R\n" +
+	"confidence\x12\f\n" +
+	"\x01h\x18\x03 \x01(\x05R\x01h\x12\x0f\n" +
+	"\x03q_g\x18\x04 \x01(\x01R\x02qG\x12\x0f\n" +
+	"\x03q_s\x18\x05 \x01(\x01R\x02qS\x12\x0f\n" +
+	"\x03q_r\x18\x06 \x01(\x01R\x02qR\x12A\n" +
+	"\x0epath_direction\x18\a \x01(\x0e2\x1a.quantram.v1.PathDirectionR\rpathDirection\x12;\n" +
+	"\fmodel_status\x18\b \x01(\x0e2\x18.quantram.v1.ModelStatusR\vmodelStatus\x12R\n" +
+	"\x16emitter_position_state\x18\t \x01(\x0e2\x1c.quantram.v1.EmitterPositionR\x14emitterPositionState\x12\x1b\n" +
+	"\trule_path\x18\n" +
+	" \x01(\tR\brulePath\x12\x1a\n" +
+	"\bstrength\x18\v \x01(\x01R\bstrength\x12\x1c\n" +
+	"\tcoherence\x18\f \x01(\x01R\tcoherence\x12 \n" +
+	"\vpersistence\x18\r \x01(\x01R\vpersistence\x12 \n" +
+	"\vuncertainty\x18\x0e \x01(\x01R\vuncertainty\x12\x1a\n" +
+	"\breversal\x18\x0f \x01(\x01R\breversal\x123\n" +
+	"\x15terminal_displacement\x18\x10 \x01(\x01R\x14terminalDisplacement\"\x8c\x01\n" +
+	"\x04Skip\x12/\n" +
+	"\x06reason\x18\x01 \x01(\x0e2\x17.quantram.v1.SkipReasonR\x06reason\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\x12;\n" +
+	"\fmodel_status\x18\x03 \x01(\x0e2\x18.quantram.v1.ModelStatusR\vmodelStatus\"\xbd\x05\n" +
+	"\rDecisionEvent\x12\x19\n" +
+	"\bevent_id\x18\x01 \x01(\tR\aeventId\x12\x1b\n" +
+	"\tsignal_id\x18\x02 \x01(\tR\bsignalId\x12\x1f\n" +
+	"\vdecision_id\x18\x03 \x01(\tR\n" +
+	"decisionId\x12\x16\n" +
+	"\x06symbol\x18\x04 \x01(\tR\x06symbol\x123\n" +
+	"\x16interval_start_unix_ms\x18\x05 \x01(\x03R\x13intervalStartUnixMs\x12,\n" +
+	"\x12market_snapshot_id\x18\x06 \x01(\tR\x10marketSnapshotId\x12)\n" +
+	"\x10source_timestamp\x18\a \x01(\tR\x0fsourceTimestamp\x12+\n" +
+	"\x11accepted_sequence\x18\b \x01(\x04R\x10acceptedSequence\x12-\n" +
+	"\x13received_at_unix_ms\x18\t \x01(\x03R\x10receivedAtUnixMs\x12/\n" +
+	"\x14completed_at_unix_ms\x18\n" +
+	" \x01(\x03R\x11completedAtUnixMs\x12\x1d\n" +
+	"\n" +
+	"latency_ms\x18\v \x01(\x03R\tlatencyMs\x12#\n" +
+	"\rmodel_version\x18\f \x01(\tR\fmodelVersion\x12%\n" +
+	"\x0eschema_version\x18\r \x01(\tR\rschemaVersion\x12$\n" +
+	"\x0epre_state_hash\x18\x0e \x01(\tR\fpreStateHash\x12&\n" +
+	"\x0fpost_state_hash\x18\x0f \x01(\tR\rpostStateHash\x123\n" +
+	"\bdecision\x18\x10 \x01(\v2\x15.quantram.v1.DecisionH\x00R\bdecision\x12'\n" +
+	"\x04skip\x18\x11 \x01(\v2\x11.quantram.v1.SkipH\x00R\x04skipB\t\n" +
+	"\aoutcome\"Q\n" +
+	"\x16StreamDecisionsRequest\x12\x18\n" +
+	"\asymbols\x18\x01 \x03(\tR\asymbols\x12\x1d\n" +
+	"\n" +
+	"max_events\x18\x02 \x01(\rR\tmaxEvents*\x80\x01\n" +
 	"\x0eInstrumentType\x12\x1f\n" +
 	"\x1bINSTRUMENT_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15INSTRUMENT_TYPE_STOCK\x10\x01\x12\x17\n" +
@@ -1331,7 +2141,41 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	"\x1bCOMPONENT_STATE_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17COMPONENT_STATE_HEALTHY\x10\x01\x12\x1c\n" +
 	"\x18COMPONENT_STATE_DEGRADED\x10\x02\x12\x1f\n" +
-	"\x1bCOMPONENT_STATE_UNAVAILABLE\x10\x032\xb3\x01\n" +
+	"\x1bCOMPONENT_STATE_UNAVAILABLE\x10\x03*H\n" +
+	"\x04Side\x12\x14\n" +
+	"\x10SIDE_UNSPECIFIED\x10\x00\x12\f\n" +
+	"\bSIDE_BUY\x10\x01\x12\r\n" +
+	"\tSIDE_SELL\x10\x02\x12\r\n" +
+	"\tSIDE_HOLD\x10\x03*\x80\x01\n" +
+	"\rPathDirection\x12\x1e\n" +
+	"\x1aPATH_DIRECTION_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15PATH_DIRECTION_UPWARD\x10\x01\x12\x1b\n" +
+	"\x17PATH_DIRECTION_DOWNWARD\x10\x02\x12\x17\n" +
+	"\x13PATH_DIRECTION_FLAT\x10\x03*\x85\x01\n" +
+	"\x0fEmitterPosition\x12 \n" +
+	"\x1cEMITTER_POSITION_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15EMITTER_POSITION_FLAT\x10\x01\x12\x19\n" +
+	"\x15EMITTER_POSITION_LONG\x10\x02\x12\x1a\n" +
+	"\x16EMITTER_POSITION_SHORT\x10\x03*g\n" +
+	"\vModelStatus\x12\x1c\n" +
+	"\x18MODEL_STATUS_UNSPECIFIED\x10\x00\x12\x1d\n" +
+	"\x19MODEL_STATUS_INITIALIZING\x10\x01\x12\x1b\n" +
+	"\x17MODEL_STATUS_ACTIONABLE\x10\x02*\x83\x03\n" +
+	"\n" +
+	"SkipReason\x12\x1b\n" +
+	"\x17SKIP_REASON_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15SKIP_REASON_INFER_OFF\x10\x01\x12\"\n" +
+	"\x1eSKIP_REASON_NOT_MODEL_ELIGIBLE\x10\x02\x12\x1c\n" +
+	"\x18SKIP_REASON_INITIALIZING\x10\x03\x12'\n" +
+	"#SKIP_REASON_DUPLICATE_OR_REGRESSION\x10\x04\x12\x19\n" +
+	"\x15SKIP_REASON_INPUT_GAP\x10\x05\x12\x1e\n" +
+	"\x1aSKIP_REASON_QUEUE_OVERFLOW\x10\x06\x12\x17\n" +
+	"\x13SKIP_REASON_TIMEOUT\x10\a\x12\x1d\n" +
+	"\x19SKIP_REASON_INVALID_INPUT\x10\b\x12\x1c\n" +
+	"\x18SKIP_REASON_ENGINE_ERROR\x10\t\x12\x1c\n" +
+	"\x18SKIP_REASON_ENGINE_PANIC\x10\n" +
+	"\x12#\n" +
+	"\x1fSKIP_REASON_STATE_DISCONTINUOUS\x10\v2\xb3\x01\n" +
 	"\x11MarketFeedService\x12K\n" +
 	"\rGetFeedHealth\x12!.quantram.v1.GetFeedHealthRequest\x1a\x17.quantram.v1.FeedHealth\x12Q\n" +
 	"\x0fGetActiveSource\x12#.quantram.v1.GetActiveSourceRequest\x1a\x19.quantram.v1.ActiveSource2\xf0\x01\n" +
@@ -1342,7 +2186,9 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	"\x0eTriggerGapFill\x12\".quantram.v1.TriggerGapFillRequest\x1a\x1a.quantram.v1.GapFillResult2\xaa\x01\n" +
 	"\x11OperationsService\x12E\n" +
 	"\tGetHealth\x12\x1d.quantram.v1.GetHealthRequest\x1a\x19.quantram.v1.HealthReport\x12N\n" +
-	"\fGetReadiness\x12 .quantram.v1.GetReadinessRequest\x1a\x1c.quantram.v1.ReadinessReportB%Z#quantram/gen/quantram/v1;quantramv1b\x06proto3"
+	"\fGetReadiness\x12 .quantram.v1.GetReadinessRequest\x1a\x1c.quantram.v1.ReadinessReport2d\n" +
+	"\fModelService\x12T\n" +
+	"\x0fStreamDecisions\x12#.quantram.v1.StreamDecisionsRequest\x1a\x1a.quantram.v1.DecisionEvent0\x01B%Z#quantram/gen/quantram/v1;quantramv1b\x06proto3"
 
 var (
 	file_quantram_v1_quantram_proto_rawDescOnce sync.Once
@@ -1356,57 +2202,76 @@ func file_quantram_v1_quantram_proto_rawDescGZIP() []byte {
 	return file_quantram_v1_quantram_proto_rawDescData
 }
 
-var file_quantram_v1_quantram_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_quantram_v1_quantram_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_quantram_v1_quantram_proto_enumTypes = make([]protoimpl.EnumInfo, 9)
+var file_quantram_v1_quantram_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_quantram_v1_quantram_proto_goTypes = []any{
 	(InstrumentType)(0),            // 0: quantram.v1.InstrumentType
 	(QualityStatus)(0),             // 1: quantram.v1.QualityStatus
 	(FeedState)(0),                 // 2: quantram.v1.FeedState
 	(ComponentState)(0),            // 3: quantram.v1.ComponentState
-	(*Bar)(nil),                    // 4: quantram.v1.Bar
-	(*GetFeedHealthRequest)(nil),   // 5: quantram.v1.GetFeedHealthRequest
-	(*FeedHealth)(nil),             // 6: quantram.v1.FeedHealth
-	(*GetActiveSourceRequest)(nil), // 7: quantram.v1.GetActiveSourceRequest
-	(*ActiveSource)(nil),           // 8: quantram.v1.ActiveSource
-	(*StreamBarsRequest)(nil),      // 9: quantram.v1.StreamBarsRequest
-	(*GetBarWindowRequest)(nil),    // 10: quantram.v1.GetBarWindowRequest
-	(*BarWindow)(nil),              // 11: quantram.v1.BarWindow
-	(*TriggerGapFillRequest)(nil),  // 12: quantram.v1.TriggerGapFillRequest
-	(*GapFillResult)(nil),          // 13: quantram.v1.GapFillResult
-	(*GetHealthRequest)(nil),       // 14: quantram.v1.GetHealthRequest
-	(*ComponentHealth)(nil),        // 15: quantram.v1.ComponentHealth
-	(*HealthReport)(nil),           // 16: quantram.v1.HealthReport
-	(*GetReadinessRequest)(nil),    // 17: quantram.v1.GetReadinessRequest
-	(*ReadinessReport)(nil),        // 18: quantram.v1.ReadinessReport
+	(Side)(0),                      // 4: quantram.v1.Side
+	(PathDirection)(0),             // 5: quantram.v1.PathDirection
+	(EmitterPosition)(0),           // 6: quantram.v1.EmitterPosition
+	(ModelStatus)(0),               // 7: quantram.v1.ModelStatus
+	(SkipReason)(0),                // 8: quantram.v1.SkipReason
+	(*Bar)(nil),                    // 9: quantram.v1.Bar
+	(*GetFeedHealthRequest)(nil),   // 10: quantram.v1.GetFeedHealthRequest
+	(*FeedHealth)(nil),             // 11: quantram.v1.FeedHealth
+	(*GetActiveSourceRequest)(nil), // 12: quantram.v1.GetActiveSourceRequest
+	(*ActiveSource)(nil),           // 13: quantram.v1.ActiveSource
+	(*StreamBarsRequest)(nil),      // 14: quantram.v1.StreamBarsRequest
+	(*GetBarWindowRequest)(nil),    // 15: quantram.v1.GetBarWindowRequest
+	(*BarWindow)(nil),              // 16: quantram.v1.BarWindow
+	(*TriggerGapFillRequest)(nil),  // 17: quantram.v1.TriggerGapFillRequest
+	(*GapFillResult)(nil),          // 18: quantram.v1.GapFillResult
+	(*GetHealthRequest)(nil),       // 19: quantram.v1.GetHealthRequest
+	(*ComponentHealth)(nil),        // 20: quantram.v1.ComponentHealth
+	(*HealthReport)(nil),           // 21: quantram.v1.HealthReport
+	(*GetReadinessRequest)(nil),    // 22: quantram.v1.GetReadinessRequest
+	(*ReadinessReport)(nil),        // 23: quantram.v1.ReadinessReport
+	(*Decision)(nil),               // 24: quantram.v1.Decision
+	(*Skip)(nil),                   // 25: quantram.v1.Skip
+	(*DecisionEvent)(nil),          // 26: quantram.v1.DecisionEvent
+	(*StreamDecisionsRequest)(nil), // 27: quantram.v1.StreamDecisionsRequest
 }
 var file_quantram_v1_quantram_proto_depIdxs = []int32{
 	0,  // 0: quantram.v1.Bar.instrument_type:type_name -> quantram.v1.InstrumentType
 	1,  // 1: quantram.v1.Bar.quality_status:type_name -> quantram.v1.QualityStatus
 	2,  // 2: quantram.v1.FeedHealth.state:type_name -> quantram.v1.FeedState
 	2,  // 3: quantram.v1.ActiveSource.state:type_name -> quantram.v1.FeedState
-	4,  // 4: quantram.v1.BarWindow.bars:type_name -> quantram.v1.Bar
+	9,  // 4: quantram.v1.BarWindow.bars:type_name -> quantram.v1.Bar
 	3,  // 5: quantram.v1.ComponentHealth.state:type_name -> quantram.v1.ComponentState
 	3,  // 6: quantram.v1.HealthReport.state:type_name -> quantram.v1.ComponentState
-	15, // 7: quantram.v1.HealthReport.components:type_name -> quantram.v1.ComponentHealth
-	5,  // 8: quantram.v1.MarketFeedService.GetFeedHealth:input_type -> quantram.v1.GetFeedHealthRequest
-	7,  // 9: quantram.v1.MarketFeedService.GetActiveSource:input_type -> quantram.v1.GetActiveSourceRequest
-	9,  // 10: quantram.v1.IngestionService.StreamBars:input_type -> quantram.v1.StreamBarsRequest
-	10, // 11: quantram.v1.IngestionService.GetBarWindow:input_type -> quantram.v1.GetBarWindowRequest
-	12, // 12: quantram.v1.IngestionService.TriggerGapFill:input_type -> quantram.v1.TriggerGapFillRequest
-	14, // 13: quantram.v1.OperationsService.GetHealth:input_type -> quantram.v1.GetHealthRequest
-	17, // 14: quantram.v1.OperationsService.GetReadiness:input_type -> quantram.v1.GetReadinessRequest
-	6,  // 15: quantram.v1.MarketFeedService.GetFeedHealth:output_type -> quantram.v1.FeedHealth
-	8,  // 16: quantram.v1.MarketFeedService.GetActiveSource:output_type -> quantram.v1.ActiveSource
-	4,  // 17: quantram.v1.IngestionService.StreamBars:output_type -> quantram.v1.Bar
-	11, // 18: quantram.v1.IngestionService.GetBarWindow:output_type -> quantram.v1.BarWindow
-	13, // 19: quantram.v1.IngestionService.TriggerGapFill:output_type -> quantram.v1.GapFillResult
-	16, // 20: quantram.v1.OperationsService.GetHealth:output_type -> quantram.v1.HealthReport
-	18, // 21: quantram.v1.OperationsService.GetReadiness:output_type -> quantram.v1.ReadinessReport
-	15, // [15:22] is the sub-list for method output_type
-	8,  // [8:15] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	20, // 7: quantram.v1.HealthReport.components:type_name -> quantram.v1.ComponentHealth
+	4,  // 8: quantram.v1.Decision.side:type_name -> quantram.v1.Side
+	5,  // 9: quantram.v1.Decision.path_direction:type_name -> quantram.v1.PathDirection
+	7,  // 10: quantram.v1.Decision.model_status:type_name -> quantram.v1.ModelStatus
+	6,  // 11: quantram.v1.Decision.emitter_position_state:type_name -> quantram.v1.EmitterPosition
+	8,  // 12: quantram.v1.Skip.reason:type_name -> quantram.v1.SkipReason
+	7,  // 13: quantram.v1.Skip.model_status:type_name -> quantram.v1.ModelStatus
+	24, // 14: quantram.v1.DecisionEvent.decision:type_name -> quantram.v1.Decision
+	25, // 15: quantram.v1.DecisionEvent.skip:type_name -> quantram.v1.Skip
+	10, // 16: quantram.v1.MarketFeedService.GetFeedHealth:input_type -> quantram.v1.GetFeedHealthRequest
+	12, // 17: quantram.v1.MarketFeedService.GetActiveSource:input_type -> quantram.v1.GetActiveSourceRequest
+	14, // 18: quantram.v1.IngestionService.StreamBars:input_type -> quantram.v1.StreamBarsRequest
+	15, // 19: quantram.v1.IngestionService.GetBarWindow:input_type -> quantram.v1.GetBarWindowRequest
+	17, // 20: quantram.v1.IngestionService.TriggerGapFill:input_type -> quantram.v1.TriggerGapFillRequest
+	19, // 21: quantram.v1.OperationsService.GetHealth:input_type -> quantram.v1.GetHealthRequest
+	22, // 22: quantram.v1.OperationsService.GetReadiness:input_type -> quantram.v1.GetReadinessRequest
+	27, // 23: quantram.v1.ModelService.StreamDecisions:input_type -> quantram.v1.StreamDecisionsRequest
+	11, // 24: quantram.v1.MarketFeedService.GetFeedHealth:output_type -> quantram.v1.FeedHealth
+	13, // 25: quantram.v1.MarketFeedService.GetActiveSource:output_type -> quantram.v1.ActiveSource
+	9,  // 26: quantram.v1.IngestionService.StreamBars:output_type -> quantram.v1.Bar
+	16, // 27: quantram.v1.IngestionService.GetBarWindow:output_type -> quantram.v1.BarWindow
+	18, // 28: quantram.v1.IngestionService.TriggerGapFill:output_type -> quantram.v1.GapFillResult
+	21, // 29: quantram.v1.OperationsService.GetHealth:output_type -> quantram.v1.HealthReport
+	23, // 30: quantram.v1.OperationsService.GetReadiness:output_type -> quantram.v1.ReadinessReport
+	26, // 31: quantram.v1.ModelService.StreamDecisions:output_type -> quantram.v1.DecisionEvent
+	24, // [24:32] is the sub-list for method output_type
+	16, // [16:24] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_quantram_v1_quantram_proto_init() }
@@ -1414,15 +2279,19 @@ func file_quantram_v1_quantram_proto_init() {
 	if File_quantram_v1_quantram_proto != nil {
 		return
 	}
+	file_quantram_v1_quantram_proto_msgTypes[17].OneofWrappers = []any{
+		(*DecisionEvent_Decision)(nil),
+		(*DecisionEvent_Skip)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_quantram_v1_quantram_proto_rawDesc), len(file_quantram_v1_quantram_proto_rawDesc)),
-			NumEnums:      4,
-			NumMessages:   15,
+			NumEnums:      9,
+			NumMessages:   19,
 			NumExtensions: 0,
-			NumServices:   3,
+			NumServices:   4,
 		},
 		GoTypes:           file_quantram_v1_quantram_proto_goTypes,
 		DependencyIndexes: file_quantram_v1_quantram_proto_depIdxs,

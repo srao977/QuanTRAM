@@ -17,11 +17,28 @@ type Server struct {
 	quantramv1.UnimplementedMarketFeedServiceServer
 	quantramv1.UnimplementedIngestionServiceServer
 	quantramv1.UnimplementedOperationsServiceServer
+	quantramv1.UnimplementedModelServiceServer
 	pipeline *ingestion.Pipeline
+	host     modelHealth
+	events   modelEvents
 }
 
-func New(pipeline *ingestion.Pipeline) *Server {
-	return &Server{pipeline: pipeline}
+type modelHealth interface {
+	Health() domain.ComponentHealth
+}
+
+type modelEvents interface {
+	SubscribeEvents(buffer int) (uint64, <-chan domain.DecisionEvent)
+	UnsubscribeEvents(id uint64)
+	LastEvents() []domain.DecisionEvent
+}
+
+func New(pipeline *ingestion.Pipeline, host modelHealth) *Server {
+	s := &Server{pipeline: pipeline, host: host}
+	if ev, ok := host.(modelEvents); ok {
+		s.events = ev
+	}
+	return s
 }
 
 func (s *Server) GetFeedHealth(context.Context, *quantramv1.GetFeedHealthRequest) (*quantramv1.FeedHealth, error) {
@@ -125,6 +142,19 @@ func (s *Server) TriggerGapFill(ctx context.Context, request *quantramv1.Trigger
 
 func (s *Server) GetHealth(context.Context, *quantramv1.GetHealthRequest) (*quantramv1.HealthReport, error) {
 	report := s.pipeline.Health()
+	if s.host != nil {
+		model := s.host.Health()
+		report.Components = append(report.Components, model)
+		if model.State == domain.ComponentUnavailable {
+			report.State = domain.ComponentUnavailable
+		} else if model.State == domain.ComponentDegraded && report.State == domain.ComponentHealthy {
+			report.State = domain.ComponentDegraded
+		}
+	} else {
+		report.Components = append(report.Components, domain.ComponentHealth{
+			Name: "model", State: domain.ComponentHealthy, Detail: "off",
+		})
+	}
 	out := &quantramv1.HealthReport{State: toProtoComponent(report.State)}
 	for _, component := range report.Components {
 		out.Components = append(out.Components, &quantramv1.ComponentHealth{

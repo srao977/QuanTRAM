@@ -479,3 +479,108 @@ var OperationsService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "quantram/v1/quantram.proto",
 }
+
+const (
+	ModelService_StreamDecisions_FullMethodName = "/quantram.v1.ModelService/StreamDecisions"
+)
+
+// ModelServiceClient is the client API for ModelService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ModelServiceClient interface {
+	StreamDecisions(ctx context.Context, in *StreamDecisionsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DecisionEvent], error)
+}
+
+type modelServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewModelServiceClient(cc grpc.ClientConnInterface) ModelServiceClient {
+	return &modelServiceClient{cc}
+}
+
+func (c *modelServiceClient) StreamDecisions(ctx context.Context, in *StreamDecisionsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DecisionEvent], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &ModelService_ServiceDesc.Streams[0], ModelService_StreamDecisions_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[StreamDecisionsRequest, DecisionEvent]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ModelService_StreamDecisionsClient = grpc.ServerStreamingClient[DecisionEvent]
+
+// ModelServiceServer is the server API for ModelService service.
+// All implementations must embed UnimplementedModelServiceServer
+// for forward compatibility.
+type ModelServiceServer interface {
+	StreamDecisions(*StreamDecisionsRequest, grpc.ServerStreamingServer[DecisionEvent]) error
+	mustEmbedUnimplementedModelServiceServer()
+}
+
+// UnimplementedModelServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedModelServiceServer struct{}
+
+func (UnimplementedModelServiceServer) StreamDecisions(*StreamDecisionsRequest, grpc.ServerStreamingServer[DecisionEvent]) error {
+	return status.Error(codes.Unimplemented, "method StreamDecisions not implemented")
+}
+func (UnimplementedModelServiceServer) mustEmbedUnimplementedModelServiceServer() {}
+func (UnimplementedModelServiceServer) testEmbeddedByValue()                      {}
+
+// UnsafeModelServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ModelServiceServer will
+// result in compilation errors.
+type UnsafeModelServiceServer interface {
+	mustEmbedUnimplementedModelServiceServer()
+}
+
+func RegisterModelServiceServer(s grpc.ServiceRegistrar, srv ModelServiceServer) {
+	// If the following call panics, it indicates UnimplementedModelServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&ModelService_ServiceDesc, srv)
+}
+
+func _ModelService_StreamDecisions_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(StreamDecisionsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ModelServiceServer).StreamDecisions(m, &grpc.GenericServerStream[StreamDecisionsRequest, DecisionEvent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ModelService_StreamDecisionsServer = grpc.ServerStreamingServer[DecisionEvent]
+
+// ModelService_ServiceDesc is the grpc.ServiceDesc for ModelService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ModelService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "quantram.v1.ModelService",
+	HandlerType: (*ModelServiceServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamDecisions",
+			Handler:       _ModelService_StreamDecisions_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "quantram/v1/quantram.proto",
+}

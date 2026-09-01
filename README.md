@@ -28,7 +28,10 @@ In another terminal:
 go run ./cmd/quantram-ingest-client -operation stream -symbols AAPL -max-bars 5
 go run ./cmd/quantram-ingest-client -operation health
 go run ./cmd/quantram-ingest-client -operation window -symbols AAPL
+go run ./cmd/quantram-ingest-client -operation decisions -symbols AAPL -max-bars 5
 ```
+
+`StreamDecisions` requires `QUANTRAM_MODEL=adaptive`. Default is `off` (`FailedPrecondition`).
 
 ## Alpaca test feed (outside regular hours)
 

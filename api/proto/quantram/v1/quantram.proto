@@ -4,7 +4,7 @@ package quantram.v1;
 
 option go_package = "quantram/gen/quantram/v1;quantramv1";
 
-// Increment 1 services. Later increments append to this file.
+// Increment 1 ingestion plus P-03 ModelService. Later increments append to this file.
 
 enum InstrumentType {
   INSTRUMENT_TYPE_UNSPECIFIED = 0;
@@ -152,4 +152,106 @@ service IngestionService {
 service OperationsService {
   rpc GetHealth(GetHealthRequest) returns (HealthReport);
   rpc GetReadiness(GetReadinessRequest) returns (ReadinessReport);
+}
+
+// P-03 adaptive DecisionEvent. HOLD is a decision. Skip never carries a side.
+// Evaluate / ModelInferenceService wait for the PriceEngine increment.
+
+enum Side {
+  SIDE_UNSPECIFIED = 0;
+  SIDE_BUY = 1;
+  SIDE_SELL = 2;
+  SIDE_HOLD = 3;
+}
+
+enum PathDirection {
+  PATH_DIRECTION_UNSPECIFIED = 0;
+  PATH_DIRECTION_UPWARD = 1;
+  PATH_DIRECTION_DOWNWARD = 2;
+  PATH_DIRECTION_FLAT = 3;
+}
+
+enum EmitterPosition {
+  EMITTER_POSITION_UNSPECIFIED = 0;
+  EMITTER_POSITION_FLAT = 1;
+  EMITTER_POSITION_LONG = 2;
+  EMITTER_POSITION_SHORT = 3;
+}
+
+enum ModelStatus {
+  MODEL_STATUS_UNSPECIFIED = 0;
+  MODEL_STATUS_INITIALIZING = 1;
+  MODEL_STATUS_ACTIONABLE = 2;
+}
+
+enum SkipReason {
+  SKIP_REASON_UNSPECIFIED = 0;
+  SKIP_REASON_INFER_OFF = 1;
+  SKIP_REASON_NOT_MODEL_ELIGIBLE = 2;
+  SKIP_REASON_INITIALIZING = 3;
+  SKIP_REASON_DUPLICATE_OR_REGRESSION = 4;
+  SKIP_REASON_INPUT_GAP = 5;
+  SKIP_REASON_QUEUE_OVERFLOW = 6;
+  SKIP_REASON_TIMEOUT = 7;
+  SKIP_REASON_INVALID_INPUT = 8;
+  SKIP_REASON_ENGINE_ERROR = 9;
+  SKIP_REASON_ENGINE_PANIC = 10;
+  SKIP_REASON_STATE_DISCONTINUOUS = 11;
+}
+
+message Decision {
+  Side side = 1;
+  double confidence = 2;
+  int32 h = 3;
+  double q_g = 4;
+  double q_s = 5;
+  double q_r = 6;
+  PathDirection path_direction = 7;
+  ModelStatus model_status = 8;
+  EmitterPosition emitter_position_state = 9;
+  string rule_path = 10;
+  double strength = 11;
+  double coherence = 12;
+  double persistence = 13;
+  double uncertainty = 14;
+  double reversal = 15;
+  double terminal_displacement = 16;
+}
+
+message Skip {
+  SkipReason reason = 1;
+  string detail = 2;
+  ModelStatus model_status = 3;
+}
+
+message DecisionEvent {
+  string event_id = 1;
+  string signal_id = 2;
+  string decision_id = 3;
+  string symbol = 4;
+  int64 interval_start_unix_ms = 5;
+  string market_snapshot_id = 6;
+  string source_timestamp = 7;
+  uint64 accepted_sequence = 8;
+  int64 received_at_unix_ms = 9;
+  int64 completed_at_unix_ms = 10;
+  int64 latency_ms = 11;
+  string model_version = 12;
+  string schema_version = 13;
+  string pre_state_hash = 14;
+  string post_state_hash = 15;
+  oneof outcome {
+    Decision decision = 16;
+    Skip skip = 17;
+  }
+}
+
+message StreamDecisionsRequest {
+  repeated string symbols = 1;
+  // Zero means stream until the client cancels.
+  uint32 max_events = 2;
+}
+
+service ModelService {
+  rpc StreamDecisions(StreamDecisionsRequest) returns (stream DecisionEvent);
 }
