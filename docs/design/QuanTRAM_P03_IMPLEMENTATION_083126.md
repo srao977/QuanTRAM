@@ -15,9 +15,9 @@ Add a collocated Go adaptive engine that:
 3. Emits one `DecisionEvent` per considered bar (decision or typed skip).
 4. Proves numerical agreement with SADE Unit Run 001 **without SDX**.
 
-Out of scope **for this coding increment:** risk, orders, the unfinished APTF→SADE RK45 migration, joining adaptive output to PriceEngine, Python `Predict` worker, dashboard decision UI.
+Out of scope **for this coding increment:** risk, orders, Go EXPM / F4 / PriceEngine, joining adaptive output to PriceEngine, Python `Predict` worker, dashboard decision UI.
 
-Those pricing items are the **next scientific increment**, not a discarded design. The destination remains: PriceEngine decisions on RK45 trajectories. See the design doc §2.1.
+Those pricing items are the **next scientific increment**, not a discarded design. **Go production destination:** PriceEngine decisions on EXPM trajectories (`time_term == false` only). Offline Gold Nugget oracle is SADE `sade/pricing_pipeline/projection.py::solve_cover_rk45_reference` (frozen copy of APTF `diagnostics/run_test_013b_qqq_validation.py::solve_cover`). Do not port RK45, do not wire it, and do not make QuanTRAM depend on the APTF repo. See the design doc §2.1.
 
 ## 2. Package layout
 
@@ -141,7 +141,7 @@ Live acceptance (regular hours): warm-up crosses 16 accepted eligible minutes; o
 
 Append to `quantram.proto`. Stream `DecisionEvent` (decision | skip oneof), not `DecisionVector` with `skipped` bool. Include H, Q_G, Q_S, Q_R, path_direction, `emitter_position_state`, skip reason enum, hashes, versions.
 
-`Evaluate` and `ModelInferenceService` wait for pricing/RK45.
+`Evaluate` and `ModelInferenceService` wait for the pricing increment (Go EXPM + PriceEngine join).
 
 Regenerate with `buf generate`.
 
@@ -165,7 +165,7 @@ Use this as the port checklist. Skip anything marked **do not port**.
 | `adaptive_pipeline/pipeline.py` | — | **No** | — |
 | `input/sdx_client.py` | — | **No** | — |
 | `input/generated/**` | — | **No** | — |
-| `pricing_pipeline/**` | — | **No** (later increment) | — |
+| `pricing_pipeline/**` | — | **No** in P-03. Later: port EXPM `solve_cover` / `analytic_affine_trajectory` only; do **not** port `solve_cover_rk45_reference` into Go. That SADE function is the offline oracle (APTF `run_test_013b_qqq_validation.py::solve_cover` lineage). | Deferred |
 | `unit_run/**`, `__main__.py` | testdata | Offline harness only | Fixture checked in |
 
 ## 5. Offline equivalence without SDX
@@ -235,3 +235,5 @@ Paper orders remain forbidden in this increment.
 | August 31, 2026 | Implementation increment written after SADE + P-02 review. |
 | August 31, 2026 | Incorporated P-03 feedback: Phase D0 model-consumer path, DecisionEvent, transactional Step, race/overflow tests, cold start. |
 | August 31, 2026 | Phases A–C implemented in-repo: `internal/domain/decision.go`, `internal/adaptive/` (D01→D02→D04→emitter), Unit Run 001 fixture + equivalence (15 / 8 / 10 / 67). Server and proto unwired. Phase D0 not started. |
+| August 31, 2026 | Pricing destination amended: next increment is Go EXPM (`time_term == false`; reject `true`), validated against Python EXPM and frozen RK45. No RK45 Go port or Python RK45 wiring. |
+| August 31, 2026 | Oracle path named: SADE `solve_cover_rk45_reference` (from APTF `run_test_013b_qqq_validation.py::solve_cover`). Go validation must not import or depend on the APTF repository. |

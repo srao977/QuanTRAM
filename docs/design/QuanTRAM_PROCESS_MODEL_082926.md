@@ -706,7 +706,7 @@ This replaces “start coding services in diagram order” with a contract-first
 | :--- | :--- | :--- | :--- | :--- |
 | S0 | **Partial** | `quantram.proto` increment-1 services generated in Go. Risk, execution, ledger, benchmark, and Python stubs are not in the file yet. | contracts | Ingestion/ops RPCs compile. Full-file golden round-trip still open. |
 | S1 | **Partial** | Alpaca IEX/test WebSocket, REST historical client, CSV replay, thin reconnect, bar window, `StreamBars`. Full circuit breaker is **not completed** and is **deferred**. See [Increment 1](QuanTRAM_INGESTION_INCREMENT_1_083026.md). | P-01, P-02 | CSV and Alpaca test-feed bars received 2026-08-30. Near-term exit is IEX RTH. Failover, live gap-fill proof, and DI-01 qualification are later. |
-| S2 | Not started | Adaptive model as a Go black box (SADE_Go). Tiny Python residue only if RK45 stays outside Go. | P-03 | Frozen CSV replay matches the Python baseline. |
+| S2 | **Partial** | Adaptive model as a Go black box (Phases A–C). Pricing later: Go EXPM only; oracle is SADE `solve_cover_rk45_reference` (frozen APTF `run_test_013b_qqq_validation.py::solve_cover`), not an APTF repo dependency and not a runtime call. | P-03 | Frozen CSV replay matches the Python baseline (Unit Run 001 done). |
 | S3 | Not started | Model host assigns IDs and skips on quality/deadline | P-03 | No decision without snapshot id and quality |
 | S4 | Not started | Risk rules + kill switch; index intents rejected | P-05 | Auditable reject reasons |
 | S5 | Not started | Alpaca paper submit/cancel + event publish + ledger | P-06, P-07, P-08 | Paper fill appears in ledger; restart is idempotent |

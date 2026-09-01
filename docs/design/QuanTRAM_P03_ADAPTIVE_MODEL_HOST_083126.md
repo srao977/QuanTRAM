@@ -50,15 +50,21 @@ Validated offline baseline: SADE Unit Run 001, AAPL, 100 vectors, outputs under 
 
 The intended product decision is **not** adaptive BUY/SELL/HOLD alone. The roadmap is:
 
-**Adaptive model + PriceEngine, with the PriceEngine decision on RK45 trajectories.**
+**Adaptive model + PriceEngine, with the PriceEngine decision on analytic EXPM trajectories.**
 
-SADE V0.1 shipped the adaptive path and a pricing pipeline, but did **not** finish joining them, and did **not** finish migrating the proved Python RK45 path from APTF. The 27 Aug Go refactorability study therefore described a split system and a later `expm` production switch (Finding 001) **before** that RK45 migration was complete. Those are snapshots of incomplete SADE, not the destination.
+SADE already closed Finding 001: production `solve_cover` is `scipy.linalg.expm` (`sade/pricing_pipeline/projection.py`). Frozen RK45 is `solve_cover_rk45_reference` — validation only. The 11-point `[0,1]` minute cover (`projected_*`, `domain_exit`, success → GREEN/RED/AMBER) is unchanged; only the solver that produces the samples changed.
 
-**RK45 is the scientific authority for that pricing decision** — the golden nugget from APTF. The 11-point `[0,1]` minute cover (`projected_*`, `domain_exit`, `rk_success` → GREEN/RED/AMBER) is not a disposable implementation detail. Completing the proved Python RK45 migration, then joining it to adaptive state, is the pricing increment.
+**Go production = EXPM only.** Do not port RK45 into the Go runtime and do not wire a Python RK45 function. Frozen Python RK45 remains **outside** QuanTRAM as the Gold Nugget validation oracle.
 
-Analytic `expm` is only a candidate **accelerator** of the same cover. It may be used in production only after it matches RK45 on the frozen trajectory and downstream PriceEngine colors. It does not replace RK45 as the definition of the decision.
+**RK45 provenance (oracle only):** the original implementation is APTF `diagnostics/run_test_013b_qqq_validation.py::solve_cover`. SADE `sade/pricing_pipeline/projection.py` records that lineage; `solve_cover_rk45_reference()` is the migrated, frozen copy of that mathematics. Future Go EXPM validation uses the **SADE** frozen reference (`projection.py::solve_cover_rk45_reference`) plus the Python EXPM production path. QuanTRAM / SADE_GO must **not** depend on the historical APTF repository.
 
-This P-03 increment ports only what SADE **did** prove and lift: the adaptive emitter. It must not treat “adaptive and pricing are separate forever” as design intent.
+A later pricing increment implements EXPM faithfully and proves it against (1) SADE production `solve_cover` (EXPM) and (2) SADE `solve_cover_rk45_reference`. After that gate, the deployed Go system contains only EXPM.
+
+**`time_term` contract (do not generalize):** Python EXPM is valid only for the production case `time_term == false` and raises `ANALYTIC_TIME_TERM_UNSUPPORTED` when `time_term == true` (that branch is explicitly time-varying). Go must reject the same case. Do not silently accept or invent a time-varying EXPM.
+
+Finding 001 already compared EXPM to frozen RK45 over **55 solves / 605 trajectory points**. Differences were tiny (max abs `p` `1.62e-08`, `p1` `9.31e-09`, `p2` `5.34e-09`; max relative error about `2.4e-05` on `p2`). Downstream scientific behavior matched: domain exit, first exit, exit dimension, `D_local_maximum`, PriceEmission, PolicyState, and cockpit outputs. That is why EXPM was promoted to production and RK45 was retained only as the reference oracle.
+
+This P-03 increment still ports only the adaptive emitter. It must not treat “adaptive and pricing are separate forever” as design intent. The earlier note that EXPM was merely a candidate accelerator, and that Go should call Python RK45, is **superseded**.
 
 ## 3. Decisions for QuanTRAM
 
@@ -68,12 +74,12 @@ This P-03 increment ports only what SADE **did** prove and lift: the adaptive em
 | SDX / SADE `sdx_client` | **Do not use** on the live path. SDX remains an offline CSV tool in another repo. |
 | Adaptive mathematics | **Go black box** in this process (`internal/adaptive`). Stdlib scalar math; no NumPy/SciPy on this path. |
 | Python adaptive wrapper / `ModelInferenceService.Predict` | **Not required** for adaptive. A stateful Python wrapper is strictly worse (affinity + serialize-every-bar). Amends process-model P-04 for this increment. |
-| RK45 / pricing | **Deferred as code, not cancelled.** Target: PriceEngine decides on RK45 trajectories, joined to the adaptive model. Transport: Go holds bars/F4; Python RK45 is a **called** solver (or later Go equivalent proved against it), not a gRPC client of P-02. |
+| Pricing / EXPM | **Deferred as code, not cancelled.** Target: PriceEngine decides on Go EXPM trajectories (`time_term == false` only), joined to the adaptive model. Offline oracle is SADE `solve_cover_rk45_reference` (frozen copy of APTF `run_test_013b_qqq_validation.py::solve_cover`). No APTF repo dependency; no RK45 in the Go runtime. |
 | Persistence of bars | Still not required. P-03 holds **per-symbol scientific state** only (D01 runtime + 15-context). |
 | CSV in QuanTRAM | Allowed only as an **offline equivalence harness** that maps rows into `domain.Bar` and calls the same Go engine. |
 | Orders / risk | Out of scope. `DecisionEvent` is the stop line. Emitter LONG/SHORT is `emitter_position_state` (scientific context), not an account position. |
 
-Process-model amendment (this increment): P-03 **owns** the proved adaptive path in Go. P-04 is reserved for the unfinished RK45 / PriceEngine join (Python solver called by Go). Do not implement `ModelInferenceService` until that increment. Do not treat Finding 001 `expm` as the final PriceEngine producer until RK45 migration and equivalence are closed.
+Process-model amendment (this increment): P-03 **owns** the proved adaptive path in Go. P-04 is reserved for the PriceEngine join on **Go EXPM** (same `time_term == false` contract as SADE production `solve_cover`). Do not implement `ModelInferenceService` until that increment. Do not carry RK45 into Go and do not call Python RK45 from the live path.
 
 ## 4. Runtime topology (local Phase 0)
 
@@ -386,7 +392,7 @@ Do **not** require live IEX prices to match Unit Run 001.
 ## 10. Explicitly out of increment
 
 - P-05 risk, P-06 paper orders, ledger, benchmark
-- Completing APTF→SADE RK45 migration, joining adaptive output to PriceEngine, or treating `expm` as the destination producer
+- Joining adaptive output to PriceEngine; implementing Go EXPM / F4 / policy (next scientific increment). Oracle is SADE `solve_cover_rk45_reference`, not a live sidecar and not an APTF checkout.
 - Databento, SIP, tick aggregation
 - Azure / AKS sharding
 - Dashboard decision views until `ModelService` is registered (optional northbound can follow the first green equivalence test)
@@ -400,3 +406,5 @@ Do **not** require live IEX prices to match Unit Run 001.
 | August 31, 2026 | RK45 recorded as the scientific authority (golden nugget) for the PriceEngine decision; expm is an optional match to that cover, not a substitute definition. |
 | August 31, 2026 | Incorporated `P03_feedback_083126.md`: model delivery (no silent drop), cold start, global infer Phase 0, transactional Step, DecisionEvent, IntervalStart event time, health/replay/DoD. |
 | August 31, 2026 | Phases A–C landed: collocated Go D01→D02→D04→emitter, `DecisionEvent` domain types, Unit Run 001 equivalence. Phase D0 / host / proto still open. |
+| August 31, 2026 | Superseded RK45-as-destination: Go production PriceEngine uses EXPM only (`time_term == false`; reject `true`). Frozen Python RK45 is the Gold Nugget validation oracle, not a Go runtime or called solver. Finding 001: 55 solves / 605 points; downstream equivalence passed. |
+| August 31, 2026 | RK45 lineage recorded: APTF `run_test_013b_qqq_validation.py::solve_cover` → SADE `projection.py::solve_cover_rk45_reference`. Go validation uses the SADE frozen reference only; no APTF repository dependency. |
