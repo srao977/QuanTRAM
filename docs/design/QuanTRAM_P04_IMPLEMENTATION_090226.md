@@ -141,13 +141,15 @@ Do not start `sdx-server` or `python -m sade.unit_run.run_pricing_001` in CI.
 
 Do **not** add `Evaluate` / `ModelInferenceService` in this increment.
 
-### Gaps, pause, and restart (live IEX, 2 Sep)
+### Continuity (updated 2 Sep, after freeze)
 
-A host-gate `INPUT_GAP` is **not** “no more bars after the last print.” It means a later eligible bar arrived whose `IntervalStart` was not exactly one minute after the last accepted bar (common when IEX omits a no-trade minute). The symbol is then `STATE_DISCONTINUOUS`. Adaptive and pricing both stop. The ingestion model path may also drop later bars (`model path skip … INPUT_GAP`) so they never reach the host.
+Model continuity is **causal observation continuity**, not fixed one-minute timestamp adjacency. Classifier: `internal/domain/continuity.go`.
 
-Silence (no new bar) does not emit a gap. The viewer keeps the last good row.
+A provider-omitted minute (`10:31 → 10:34`) is a valid irregular interval. Adaptive and Price Engine both step on that accepted bar. Actual `IntervalStart` is preserved (P-04 `x = t - t_index` in minutes). The one-minute EXPM cover is a **projection horizon**, not an incoming-bar spacing rule. No synthetic flat bar is inserted.
 
-There is no live `ResetModelPath` RPC yet. Recovery is **Ctrl+C** and re-run `Start-QuantramIngestion.ps1` with `QUANTRAM_MODEL=adaptive` and `QUANTRAM_PRICING=expm`. That is a cold start: Adaptive needs **15** consecutive accepted eligible minutes; Price Engine color needs **45**. Another hole during warm-up pauses that symbol again. Refresh Adaptive Pipeline after restart so the airport boards clear.
+`INPUT_GAP` / `STATE_DISCONTINUOUS` remain for **proven** loss: queue overflow, isolated panic, or a harness-proven missing eligible bar. Silence (no new bar) is not a gap.
+
+`Host.ResetSymbol` reinitializes one symbol (adaptive + pricing) and restarts warm-up. There is no operator reset RPC yet. Process restart is no longer required for a skipped IEX minute.
 
 ## 4. SADE file → Go file map
 
@@ -235,3 +237,4 @@ Phases A–I landed. Host and viewer are wired. Next work is live IEX color obse
 | September 2, 2026 | Phase H: same keyed worker, `QUANTRAM_PRICING=off|expm`, transactional prepare/commit, rollback/replay, `GetHealth` pricing component. No proto / dashboard. |
 | September 2, 2026 | Phase I: `StreamPriceEvents`, dashboard Price Engine **stage** + output card, Departures / Arrivals airport boards. |
 | September 2, 2026 | Live IEX: documented `INPUT_GAP` / `STATE_DISCONTINUOUS` (missing adjacent minute, not end-of-data). Restart = cold start (15 Adaptive + 45 Price Engine consecutive eligible minutes). |
+| September 2, 2026 | False adjacency latch removed. Irregular provider intervals accepted on the same bar by P-03 and P-04. Pricing science unchanged. |

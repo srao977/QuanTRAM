@@ -13,12 +13,18 @@ import (
 	"quantram/internal/ingestion"
 )
 
+type missingEligible struct {
+	symbol string
+	start  time.Time
+}
+
 type fakeSource struct {
-	mu     sync.Mutex
-	bars   chan domain.Bar
-	infer  bool
-	subs   int
-	status map[string]ingestion.ModelPathStatus
+	mu      sync.Mutex
+	bars    chan domain.Bar
+	infer   bool
+	subs    int
+	status  map[string]ingestion.ModelPathStatus
+	missing []missingEligible
 }
 
 func newFake(buffer int) *fakeSource {
@@ -58,6 +64,30 @@ func (f *fakeSource) setStatus(symbol string, st ingestion.ModelPathStatus) {
 	f.status[symbol] = st
 }
 func (f *fakeSource) push(bar domain.Bar) { f.bars <- bar }
+
+func (f *fakeSource) ResetModelPath(symbol string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	delete(f.status, symbol)
+	f.missing = nil
+}
+
+func (f *fakeSource) ProvenMissingEligible(symbol string, from, to time.Time) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, miss := range f.missing {
+		if miss.symbol == symbol && miss.start.After(from) && miss.start.Before(to) {
+			return true
+		}
+	}
+	return false
+}
+
+func (f *fakeSource) addMissing(symbol string, start time.Time) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.missing = append(f.missing, missingEligible{symbol: symbol, start: start})
+}
 
 func (f *fakeSource) subscribeCount() int {
 	f.mu.Lock()
@@ -185,21 +215,210 @@ func TestDuplicateOrRegressionSkip(t *testing.T) {
 	}
 }
 
-func TestHostInputGapMarksDiscontinuous(t *testing.T) {
+func TestHostNormalMinuteSequence(t *testing.T) {
 	src := newFake(8)
 	host, _ := startHost(t, src, []string{"AAPL"}, Options{})
-	start := time.Date(2026, 9, 1, 13, 30, 0, 0, time.UTC)
+	start := time.Date(2026, 9, 1, 13, 31, 0, 0, time.UTC)
+	for i := 0; i < 3; i++ {
+		src.push(finalBar("AAPL", start.Add(time.Duration(i)*time.Minute), 100+float64(i)))
+	}
+	events := collect(t, host.Events(), 3, time.Second)
+	for i, ev := range events {
+		if ev.IsSkip() && (ev.Skip.Reason == domain.SkipInputGap || ev.Skip.Reason == domain.SkipStateDiscontinuous) {
+			t.Fatalf("step %d unexpected continuity skip %+v", i+1, ev.Skip)
+		}
+		if !ev.IsSkip() || ev.Skip.Reason != domain.SkipInitializing {
+			t.Fatalf("step %d want INITIALIZING, got %+v / %+v", i+1, ev.Decision, ev.Skip)
+		}
+	}
+	if host.WorkerCompleted("AAPL") != 3 {
+		t.Fatalf("completed=%d", host.WorkerCompleted("AAPL"))
+	}
+}
+
+func TestHostIrregularIntervalAccepted(t *testing.T) {
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{})
+	start := time.Date(2026, 9, 1, 13, 31, 0, 0, time.UTC)
 	src.push(finalBar("AAPL", start, 100))
-	_ = collect(t, host.Events(), 1, time.Second)
+	src.push(finalBar("AAPL", start.Add(time.Minute), 101))
+	_ = collect(t, host.Events(), 2, time.Second)
+	hash := host.WorkerHash("AAPL")
 	src.push(finalBar("AAPL", start.Add(3*time.Minute), 103))
 	ev := collect(t, host.Events(), 1, time.Second)[0]
-	if !ev.IsSkip() || ev.Skip.Reason != domain.SkipInputGap {
-		t.Fatalf("want INPUT_GAP, got %+v", ev.Skip)
+	if ev.IsSkip() && (ev.Skip.Reason == domain.SkipInputGap || ev.Skip.Reason == domain.SkipStateDiscontinuous) {
+		t.Fatalf("10:34 must not be INPUT_GAP, got %+v", ev.Skip)
 	}
-	src.push(finalBar("AAPL", start.Add(4*time.Minute), 104))
+	if host.WorkerCompleted("AAPL") != 3 {
+		t.Fatalf("irregular bar must advance science, completed=%d", host.WorkerCompleted("AAPL"))
+	}
+	if host.WorkerHash("AAPL") == hash {
+		t.Fatal("10:34 must commit new adaptive state")
+	}
+	if host.SymbolHealth("AAPL").Status == StatusDiscontinuous {
+		t.Fatal("irregular interval must not latch discontinuity")
+	}
+}
+
+func TestHostLongerIrregularIntervalAccepted(t *testing.T) {
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{})
+	start := time.Date(2026, 9, 1, 13, 31, 0, 0, time.UTC)
+	src.push(finalBar("AAPL", start, 100))
+	_ = collect(t, host.Events(), 1, time.Second)
+	src.push(finalBar("AAPL", start.Add(5*time.Minute), 105))
+	ev := collect(t, host.Events(), 1, time.Second)[0]
+	if ev.IsSkip() && ev.Skip.Reason == domain.SkipInputGap {
+		t.Fatalf("5-minute irregular must be accepted, got %+v", ev.Skip)
+	}
+	if host.WorkerCompleted("AAPL") != 2 {
+		t.Fatalf("completed=%d", host.WorkerCompleted("AAPL"))
+	}
+}
+
+func TestHostOutOfOrderRejected(t *testing.T) {
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{})
+	start := time.Date(2026, 9, 1, 13, 31, 0, 0, time.UTC)
+	src.push(finalBar("AAPL", start.Add(3*time.Minute), 103))
+	_ = collect(t, host.Events(), 1, time.Second)
+	hash := host.WorkerHash("AAPL")
+	count := host.WorkerCompleted("AAPL")
+	src.push(finalBar("AAPL", start.Add(2*time.Minute), 102))
+	ev := collect(t, host.Events(), 1, time.Second)[0]
+	if !ev.IsSkip() || ev.Skip.Reason != domain.SkipDuplicateOrRegression {
+		t.Fatalf("want DUPLICATE_OR_REGRESSION, got %+v", ev.Skip)
+	}
+	if host.WorkerHash("AAPL") != hash || host.WorkerCompleted("AAPL") != count {
+		t.Fatal("out-of-order bar mutated state")
+	}
+}
+
+func TestHostProvenMissingEligibleLatches(t *testing.T) {
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{})
+	start := time.Date(2026, 9, 1, 13, 31, 0, 0, time.UTC)
+	src.push(finalBar("AAPL", start, 100))
+	_ = collect(t, host.Events(), 1, time.Second)
+	src.addMissing("AAPL", start.Add(time.Minute))
+	src.push(finalBar("AAPL", start.Add(2*time.Minute), 102))
+	ev := collect(t, host.Events(), 1, time.Second)[0]
+	if !ev.IsSkip() || ev.Skip.Reason != domain.SkipInputGap {
+		t.Fatalf("want INPUT_GAP for proven missing eligible, got %+v", ev.Skip)
+	}
+	src.push(finalBar("AAPL", start.Add(3*time.Minute), 103))
 	ev = collect(t, host.Events(), 1, time.Second)[0]
 	if !ev.IsSkip() || ev.Skip.Reason != domain.SkipStateDiscontinuous {
-		t.Fatalf("later bar must be STATE_DISCONTINUOUS, got %+v", ev.Skip)
+		t.Fatalf("later bar must stay STATE_DISCONTINUOUS, got %+v", ev.Skip)
+	}
+}
+
+func TestHostOverflowIsolatesSymbol(t *testing.T) {
+	src := newFake(16)
+	host, _ := startHost(t, src, []string{"AAPL", "MSFT"}, Options{Delay: 80 * time.Millisecond, InboxSize: 2})
+	start := time.Date(2026, 9, 1, 13, 31, 0, 0, time.UTC)
+	for i := 0; i < 6; i++ {
+		src.push(finalBar("AAPL", start.Add(time.Duration(i)*time.Minute), 100+float64(i)))
+	}
+	deadline := time.After(2 * time.Second)
+	var sawOverflow bool
+	for !sawOverflow {
+		select {
+		case ev := <-host.Events():
+			if ev.Symbol == "AAPL" && ev.Skip != nil && ev.Skip.Reason == domain.SkipQueueOverflow {
+				sawOverflow = true
+			}
+		case <-deadline:
+			t.Fatal("expected QUEUE_OVERFLOW")
+		}
+	}
+	src.push(finalBar("MSFT", start, 200))
+	var msft *domain.DecisionEvent
+	deadline = time.After(time.Second)
+	for msft == nil {
+		select {
+		case ev := <-host.Events():
+			if ev.Symbol == "MSFT" {
+				cp := ev
+				msft = &cp
+			}
+		case <-deadline:
+			t.Fatal("MSFT did not continue after AAPL overflow")
+		}
+	}
+	if msft.IsSkip() && (msft.Skip.Reason == domain.SkipStateDiscontinuous || msft.Skip.Reason == domain.SkipQueueOverflow) {
+		t.Fatalf("MSFT must not inherit AAPL discontinuity, got %+v", msft.Skip)
+	}
+}
+
+func TestHostIrregularDoesNotRestartWarmup(t *testing.T) {
+	src := newFake(32)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{})
+	start := time.Date(2026, 9, 1, 13, 31, 0, 0, time.UTC)
+	accepted := 0
+	for i := 0; i < adaptive.ContextLength; i++ {
+		delta := time.Duration(i) * time.Minute
+		if i == 8 {
+			delta = 10 * time.Minute
+		} else if i > 8 {
+			delta = time.Duration(i+2) * time.Minute
+		}
+		src.push(finalBar("AAPL", start.Add(delta), 100+float64(i)))
+		ev := collect(t, host.Events(), 1, time.Second)[0]
+		if ev.IsSkip() && ev.Skip.Reason == domain.SkipInitializing {
+			accepted++
+			continue
+		}
+		t.Fatalf("step %d want INITIALIZING through irregular, got %+v", i+1, ev.Skip)
+	}
+	if accepted != adaptive.ContextLength || host.WorkerCompleted("AAPL") != adaptive.ContextLength {
+		t.Fatalf("warmup restarted accepted=%d completed=%d", accepted, host.WorkerCompleted("AAPL"))
+	}
+	src.push(finalBar("AAPL", start.Add(18*time.Minute), 120))
+	ev := collect(t, host.Events(), 1, time.Second)[0]
+	if !ev.IsDecision() || ev.Decision.ModelStatus != domain.StatusActionable {
+		t.Fatalf("16th after irregular warmup should be ACTIONABLE, got %+v / %+v", ev.Decision, ev.Skip)
+	}
+}
+
+func TestResetSymbolReplayMatchesUninterrupted(t *testing.T) {
+	start := time.Date(2026, 9, 1, 13, 31, 0, 0, time.UTC)
+	bars := []domain.Bar{
+		finalBar("AAPL", start, 100),
+		finalBar("AAPL", start.Add(time.Minute), 101),
+		finalBar("AAPL", start.Add(2*time.Minute), 102),
+	}
+
+	cleanSrc := newFake(8)
+	clean, _ := startHost(t, cleanSrc, []string{"AAPL"}, Options{Pricing: config.PricingExpm})
+	for _, bar := range bars {
+		cleanSrc.push(bar)
+	}
+	_ = collect(t, clean.Events(), 3, time.Second)
+	wantA, wantP := clean.WorkerHash("AAPL"), clean.WorkerPricingHash("AAPL")
+
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{Pricing: config.PricingExpm})
+	src.push(bars[0])
+	_ = collect(t, host.Events(), 1, time.Second)
+	src.addMissing("AAPL", start.Add(time.Minute))
+	src.push(finalBar("AAPL", start.Add(2*time.Minute), 199))
+	ev := collect(t, host.Events(), 1, time.Second)[0]
+	if !ev.IsSkip() || ev.Skip.Reason != domain.SkipInputGap {
+		t.Fatalf("want proven INPUT_GAP, got %+v", ev.Skip)
+	}
+	if err := host.ResetSymbol("AAPL"); err != nil {
+		t.Fatal(err)
+	}
+	if host.WorkerCompleted("AAPL") != 0 {
+		t.Fatal("reset must restart warm-up")
+	}
+	for _, bar := range bars {
+		src.push(bar)
+	}
+	_ = collect(t, host.Events(), 3, time.Second)
+	if host.WorkerHash("AAPL") != wantA || host.WorkerPricingHash("AAPL") != wantP {
+		t.Fatal("reset+replay must match uninterrupted adaptive and pricing hashes")
 	}
 }
 
@@ -473,20 +692,40 @@ func TestPricingInferPauseDoesNotReset(t *testing.T) {
 	}
 }
 
-func TestPricingGapDoesNotStep(t *testing.T) {
+func TestPricingIrregularIntervalStepsBoth(t *testing.T) {
 	src := newFake(8)
 	host, _ := startHost(t, src, []string{"AAPL"}, Options{Pricing: config.PricingExpm})
 	start := time.Date(2026, 9, 1, 13, 30, 0, 0, time.UTC)
 	src.push(finalBar("AAPL", start, 100))
 	_ = collect(t, host.Events(), 1, time.Second)
-	hashP := host.WorkerPricingHash("AAPL")
+	hashA, hashP := host.WorkerHash("AAPL"), host.WorkerPricingHash("AAPL")
 	src.push(finalBar("AAPL", start.Add(3*time.Minute), 103))
 	ev := collect(t, host.Events(), 1, time.Second)[0]
-	if !ev.IsSkip() || ev.Skip.Reason != domain.SkipInputGap {
-		t.Fatalf("want INPUT_GAP, got %+v", ev.Skip)
+	if ev.IsSkip() && ev.Skip.Reason == domain.SkipInputGap {
+		t.Fatalf("irregular must not skip as INPUT_GAP, got %+v", ev.Skip)
 	}
-	if host.WorkerPricingHash("AAPL") != hashP || host.WorkerPricingReceived("AAPL") != 1 {
-		t.Fatal("gap stepped pricing")
+	if host.WorkerCompleted("AAPL") != 2 || host.WorkerPricingReceived("AAPL") != 2 {
+		t.Fatalf("both engines must step completed=%d pricing=%d", host.WorkerCompleted("AAPL"), host.WorkerPricingReceived("AAPL"))
+	}
+	if host.WorkerHash("AAPL") == hashA || host.WorkerPricingHash("AAPL") == hashP {
+		t.Fatal("irregular bar must commit adaptive and pricing")
+	}
+}
+
+func TestPricingRejectedBarDoesNotStep(t *testing.T) {
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{Pricing: config.PricingExpm})
+	start := time.Date(2026, 9, 1, 13, 30, 0, 0, time.UTC)
+	src.push(finalBar("AAPL", start, 100))
+	_ = collect(t, host.Events(), 1, time.Second)
+	hashA, hashP := host.WorkerHash("AAPL"), host.WorkerPricingHash("AAPL")
+	src.push(finalBar("AAPL", start, 100))
+	ev := collect(t, host.Events(), 1, time.Second)[0]
+	if !ev.IsSkip() || ev.Skip.Reason != domain.SkipDuplicateOrRegression {
+		t.Fatalf("want DUPLICATE_OR_REGRESSION, got %+v", ev.Skip)
+	}
+	if host.WorkerHash("AAPL") != hashA || host.WorkerPricingHash("AAPL") != hashP || host.WorkerPricingReceived("AAPL") != 1 {
+		t.Fatal("rejected bar must not advance adaptive or pricing")
 	}
 }
 

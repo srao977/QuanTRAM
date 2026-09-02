@@ -38,7 +38,7 @@ The August 31 work makes a bar eligible for the next pipeline component (P-03 Ad
 `infer` is true only when **all** of the following hold (`internal/domain/quality.go`):
 
 1. The shared feed breaker is `HEALTHY`.
-2. Every configured symbol has **two adjacent** finalized 1-minute bars (no skipped minute between the last two finals).
+2. Every configured symbol has **two causally ordered** finalized bars (later `IntervalStart` strictly after earlier). A skipped provider minute is allowed. Fixed one-minute adjacency is **not** required.
 3. The latest finalized bar is **model-eligible**: `is_final=true`, `quality_status=COMPLETE`, `is_backfilled=false`.
 4. For live Alpaca (`ALPACA_IEX` or `ALPACA_TEST`), that last bar’s `interval_end` is within **90 seconds** of now (`MaxFinalLateness`). CSV replay does not use wall-clock freshness.
 
@@ -185,3 +185,4 @@ Default script feed is still `test` / `FAKEPACA`. Use `-Feed iex` for regular-ho
 | September 1, 2026 | P-03 Phase D host wired; ingest default remains `QUANTRAM_MODEL=off`. |
 | September 1, 2026 | P-03 Phase E: `ModelService.StreamDecisions` on `:50051`. |
 | September 1, 2026 | Live IEX DecisionEvents observed; Adaptive Pipeline viewer in `quantram-dashboard`. Model path does not consume REST backfill (eligible-only mailbox, depth 64). |
+| September 2, 2026 | `infer` continuity is causal observation order, not exact one-minute adjacency. A provider-omitted minute does not clear `infer`. |

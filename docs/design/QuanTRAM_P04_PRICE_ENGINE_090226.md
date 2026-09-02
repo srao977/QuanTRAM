@@ -145,7 +145,7 @@ Production projection is `sade/pricing_pipeline/projection.py::solve_cover` → 
 | :--- | :--- |
 | Process ID | **P-04** is PriceEngine / Go EXPM. The August 29 process-model P-04 (Python adaptive `Predict` worker) is **superseded**. Adaptive math stays in P-03. |
 | Live input | Same **accepted eligible** bars as P-03 (`SubscribeModelBars` / `ModelEligible()`, adjacency, Phase 0 `infer`). Not the lossy observe stream. Not REST backfill. |
-| Join | **Sibling on the bar**, not a consumer of `Decision.side`. After the host accepts a bar for the symbol, P-03 and P-04 both step. Adaptive `INITIALIZING` still feeds pricing. A host-gate skip (`INPUT_GAP`, `QUEUE_OVERFLOW`, `NOT_MODEL_ELIGIBLE`, …) feeds **neither**. |
+| Join | **Sibling on the bar**, not a consumer of `Decision.side`. After the host accepts a bar for the symbol, P-03 and P-04 both step, including valid irregular intervals. Adaptive `INITIALIZING` still feeds pricing. A host-gate skip (`QUEUE_OVERFLOW`, proven `INPUT_GAP`, `NOT_MODEL_ELIGIBLE`, …) feeds **neither**. |
 | Time basis | Live: `Bar.IntervalStart` as minutes (`unix_ms / 60_000`), same event-time lock as P-03. Offline fixture: parse `source_timestamp` into `IntervalStart` the same way P-03 Unit Run 001 tests do. Consecutive 1-minute bars make the quadratic `x = t - t_index` independent of wall timezone. |
 | Active index | SADE evaluates derivatives / F4 / cover at `active_index = current - 1` (newest close is pending). Preserve that lag. Do not fit F4 on the newest row (`fit_f4_at_index` requires `index < len(p)-1`). |
 | Solver | Go production = **4×4 affine EXPM** (`time_term == false` only). Reject `true` with `ANALYTIC_TIME_TERM_UNSUPPORTED`. Do not port `solve_cover_rk45_reference`. Offline Gold Nugget remains SADE Python RK45; QuanTRAM tests compare to **checked-in SADE EXPM outputs**, not a live Python process. |
@@ -265,8 +265,8 @@ HOLD remains a P-03 decision. GREEN/AMBER/RED is a P-04 emission. Do not invent 
 - Frozen Pricing Unit Run 001 compare: status counts 15 / 30 / 55; color/phase/confidence/`rk_success`/`domain_exit` within a stated tolerance table (eigenvalue / cond / amplification are MEDIUM-HIGH drift risk — investigation F.2.5).
 - Fixture SHA-256 recorded at check-in (do not reuse the August 25 SADE report hashes blindly; re-hash the copied file).
 - `time_term true` rejected; RK45 not imported.
-- Host: pricing off by default; `expm` requires `adaptive`; gap/overflow still pause **both**; infer pause-not-reset applies to pricing state too.
-- `go test ./...` green. `StreamPriceEvents` and viewer cards landed 2 Sep. Live IEX color is not claimed until a regular-hours emitted `PriceEvent` is accepted (warm-up + `INPUT_GAP` pause observed 2 Sep).
+- Host: pricing off by default; `expm` requires `adaptive`; overflow / proven loss still pause **both**; a skipped provider minute does not. Infer pause-not-reset applies to pricing state too.
+- `go test ./...` green. `StreamPriceEvents` and viewer cards landed 2 Sep. Live IEX color is not claimed until a regular-hours emitted `PriceEvent` is accepted. A skipped provider minute no longer pauses pricing.
 - No P-04 output connected to orders.
 
 ## 9. Change log
@@ -278,3 +278,4 @@ HOLD remains a P-03 decision. GREEN/AMBER/RED is a P-04 emission. Do not invent 
 | September 2, 2026 | Phase H host join: collocated EXPM on the same accepted bar as P-03; commit both or neither; pricing default off. |
 | September 2, 2026 | Phase I: `StreamPriceEvents`; dashboard Price Engine stage + output card; Departures / Arrivals airport boards. |
 | September 2, 2026 | Live IEX: `INPUT_GAP` / `STATE_DISCONTINUOUS` is a missing adjacent minute (not end-of-data). Restart is a cold start (15 Adaptive + 45 Price Engine consecutive accepted minutes). |
+| September 2, 2026 | Incoming bar spacing is not required to be one minute. EXPM horizon remains one minute. Irregular accepted bars step pricing with actual timestamps. |

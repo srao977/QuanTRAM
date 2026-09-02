@@ -54,14 +54,20 @@ func (p *Pipeline) fanoutModel(bar domain.Bar) {
 		return
 	}
 	if last, ok := p.modelLast[bar.Symbol]; ok {
-		if !bar.IntervalStart.After(last) {
+		class, elapsed := domain.ClassifyBarContinuity(last, true, bar.IntervalStart)
+		switch class {
+		case domain.ContinuityDuplicate, domain.ContinuityRegression:
+			log.Printf("model path skip symbol=%s reason=%s last=%s current=%s elapsed=%s", bar.Symbol, class, last.UTC().Format(time.RFC3339), bar.IntervalStart.UTC().Format(time.RFC3339), elapsed)
 			return
-		}
-		if bar.IntervalStart.Sub(last) != time.Minute {
-			p.modelDisc[bar.Symbol] = domain.SkipInputGap
-			log.Printf("model path INPUT_GAP symbol=%s last=%s got=%s", bar.Symbol, last.UTC().Format(time.RFC3339), bar.IntervalStart.UTC().Format(time.RFC3339))
+		case domain.ContinuityUnaligned:
+			log.Printf("model path skip symbol=%s reason=unaligned last=%s current=%s elapsed=%s", bar.Symbol, last.UTC().Format(time.RFC3339), bar.IntervalStart.UTC().Format(time.RFC3339), elapsed)
 			return
+		case domain.ContinuityIrregular:
+			log.Printf("model path accept irregular symbol=%s last=%s current=%s elapsed=%s", bar.Symbol, last.UTC().Format(time.RFC3339), bar.IntervalStart.UTC().Format(time.RFC3339), elapsed)
 		}
+	} else if class, _ := domain.ClassifyBarContinuity(time.Time{}, false, bar.IntervalStart); class == domain.ContinuityUnaligned {
+		log.Printf("model path skip symbol=%s reason=unaligned current=%s", bar.Symbol, bar.IntervalStart.UTC().Format(time.RFC3339))
+		return
 	}
 	for id, ch := range p.modelSubs {
 		select {
@@ -73,6 +79,21 @@ func (p *Pipeline) fanoutModel(bar domain.Bar) {
 		}
 	}
 	p.modelLast[bar.Symbol] = bar.IntervalStart
+}
+
+func (p *Pipeline) HasEligibleBetween(symbol string, from, to time.Time) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.hasEligibleBetweenLocked(symbol, from, to)
+}
+
+func (p *Pipeline) hasEligibleBetweenLocked(symbol string, from, to time.Time) bool {
+	for _, bar := range p.window.Window(symbol, 0) {
+		if bar.ModelEligible() && bar.IntervalStart.After(from) && bar.IntervalStart.Before(to) {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *Pipeline) ModelPathStatus(symbol string) ModelPathStatus {

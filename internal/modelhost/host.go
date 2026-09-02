@@ -57,6 +57,20 @@ type BarSource interface {
 	ModelPathStatus(symbol string) ingestion.ModelPathStatus
 }
 
+// provenMissingInspector is a test/harness hook. Live Pipeline does not implement
+// it: a skipped IEX minute is not evidence that a required observation was lost.
+type provenMissingInspector interface {
+	ProvenMissingEligible(symbol string, from, to time.Time) bool
+}
+
+type modelPathResetter interface {
+	ResetModelPath(symbol string)
+}
+
+func continuityDetail(class domain.ContinuityClass, last, current time.Time, elapsed time.Duration) string {
+	return fmt.Sprintf("%s last=%s current=%s elapsed=%s", class, last.UTC().Format(time.RFC3339), current.UTC().Format(time.RFC3339), elapsed)
+}
+
 type Options struct {
 	Mode      config.ModelMode
 	Pricing   config.PricingMode
@@ -189,6 +203,41 @@ func New(src BarSource, symbols []string, opts Options) (*Host, error) {
 	}
 	h.enabled.Store(true)
 	return h, nil
+}
+
+// ResetSymbol reinitializes one symbol's adaptive and pricing engines.
+// It is an explicit, auditable reinitialization (warm-up restarts). It is not
+// an operator RPC and must not be used to hide a live irregular interval.
+func (h *Host) ResetSymbol(symbol string) error {
+	if h == nil {
+		return fmt.Errorf("host is nil")
+	}
+	w := h.workers[symbol]
+	if w == nil {
+		return fmt.Errorf("unknown symbol %s", symbol)
+	}
+	w.engine = adaptive.NewEngine(symbol)
+	if h.opts.Pricing == config.PricingExpm && !h.pricingUnavail.Load() {
+		eng, err := pricing.NewEngine(symbol)
+		if err != nil {
+			return err
+		}
+		w.pricing = eng
+	} else {
+		w.pricing = nil
+	}
+	w.hasAccepted = false
+	w.lastAccepted = time.Time{}
+	w.disc.Store(false)
+	w.discReason.Store(domain.SkipReason(""))
+	w.lastSkip.Store(domain.SkipReason(""))
+	w.lastOutcome.Store(domain.Side(""))
+	w.lastPrice.Store(domain.PriceEvent{})
+	if r, ok := h.src.(modelPathResetter); ok {
+		r.ResetModelPath(symbol)
+	}
+	log.Printf("model reset symbol=%s (explicit per-symbol reinitialization)", symbol)
+	return nil
 }
 
 func (h *Host) FailNextPricing() {
@@ -448,20 +497,26 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 		h.emit(ev)
 		return
 	}
-	if w.hasAccepted {
-		if !bar.IntervalStart.After(w.lastAccepted) {
-			ev := h.gateSkip(bar, domain.SkipDuplicateOrRegression, pre)
-			w.lastSkip.Store(domain.SkipDuplicateOrRegression)
-			h.emit(ev)
-			return
+	if class, elapsed := domain.ClassifyBarContinuity(w.lastAccepted, w.hasAccepted, bar.IntervalStart); class != domain.ContinuityFirst && class != domain.ContinuityNormal && class != domain.ContinuityIrregular {
+		reason := domain.SkipDuplicateOrRegression
+		if class == domain.ContinuityUnaligned {
+			reason = domain.SkipInvalidInput
 		}
-		if bar.IntervalStart.Sub(w.lastAccepted) != time.Minute {
+		ev := h.gateSkip(bar, reason, pre)
+		ev.Skip.Detail = continuityDetail(class, w.lastAccepted, bar.IntervalStart, elapsed)
+		w.lastSkip.Store(reason)
+		h.emit(ev)
+		return
+	} else if class == domain.ContinuityIrregular {
+		if inspector, ok := h.src.(provenMissingInspector); ok && inspector.ProvenMissingEligible(w.symbol, w.lastAccepted, bar.IntervalStart) {
 			w.markDisc(domain.SkipInputGap)
 			ev := h.gateSkip(bar, domain.SkipInputGap, pre)
+			ev.Skip.Detail = continuityDetail(class, w.lastAccepted, bar.IntervalStart, elapsed) + " proven_missing_eligible"
 			w.lastSkip.Store(domain.SkipInputGap)
 			h.emit(ev)
 			return
 		}
+		log.Printf("model accept irregular symbol=%s last=%s current=%s elapsed=%s", w.symbol, w.lastAccepted.UTC().Format(time.RFC3339), bar.IntervalStart.UTC().Format(time.RFC3339), elapsed)
 	}
 
 	started := time.Now()

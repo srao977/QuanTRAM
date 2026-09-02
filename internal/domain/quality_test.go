@@ -47,8 +47,8 @@ func TestInferReadyRequiresContiguousLiveHead(t *testing.T) {
 	}
 
 	gapped := testBar(time.Date(2026, 8, 31, 16, 53, 0, 0, time.UTC), QualityComplete, true, false, "ALPACA_IEX")
-	if InferReady([]Bar{first, gapped}, now.Add(time.Minute)) {
-		t.Fatal("gapped series must not enable infer")
+	if !InferReady([]Bar{first, gapped}, now.Add(time.Minute)) {
+		t.Fatal("a skipped provider minute must still enable infer")
 	}
 
 	filled := testBar(first.IntervalStart, QualityReconstructed, true, true, "ALPACA_IEX")

@@ -126,8 +126,8 @@ func TestInferGatedOnQuality(t *testing.T) {
 	gapped.breaker.MarkHealthy()
 	gapped.accept(first)
 	gapped.accept(liveBar(minute.Add(3*time.Minute), 314, domain.QualityComplete, true, false))
-	if gapped.Readiness().Infer {
-		t.Fatal("gapped series must not enable infer")
+	if !gapped.Readiness().Infer {
+		t.Fatal("a skipped provider minute must still enable infer")
 	}
 
 	filled := NewPipeline(live, stubHistorical{bars: []domain.Bar{reconstructed}}, "CSV", []string{"AAPL"})

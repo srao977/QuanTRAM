@@ -226,7 +226,7 @@ Each process lists what it owns, what it consumes and produces, how it fails, ho
 
 **Proto:** `ModelService.StreamPriceEvents` fans out `PriceEvent` the way `StreamDecisions` fans out `DecisionEvent`. Off → `FailedPrecondition`; unavailable → `Unavailable`. Last-per-symbol catch-up, no durable history. Do **not** implement `ModelInferenceService`.
 
-**Local Phase 0:** Collocated in `quantram-server`. `QUANTRAM_PRICING=off` by default; `expm` requires `QUANTRAM_MODEL=adaptive`. Phases A–I landed 2 Sep. A host-gate `INPUT_GAP` means a later eligible bar was not exactly one minute after the last accepted bar (not “no more bars”). Recovery is a server restart (cold start: 15 Adaptive + 45 Price Engine consecutive accepted minutes).
+**Local Phase 0:** Collocated in `quantram-server`. `QUANTRAM_PRICING=off` by default; `expm` requires `QUANTRAM_MODEL=adaptive`. Phases A–I landed 2 Sep. Continuity is causal observation order: a skipped provider minute is a valid irregular interval, not `INPUT_GAP`. `STATE_DISCONTINUOUS` is reserved for proven loss (overflow / panic / proven missing eligible). `Host.ResetSymbol` reinitializes one symbol; no operator reset RPC yet.
 
 **Oracle:** SADE `solve_cover_rk45_reference` stays outside QuanTRAM. Go production is EXPM only (`gonum` v0.17.0 `Dense.Exp`).
 
@@ -780,6 +780,7 @@ Do not invent silent defaults for these in code that will drive money or promoti
 | :--- | :--- | :--- |
 | September 2, 2026 | 0.4 | P-04 redefined as collocated Go PriceEngine (EXPM). Python `ModelInferenceService` sidecar withdrawn. Linked P-04 design/implementation. S2/S3 marked partial after P-03 live DecisionEvents. |
 | September 2, 2026 | 0.5 | P-04 Phases A–I landed: `internal/pricing`, host join, `StreamPriceEvents`, dashboard Price Engine cards/boards. Default still `QUANTRAM_PRICING=off`. Live IEX `INPUT_GAP` documented as missing adjacent minute, not end-of-data. |
+| September 2, 2026 | 0.6 | Causal continuity: skipped provider minutes no longer latch `STATE_DISCONTINUOUS`. D01/D02/D04/P-04 mathematics unchanged. |
 | August 30, 2026 | 0.3 | Deferred full circuit breaker / Databento failover (S6); increment-1 reconnect is not treated as complete. |
 | August 30, 2026 | 0.2 | Marked S0/S1 partial after increment-1 ingestion implementation; linked the increment design; noted the adaptive model as a Go black box for S2. |
 | August 29, 2026 | 0.1 | Initial process model: ten server processes, Python inference sidecar, gRPC sketch, local Alpaca-paper topology, Azure scale-out mapping, and required versus optional planes. |

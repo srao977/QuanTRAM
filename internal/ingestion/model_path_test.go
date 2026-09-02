@@ -61,7 +61,7 @@ func TestSubscribeModelBarsNoSilentDrop(t *testing.T) {
 	}
 }
 
-func TestSubscribeModelBarsInputGap(t *testing.T) {
+func TestSubscribeModelBarsIrregularIntervalDelivers(t *testing.T) {
 	pipeline := newTestPipeline("AAPL")
 	id, bars := pipeline.SubscribeModelBars(8)
 	defer pipeline.Unsubscribe(id)
@@ -71,12 +71,12 @@ func TestSubscribeModelBarsInputGap(t *testing.T) {
 	pipeline.accept(liveBar(start.Add(2*time.Minute), 102, domain.QualityComplete, true, false))
 
 	status := pipeline.ModelPathStatus("AAPL")
-	if !status.Discontinuous || status.Reason != domain.SkipInputGap {
-		t.Fatalf("expected INPUT_GAP, got %+v", status)
+	if status.Discontinuous {
+		t.Fatalf("irregular interval must not latch discontinuity, got %+v", status)
 	}
 	got := drainBars(bars)
-	if len(got) != 1 || got[0].Close != 100 {
-		t.Fatalf("gapped bar must not be delivered, got %+v", closes(got))
+	if len(got) != 2 || got[0].Close != 100 || got[1].Close != 102 {
+		t.Fatalf("10:32-absent then 10:34 must deliver both bars, got %+v", closes(got))
 	}
 }
 

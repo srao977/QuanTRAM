@@ -47,6 +47,8 @@ func LastFinalized(bars []Bar) (Bar, bool) {
 	return Bar{}, false
 }
 
+// ContiguousFinalized reports whether the last n finalized bars are in causal
+// IntervalStart order. A skipped provider minute is allowed.
 func ContiguousFinalized(bars []Bar, n int) bool {
 	if n <= 0 {
 		return true
@@ -57,13 +59,15 @@ func ContiguousFinalized(bars []Bar, n int) bool {
 	}
 	tail := finals[len(finals)-n:]
 	for i := 1; i < len(tail); i++ {
-		if tail[i].IntervalStart.Sub(tail[i-1].IntervalStart) != time.Minute {
+		if !tail[i].IntervalStart.After(tail[i-1].IntervalStart) {
 			return false
 		}
 	}
 	return true
 }
 
+// InferReady is the P-02 quality gate. Continuity is causal observation
+// order (strictly increasing IntervalStart), not fixed one-minute adjacency.
 func InferReady(bars []Bar, now time.Time) bool {
 	if !ContiguousFinalized(bars, MinInferContiguous) {
 		return false

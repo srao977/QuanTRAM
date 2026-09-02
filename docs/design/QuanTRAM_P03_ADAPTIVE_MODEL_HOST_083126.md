@@ -110,7 +110,7 @@ P-03 may **commit** an engine step only when **all** of these hold:
 1. The bar arrived on the **model** finalized path (`is_final=true`).
 2. The Phase 0 `infer` policy in §5.4 allows evaluation.
 3. `bar.ModelEligible()` — `COMPLETE`, not backfilled.
-4. Per-symbol `IntervalStart` is **exactly one minute after** the last accepted step (adjacency), except the first accepted bar after a documented cold start.
+4. Per-symbol `IntervalStart` is **strictly after** the last accepted step, minute-aligned. A delta greater than one minute is a **valid irregular interval** unless there is independent evidence of required observation loss (queue overflow, panic, or a proven missing eligible bar). Do not synthesize a flat bar for the omitted minute.
 
 Otherwise emit a typed skip and leave scientific state unchanged. Do not reuse a previous decision as if it were new (OP-05).
 
@@ -263,13 +263,13 @@ HOLD is a **decision**. `emitter_position_state` is frozen SADE context, not P-0
 | `NOT_MODEL_ELIGIBLE` | Partial, reconstructed, not complete |
 | `INITIALIZING` | Accepted step, context not yet 15 |
 | `DUPLICATE_OR_REGRESSION` | `IntervalStart` ≤ last |
-| `INPUT_GAP` | Non-adjacent minute |
+| `INPUT_GAP` | Proven missing eligible observation (not a skipped IEX minute) |
 | `QUEUE_OVERFLOW` | Model mailbox would drop |
 | `TIMEOUT` | Step exceeded deadline; state not committed |
 | `INVALID_INPUT` | Non-finite / domain check |
 | `ENGINE_ERROR` | Scientific failure |
 | `ENGINE_PANIC` | Recovered panic |
-| `STATE_DISCONTINUOUS` | Symbol paused after gap/overflow |
+| `STATE_DISCONTINUOUS` | Symbol quarantined after proven loss (overflow / panic / INPUT_GAP) |
 
 `INITIALIZING` is an evaluated non-actionable outcome (has `signal_id`, no `decision_id`). Gate skips may omit `signal_id` only if the engine never ran; still require `event_id`.
 
@@ -414,3 +414,4 @@ Do **not** require live IEX prices to match Unit Run 001.
 | September 1, 2026 | Phase E: `ModelService.StreamDecisions` (`oneof` decision \| skip). |
 | September 2, 2026 | P-04 design published: Go PriceEngine/EXPM sibling on accepted bars. This P-03 doc no longer treats pricing as an unnamed “next session.” |
 | September 2, 2026 | P-04 Phases A–I landed. Adaptive still does not consume GREEN/AMBER/RED. |
+| September 2, 2026 | Runtime continuity is causal observation order. A skipped provider minute is a valid irregular interval. `INPUT_GAP` / `STATE_DISCONTINUOUS` reserved for proven loss. D01/D02/D04 mathematics unchanged. |

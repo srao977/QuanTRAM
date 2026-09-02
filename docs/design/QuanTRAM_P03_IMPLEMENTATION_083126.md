@@ -119,11 +119,11 @@ Result: 100 AAPL bars → 15 `INITIALIZING`, 8 BUY / 10 SELL / 67 HOLD. Exact `m
 Do **not** call `SubscribeFinalized(2)` for P-03. `FinalizedBarConsumer` / `SubscribeModelBars` is in `internal/ingestion/model_path.go`:
 
 - finalized-only; no silent drop-oldest
-- mailbox overflow → `QUEUE_OVERFLOW`; non-adjacent `IntervalStart` → `INPUT_GAP`; symbol stays discontinuous until `ResetModelPath`
+- mailbox overflow → `QUEUE_OVERFLOW`; irregular `IntervalStart` (skipped provider minute) is delivered; `INPUT_GAP` only for proven missing eligible observations; overflow/panic still latch until `ResetModelPath` / `Host.ResetSymbol`
 - later bars for that symbol are not delivered (so they cannot be evaluated)
 - `Subscribe` / `SubscribeFinalized` remain lossy observe hooks
 
-**Exit (met):** stall consumer, depth-2 mailbox, three finalized minutes: in-order prefix `[N, N+1]` retained; N+2 marks `QUEUE_OVERFLOW` and is not substituted for N. Adjacent-gap test marks `INPUT_GAP` and does not deliver the jumped bar. Partials still reach observe only.
+**Exit (met):** stall consumer, depth-2 mailbox, three finalized minutes: in-order prefix `[N, N+1]` retained; N+2 marks `QUEUE_OVERFLOW` and is not substituted for N. A jumped minute (10:31 → 10:34) is delivered as a valid irregular interval. Partials still reach observe only.
 
 ### Phase D — Model host — **done (1 Sep)**
 
@@ -253,3 +253,4 @@ Phases A–E are green in-process. Adaptive Pipeline landed in `quantram-dashboa
 | September 1, 2026 | Live fix: model path ignores backfill; mailbox 64. Restored gap-fill/reconnect no longer permanently pauses P-03 while P-02 observe stays healthy. |
 | September 2, 2026 | P-04 design/implementation docs. Adaptive remains this increment’s stop line (`DecisionEvent`). |
 | September 2, 2026 | P-04 Phases A–I landed in-repo (sibling on the same accepted bar). Adaptive still does not consume GREEN/AMBER/RED. |
+| September 2, 2026 | False `INPUT_GAP` latch removed. Continuity is causal (`internal/domain/continuity.go`). Irregular IEX minutes accepted. Overflow/panic still quarantine. `Host.ResetSymbol` is explicit per-symbol reinitialization (no operator RPC yet). |
