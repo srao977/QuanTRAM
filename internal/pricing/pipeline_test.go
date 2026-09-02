@@ -7,6 +7,15 @@ import (
 	"quantram/internal/domain"
 )
 
+func TestProjectionFailureKeepsSADEFixtureAlias(t *testing.T) {
+	if domain.PricingStatusProjectionFailure != "RK45_FAILURE" {
+		t.Fatalf("frozen SADE CSV status alias broken: %s", domain.PricingStatusProjectionFailure)
+	}
+	if domain.PricingSkipProjectionFail != "PROJECTION_FAILURE" {
+		t.Fatalf("canonical skip reason %s", domain.PricingSkipProjectionFail)
+	}
+}
+
 func TestPrepareStepDoesNotCommitUntilAsked(t *testing.T) {
 	eng, err := NewEngine("AAPL")
 	if err != nil {

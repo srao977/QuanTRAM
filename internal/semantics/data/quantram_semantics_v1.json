@@ -1,0 +1,3885 @@
+{
+  "semantic_contract": {
+    "name": "QuanTRAM Semantic Dictionary",
+    "version": "1.0",
+    "date": "2026-09-02",
+    "status": "INITIAL_CANONICAL_BASELINE",
+    "persistence_policy": "PERSIST_CANONICAL_RENDER_PRESENTATION"
+  },
+  "terms": [
+    {
+      "id": "ADAPTIVE_BUY",
+      "term": "BUY",
+      "display": "Buy",
+      "type": "DECISION",
+      "component": "ADAPTIVE_EMITTER",
+      "plain_meaning": "The Adaptive Emitter decided BUY on this accepted minute.",
+      "scientific_meaning": "decide() returns SideBuy when PathDirection is UPWARD, H==1, C \u003e= prior-15 median C, and UpCount \u003e= DownCount. Rule path UPWARD_AND_PRIOR_DIRECTION_AGREEMENT_AND_C_GE_PRIOR_MEDIAN. Sets scientific position LONG.",
+      "does_not_mean": [
+        "BUY is not a Price Engine GREEN.",
+        "BUY is not an OMS or broker order.",
+        "BUY is not the same as scientific LONG by itself; LONG is the resulting emitter position state."
+      ],
+      "related_terms": [
+        "ADAPTIVE_SELL",
+        "ADAPTIVE_HOLD",
+        "ADAPTIVE_LONG",
+        "PRICE_COLOR_GREEN"
+      ],
+      "interpretation": "A scientific buy decision, not an order and not a Price Engine color.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/engine.go",
+        "go_symbol": "decide",
+        "proto_enum_or_field": "quantram.v1.Side.SIDE_BUY",
+        "test_reference": "internal/adaptive/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "Adaptive Emitter decision: BUY. Not an order.",
+        "popover_title": "Buy",
+        "popover_body": "The emitter decided BUY because the return-shape path is upward, D04 hard eligibility is 1, capturability is at least the prior-15 median, and recent path counts agree with up. This does not place an order and is not a Price Engine color.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_SELL",
+      "term": "SELL",
+      "display": "Sell",
+      "type": "DECISION",
+      "component": "ADAPTIVE_EMITTER",
+      "plain_meaning": "The Adaptive Emitter decided SELL on this accepted minute.",
+      "scientific_meaning": "decide() returns SideSell when PathDirection is DOWNWARD, H==1, C \u003e= prior-15 median C, and DownCount \u003e= UpCount. Sets scientific position SHORT.",
+      "does_not_mean": [
+        "SELL is not a Price Engine RED.",
+        "SELL is not a broker order."
+      ],
+      "related_terms": [
+        "ADAPTIVE_BUY",
+        "ADAPTIVE_HOLD",
+        "ADAPTIVE_SHORT",
+        "PRICE_COLOR_RED"
+      ],
+      "interpretation": "A scientific sell decision, not an order and not Price Engine RED.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/engine.go",
+        "go_symbol": "decide",
+        "proto_enum_or_field": "quantram.v1.Side.SIDE_SELL",
+        "test_reference": "internal/adaptive/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "Adaptive Emitter decision: SELL. Not an order.",
+        "popover_title": "Sell",
+        "popover_body": "The emitter decided SELL under the downward path-agreement predicate. This is not an execution instruction and is independent of Price Engine color.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_HOLD",
+      "term": "HOLD",
+      "display": "Hold",
+      "type": "DECISION",
+      "component": "ADAPTIVE_EMITTER",
+      "plain_meaning": "The Adaptive Emitter decided HOLD. Hold is a decision, not a skip.",
+      "scientific_meaning": "decide() returns SideHold when the BUY/SELL predicate is not satisfied (rule AFFIRM_POSITION_STATE_TRANSITION_PREDICATE_NOT_SATISFIED). Emitter position is left unchanged.",
+      "does_not_mean": [
+        "HOLD is not the Price Engine airport status HOLDING.",
+        "HOLD is not Price Engine AMBER.",
+        "HOLD is not INITIALIZING and not a host-gate skip."
+      ],
+      "related_terms": [
+        "ADAPTIVE_BUY",
+        "ADAPTIVE_SELL",
+        "VIEWER_ADAPTIVE_HOLDING",
+        "PRICE_COLOR_AMBER"
+      ],
+      "interpretation": "An evaluated decision to keep the current scientific position.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/engine.go",
+        "go_symbol": "decide",
+        "proto_enum_or_field": "quantram.v1.Side.SIDE_HOLD",
+        "test_reference": "internal/adaptive/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "Adaptive decision HOLD. Not a skip, and not Price Engine HOLDING.",
+        "popover_title": "Hold",
+        "popover_body": "HOLD means the BUY/SELL transition predicate was not met. The scientific LONG/SHORT/FLAT position is unchanged. This is not the Arrivals-board word HOLDING, which is a viewer alias of Price Engine AMBER.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_LONG",
+      "term": "LONG",
+      "display": "Scientific LONG",
+      "type": "STATE",
+      "component": "ADAPTIVE_EMITTER",
+      "plain_meaning": "The emitter's scientific position is LONG after a BUY.",
+      "scientific_meaning": "EmitterPosition LONG. Set when Side is BUY (nextPosition = EmitterLong). Not an account position.",
+      "does_not_mean": [
+        "This is not a brokerage long position.",
+        "This is not Price Engine UP."
+      ],
+      "related_terms": [
+        "ADAPTIVE_SHORT",
+        "ADAPTIVE_FLAT",
+        "ADAPTIVE_BUY"
+      ],
+      "interpretation": "Scientific LONG/SHORT/FLAT tracks emitter state, not ledger quantity.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/decision.go",
+        "go_symbol": "EmitterLong",
+        "proto_enum_or_field": "quantram.v1.EmitterPosition.EMITTER_POSITION_LONG",
+        "test_reference": "internal/adaptive/engine.go"
+      },
+      "ui": {
+        "tooltip": "Scientific emitter position LONG, not an account position.",
+        "popover_title": "Scientific LONG",
+        "popover_body": "After a BUY decision the emitter stores LONG. It is not P-05/P-08 position or inventory.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_SHORT",
+      "term": "SHORT",
+      "display": "Scientific SHORT",
+      "type": "STATE",
+      "component": "ADAPTIVE_EMITTER",
+      "plain_meaning": "The emitter's scientific position is SHORT after a SELL.",
+      "scientific_meaning": "EmitterPosition SHORT. Set when Side is SELL. Not an account short.",
+      "does_not_mean": [
+        "This is not a brokerage short.",
+        "This is not Price Engine DOWN."
+      ],
+      "related_terms": [
+        "ADAPTIVE_LONG",
+        "ADAPTIVE_FLAT",
+        "ADAPTIVE_SELL"
+      ],
+      "interpretation": "The emitter's scientific position is SHORT after a SELL.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/decision.go",
+        "go_symbol": "EmitterShort",
+        "proto_enum_or_field": "quantram.v1.EmitterPosition.EMITTER_POSITION_SHORT",
+        "test_reference": "internal/adaptive/engine.go"
+      },
+      "ui": {
+        "tooltip": "Scientific emitter position SHORT, not an account short.",
+        "popover_title": "Scientific SHORT",
+        "popover_body": "After a SELL decision the emitter stores SHORT. Combined dashboard text such as Hold · scientific SHORT means HOLD decision plus leftover SHORT position.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_FLAT",
+      "term": "FLAT",
+      "display": "Scientific FLAT",
+      "type": "STATE",
+      "component": "ADAPTIVE_EMITTER",
+      "plain_meaning": "The emitter has no LONG or SHORT scientific position.",
+      "scientific_meaning": "EmitterPosition FLAT. Initial engine state before any BUY/SELL.",
+      "does_not_mean": [
+        "FLAT is not PathDirection FLAT.",
+        "FLAT is not a skip."
+      ],
+      "related_terms": [
+        "ADAPTIVE_LONG",
+        "ADAPTIVE_SHORT",
+        "ADAPTIVE_PATH_FLAT"
+      ],
+      "interpretation": "The emitter has no LONG or SHORT scientific position.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/decision.go",
+        "go_symbol": "EmitterFlat",
+        "proto_enum_or_field": "quantram.v1.EmitterPosition.EMITTER_POSITION_FLAT",
+        "test_reference": "internal/adaptive/engine.go"
+      },
+      "ui": {
+        "tooltip": "Scientific emitter position FLAT.",
+        "popover_title": "Scientific FLAT",
+        "popover_body": "FLAT is the emitter position before any BUY or SELL. It is a different enum from D02 path FLAT.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_PATH_UPWARD",
+      "term": "UPWARD",
+      "display": "Upward",
+      "type": "CLASSIFICATION",
+      "component": "D02",
+      "plain_meaning": "The elastic return shape's terminal displacement is positive.",
+      "scientific_meaning": "PathDirection UPWARD when TerminalDisplacement \u003e 0 in ValidateReturnShape / BuildReturnShape.",
+      "does_not_mean": [
+        "UPWARD is not automatically BUY.",
+        "UPWARD is not Price Engine UP_ACCELERATING."
+      ],
+      "related_terms": [
+        "ADAPTIVE_PATH_DOWNWARD",
+        "ADAPTIVE_PATH_FLAT",
+        "ADAPTIVE_BUY"
+      ],
+      "interpretation": "The elastic return shape's terminal displacement is positive.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/d02.go",
+        "go_symbol": "ReturnShape.PathDirection",
+        "proto_enum_or_field": "quantram.v1.PathDirection.PATH_DIRECTION_UPWARD",
+        "test_reference": "internal/adaptive/d04.go"
+      },
+      "ui": {
+        "tooltip": "D02 path is upward (positive terminal displacement).",
+        "popover_title": "Upward path",
+        "popover_body": "D02 classifies path from the sign of terminal displacement. BUY still requires H, C, and prior-direction agreement.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_PATH_DOWNWARD",
+      "term": "DOWNWARD",
+      "display": "Downward",
+      "type": "CLASSIFICATION",
+      "component": "D02",
+      "plain_meaning": "The elastic return shape's terminal displacement is negative.",
+      "scientific_meaning": "PathDirection DOWNWARD when TerminalDisplacement \u003c 0.",
+      "does_not_mean": [
+        "DOWNWARD is not automatically SELL."
+      ],
+      "related_terms": [
+        "ADAPTIVE_PATH_UPWARD",
+        "ADAPTIVE_SELL"
+      ],
+      "interpretation": "The elastic return shape's terminal displacement is negative.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/d02.go",
+        "go_symbol": "ReturnShape.PathDirection",
+        "proto_enum_or_field": "quantram.v1.PathDirection.PATH_DIRECTION_DOWNWARD",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "D02 path is downward (negative terminal displacement).",
+        "popover_title": "Downward path",
+        "popover_body": "Downward path is an input to the SELL predicate, not a SELL by itself.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_PATH_FLAT",
+      "term": "FLAT",
+      "display": "Flat path",
+      "type": "CLASSIFICATION",
+      "component": "D02",
+      "plain_meaning": "Terminal displacement of the return shape is zero.",
+      "scientific_meaning": "PathDirection FLAT when TerminalDisplacement == 0.",
+      "does_not_mean": [
+        "This is not emitter FLAT.",
+        "This is not HOLD."
+      ],
+      "related_terms": [
+        "ADAPTIVE_FLAT",
+        "ADAPTIVE_HOLD"
+      ],
+      "interpretation": "Terminal displacement of the return shape is zero.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/d02.go",
+        "go_symbol": "ReturnShape.PathDirection",
+        "proto_enum_or_field": "quantram.v1.PathDirection.PATH_DIRECTION_FLAT",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "D02 path is flat (zero terminal displacement).",
+        "popover_title": "Flat path",
+        "popover_body": "Path FLAT is a shape classification. Emitter FLAT is a position state. They share English but not identity.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_INITIALIZING",
+      "term": "INITIALIZING",
+      "display": "Initializing",
+      "type": "STATUS",
+      "component": "ADAPTIVE_EMITTER",
+      "plain_meaning": "The model is building its first 15 accepted eligible minutes. Not a failure.",
+      "scientific_meaning": "SkipInitializing when completedCount \u003c ContextLength (15). ActionableAfter = 16. State is committed. ModelStatus INITIALIZING.",
+      "does_not_mean": [
+        "Not a host-gate skip.",
+        "Not Price Engine WARMUP_DERIVATIVE/WARMUP_F4 (those need 45)."
+      ],
+      "related_terms": [
+        "ADAPTIVE_ACTIONABLE",
+        "PRICE_STATUS_WARMUP_DERIVATIVE",
+        "PRICE_STATUS_WARMUP_F4"
+      ],
+      "interpretation": "The model is building its first 15 accepted eligible minutes. Not a failure.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/engine.go",
+        "go_symbol": "SkipInitializing",
+        "proto_enum_or_field": "quantram.v1.SkipReason.SKIP_REASON_INITIALIZING",
+        "test_reference": "internal/adaptive/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "Adaptive warm-up: accepted eligible minutes 1–15.",
+        "popover_title": "Initializing",
+        "popover_body": "The first 15 accepted eligible minutes emit INITIALIZING skips with committed D01 state. The 16th can be BUY, SELL, or HOLD. Price Engine warm-up is independently 45 minutes.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_ACTIONABLE",
+      "term": "ACTIONABLE",
+      "display": "Actionable",
+      "type": "STATUS",
+      "component": "ADAPTIVE_EMITTER",
+      "plain_meaning": "Warm-up is complete. This minute can be BUY, SELL, or HOLD.",
+      "scientific_meaning": "ModelStatus ACTIONABLE on Decision after completedCount \u003e= 15.",
+      "does_not_mean": [
+        "ACTIONABLE is not an order permission.",
+        "ACTIONABLE is not Price Engine EMITTED."
+      ],
+      "related_terms": [
+        "ADAPTIVE_INITIALIZING",
+        "ADAPTIVE_BUY",
+        "ADAPTIVE_HOLD"
+      ],
+      "interpretation": "Warm-up is complete. This minute can be BUY, SELL, or HOLD.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/decision.go",
+        "go_symbol": "StatusActionable",
+        "proto_enum_or_field": "quantram.v1.ModelStatus",
+        "test_reference": "internal/adaptive/engine.go"
+      },
+      "ui": {
+        "tooltip": "Adaptive is past warm-up and can emit BUY, SELL, or HOLD.",
+        "popover_title": "Actionable",
+        "popover_body": "Actionable means the 15-bar context exists. It does not mean P-05 may submit an order.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_H",
+      "term": "H",
+      "display": "H",
+      "type": "MEASURE",
+      "component": "D04",
+      "plain_meaning": "Hard eligibility: 1 if the shape is timely and market-eligible, else 0.",
+      "scientific_meaning": "HardEligibility is 1 iff projectionValid (EvaluationTime \u003c= ModelTime+ProjectionInterval) and MarketEligible is nil or true. C = H * Q_G * Q_S * Q_R.",
+      "does_not_mean": [
+        "H=1 is not BUY.",
+        "H is not capturability C."
+      ],
+      "related_terms": [
+        "ADAPTIVE_C",
+        "ADAPTIVE_QG",
+        "ADAPTIVE_QS",
+        "ADAPTIVE_QR"
+      ],
+      "interpretation": "Hard eligibility: 1 if the shape is timely and market-eligible, else 0.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/d04.go",
+        "go_symbol": "EvaluateCapturability",
+        "proto_enum_or_field": "quantram.v1.Decision.h",
+        "test_reference": "internal/adaptive/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "D04 hard eligibility H is 0 or 1.",
+        "popover_title": "H",
+        "popover_body": "H is 1 when the projected shape is still timely. BUY/SELL also require C versus the prior-15 median and path agreement.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_QG",
+      "term": "Q_G",
+      "display": "Q_G",
+      "type": "MEASURE",
+      "component": "D04",
+      "plain_meaning": "Geometry quality of the return shape.",
+      "scientific_meaning": "geometryQuality = |TerminalDisplacement| / MaximumAbsoluteDisplacement, or 0 if max displacement is 0.",
+      "does_not_mean": [
+        "Q_G is not Price Engine GREEN."
+      ],
+      "related_terms": [
+        "ADAPTIVE_QS",
+        "ADAPTIVE_QR",
+        "ADAPTIVE_C"
+      ],
+      "interpretation": "Geometry quality of the return shape.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/d04.go",
+        "go_symbol": "geometryQuality",
+        "proto_enum_or_field": "quantram.v1.Decision.q_g",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "D04 geometry quality Q_G.",
+        "popover_title": "Q_G",
+        "popover_body": "Q_G measures how much of the shape's maximum displacement is still present at the terminal sample.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_QS",
+      "term": "Q_S",
+      "display": "Q_S",
+      "type": "MEASURE",
+      "component": "D04",
+      "plain_meaning": "Structural quality from strength, coherence, and persistence.",
+      "scientific_meaning": "structuralQuality = (strength * coherence * persistence) ** (1/3) using Pow, not Cbrt.",
+      "does_not_mean": [
+        "Q_S is not Price Engine stability."
+      ],
+      "related_terms": [
+        "ADAPTIVE_QG",
+        "ADAPTIVE_QR",
+        "ADAPTIVE_STRENGTH"
+      ],
+      "interpretation": "Structural quality from strength, coherence, and persistence.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/d04.go",
+        "go_symbol": "structuralQuality",
+        "proto_enum_or_field": "quantram.v1.Decision.q_s",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "D04 structural quality Q_S.",
+        "popover_title": "Q_S",
+        "popover_body": "Q_S is the geometric mean of strength, coherence, and persistence.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_QR",
+      "term": "Q_R",
+      "display": "Q_R",
+      "type": "MEASURE",
+      "component": "D04",
+      "plain_meaning": "Risk quality from low uncertainty and low reversal propensity.",
+      "scientific_meaning": "riskQuality = sqrt((1-uncertainty) * (1-reversal_propensity)).",
+      "does_not_mean": [
+        "Q_R is not a P-05 risk decision."
+      ],
+      "related_terms": [
+        "ADAPTIVE_QG",
+        "ADAPTIVE_C"
+      ],
+      "interpretation": "Risk quality from low uncertainty and low reversal propensity.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/d04.go",
+        "go_symbol": "riskQuality",
+        "proto_enum_or_field": "quantram.v1.Decision.q_r",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "D04 risk quality Q_R.",
+        "popover_title": "Q_R",
+        "popover_body": "Q_R rises when uncertainty and reversal propensity are low. It is not OMS risk.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_C",
+      "term": "C",
+      "display": "C",
+      "type": "MEASURE",
+      "component": "D04",
+      "plain_meaning": "Capturability score on [0, 1].",
+      "scientific_meaning": "CapturabilityScore = H * Q_G * Q_S * Q_R. BUY/SELL require C \u003e= prior-15 median C.",
+      "does_not_mean": [
+        "High C is not automatically BUY.",
+        "C is not Price Engine confidence HIGH/MEDIUM/LOW."
+      ],
+      "related_terms": [
+        "ADAPTIVE_H",
+        "ADAPTIVE_QG",
+        "PRICE_CONFIDENCE_HIGH"
+      ],
+      "interpretation": "Capturability score on [0, 1].",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/d04.go",
+        "go_symbol": "EvaluateCapturability",
+        "proto_enum_or_field": "quantram.v1.Decision.confidence",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "D04 capturability C = H × Q_G × Q_S × Q_R.",
+        "popover_title": "C",
+        "popover_body": "C is the capturability score. Price Engine confidence HIGH/MEDIUM/LOW is a different classification.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_STRENGTH",
+      "term": "strength",
+      "display": "Strength",
+      "type": "MEASURE",
+      "component": "D01",
+      "plain_meaning": "D01 channel strength carried onto the D02 shape.",
+      "scientific_meaning": "computeStrength(...) on D01; copied onto ReturnShape.Strength and Decision.Strength.",
+      "does_not_mean": [
+        "Not Price Engine perturbation amplification."
+      ],
+      "related_terms": [
+        "ADAPTIVE_COHERENCE",
+        "ADAPTIVE_QS"
+      ],
+      "interpretation": "D01 channel strength carried onto the D02 shape.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/strength.go",
+        "go_symbol": "computeStrength",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "D01 strength channel.",
+        "popover_title": "Strength",
+        "popover_body": "Strength is a D01 evolving-state channel used in D04 Q_S.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_COHERENCE",
+      "term": "coherence",
+      "display": "Coherence",
+      "type": "MEASURE",
+      "component": "D01",
+      "plain_meaning": "D01 coherence among displacement, velocity, acceleration, and volume evidence.",
+      "scientific_meaning": "computeCoherence(evidence, ChannelWeights).",
+      "does_not_mean": [
+        "Not Price Engine stability."
+      ],
+      "related_terms": [
+        "ADAPTIVE_STRENGTH",
+        "ADAPTIVE_PERSISTENCE"
+      ],
+      "interpretation": "D01 coherence among displacement, velocity, acceleration, and volume evidence.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/coherence.go",
+        "go_symbol": "computeCoherence",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "D01 coherence among kinematic channels.",
+        "popover_title": "Coherence",
+        "popover_body": "Coherence measures agreement among D01 evidence channels.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_PERSISTENCE",
+      "term": "persistence",
+      "display": "Persistence",
+      "type": "MEASURE",
+      "component": "D01",
+      "plain_meaning": "D01 persistence of the current motion regime.",
+      "scientific_meaning": "updatePersistence(...) on D01; not PriceCockpit.PersistenceState.",
+      "does_not_mean": [
+        "Not Price Engine cockpit persistence_state."
+      ],
+      "related_terms": [
+        "ADAPTIVE_STRENGTH",
+        "PRICE_COCKPIT_PERSISTENCE"
+      ],
+      "interpretation": "D01 persistence of the current motion regime.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/persistence.go",
+        "go_symbol": "updatePersistence",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "D01 persistence of the motion regime.",
+        "popover_title": "Persistence",
+        "popover_body": "Adaptive persistence is a D01 scalar. Price Engine cockpit persistence is a different string state.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_UNCERTAINTY",
+      "term": "uncertainty",
+      "display": "Uncertainty",
+      "type": "MEASURE",
+      "component": "D01",
+      "plain_meaning": "D01 uncertainty used in D04 risk quality.",
+      "scientific_meaning": "computeUncertainty(...). If \u003e 0.5, D04 reason UNCERTAINTY_HIGH.",
+      "does_not_mean": [
+        "Not Price Engine INVALID."
+      ],
+      "related_terms": [
+        "ADAPTIVE_QR",
+        "ADAPTIVE_REVERSAL"
+      ],
+      "interpretation": "D01 uncertainty used in D04 risk quality.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/uncertainty.go",
+        "go_symbol": "computeUncertainty",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "D01 uncertainty channel.",
+        "popover_title": "Uncertainty",
+        "popover_body": "Higher uncertainty lowers D04 Q_R.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_REVERSAL",
+      "term": "reversal_propensity",
+      "display": "Reversal propensity",
+      "type": "MEASURE",
+      "component": "D01",
+      "plain_meaning": "D01 reversal propensity used in D04 risk quality.",
+      "scientific_meaning": "computeReversalPropensity(...). If \u003e 0.5, D04 reason REVERSAL_PROPENSITY_HIGH.",
+      "does_not_mean": [
+        "Not Price Engine TURNING_UP/TURNING_DOWN."
+      ],
+      "related_terms": [
+        "ADAPTIVE_QR",
+        "PRICE_PHASE_TURNING_UP"
+      ],
+      "interpretation": "D01 reversal propensity used in D04 risk quality.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/reversal.go",
+        "go_symbol": "computeReversalPropensity",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "D01 reversal propensity.",
+        "popover_title": "Reversal propensity",
+        "popover_body": "This is a D01 scalar. Price Engine turning phases are computed from p1/p2, not this field.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "SKIP_INFER_OFF",
+      "term": "INFER_OFF",
+      "display": "Infer off",
+      "type": "REASON",
+      "component": "MODEL_HOST",
+      "plain_meaning": "Inference is paused. Scientific state is held, not reset.",
+      "scientific_meaning": "Host.handle emits SkipInferOff when src.Readiness().Infer is false. PrepareStep is not called.",
+      "does_not_mean": [
+        "Infer off does not reset D01 or pricing history.",
+        "Not STATE_DISCONTINUOUS."
+      ],
+      "related_terms": [
+        "SKIP_STATE_DISCONTINUOUS",
+        "OPS_INFER"
+      ],
+      "interpretation": "Inference is paused. Scientific state is held, not reset.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/modelhost/host.go",
+        "go_symbol": "Host.handle",
+        "proto_enum_or_field": "quantram.v1.SkipReason.SKIP_REASON_INFER_OFF",
+        "test_reference": "internal/modelhost/host_test.go"
+      },
+      "ui": {
+        "tooltip": "Inference paused. State is held, not reset.",
+        "popover_title": "Infer off",
+        "popover_body": "The host skipped this minute because the P-02 infer gate is false. Adaptive and pricing history stay as they were.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "SKIP_NOT_MODEL_ELIGIBLE",
+      "term": "NOT_MODEL_ELIGIBLE",
+      "display": "Not model eligible",
+      "type": "REASON",
+      "component": "INGESTION",
+      "plain_meaning": "This bar is not a complete live finalized minute, so the model did not run.",
+      "scientific_meaning": "ModelEligible() requires IsFinal, QualityComplete, and !IsBackfilled.",
+      "does_not_mean": [
+        "Not proof that the feed is down.",
+        "Reconstructed REST bars are observe-only."
+      ],
+      "related_terms": [
+        "QUALITY_COMPLETE",
+        "QUALITY_RECONSTRUCTED",
+        "QUALITY_PARTIAL"
+      ],
+      "interpretation": "This bar is not a complete live finalized minute, so the model did not run.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/quality.go",
+        "go_symbol": "Bar.ModelEligible",
+        "proto_enum_or_field": "quantram.v1.SkipReason.SKIP_REASON_NOT_MODEL_ELIGIBLE",
+        "test_reference": "internal/domain/quality_test.go"
+      },
+      "ui": {
+        "tooltip": "Bar is not a complete live minute. Model did not run.",
+        "popover_title": "Not model eligible",
+        "popover_body": "Only finalized COMPLETE non-backfilled bars enter Adaptive and Price Engine.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "SKIP_DUPLICATE_OR_REGRESSION",
+      "term": "DUPLICATE_OR_REGRESSION",
+      "display": "Duplicate or out of order",
+      "type": "REASON",
+      "component": "RUNTIME",
+      "plain_meaning": "This minute was already accepted, or time went backwards. State was not advanced.",
+      "scientific_meaning": "ClassifyBarContinuity Duplicate or Regression, or EventTime did not increase. Host does not latch discontinuity.",
+      "does_not_mean": [
+        "Not a skipped IEX minute (that is irregular, accepted).",
+        "Not INPUT_GAP."
+      ],
+      "related_terms": [
+        "RUNTIME_CONTINUITY_DUPLICATE",
+        "RUNTIME_CONTINUITY_REGRESSION",
+        "SKIP_INPUT_GAP"
+      ],
+      "interpretation": "This minute was already accepted, or time went backwards. State was not advanced.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/continuity.go",
+        "go_symbol": "ClassifyBarContinuity",
+        "proto_enum_or_field": "quantram.v1.SkipReason.SKIP_REASON_DUPLICATE_OR_REGRESSION",
+        "test_reference": "internal/modelhost/host_test.go"
+      },
+      "ui": {
+        "tooltip": "Duplicate or earlier timestamp. State unchanged.",
+        "popover_title": "Duplicate or out of order",
+        "popover_body": "The host refused to step twice on the same or earlier IntervalStart.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "SKIP_INPUT_GAP",
+      "term": "INPUT_GAP",
+      "display": "Input gap",
+      "type": "REASON",
+      "component": "RUNTIME",
+      "plain_meaning": "Proven missing eligible observation. A skipped provider minute is not this.",
+      "scientific_meaning": "After the 2 Sep continuity fix, INPUT_GAP is reserved for proven missing eligible bars (test harness) or equivalent proven loss. A 10:31→10:34 IEX skip is ContinuityIrregular and is accepted. Historical viewer text that treated every non-adjacent minute as INPUT_GAP is stale.",
+      "does_not_mean": [
+        "A missing IEX no-trade minute is not automatically INPUT_GAP.",
+        "Silence (no new bar) is not INPUT_GAP."
+      ],
+      "related_terms": [
+        "RUNTIME_CONTINUITY_IRREGULAR",
+        "SKIP_STATE_DISCONTINUOUS",
+        "SKIP_QUEUE_OVERFLOW"
+      ],
+      "interpretation": "Proven missing eligible observation. A skipped provider minute is not this.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/modelhost/host.go",
+        "go_symbol": "Host.handle",
+        "proto_enum_or_field": "quantram.v1.SkipReason.SKIP_REASON_INPUT_GAP",
+        "test_reference": "internal/modelhost/host_test.go"
+      },
+      "ui": {
+        "tooltip": "Proven observation loss. Not a normal skipped IEX minute.",
+        "popover_title": "Input gap",
+        "popover_body": "INPUT_GAP now means the host has evidence a required eligible bar was lost. A provider-omitted minute is a valid irregular interval and does not pause the symbol.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "SKIP_QUEUE_OVERFLOW",
+      "term": "QUEUE_OVERFLOW",
+      "display": "Queue overflow",
+      "type": "REASON",
+      "component": "MODEL_HOST",
+      "plain_meaning": "The model mailbox could not accept the next bar without dropping. This symbol is quarantined.",
+      "scientific_meaning": "Host.dispatch default branch or model_path fanoutModel overflow sets SkipQueueOverflow and marks discontinuous. No silent drop-oldest.",
+      "does_not_mean": [
+        "Other symbols are not automatically stopped."
+      ],
+      "related_terms": [
+        "SKIP_STATE_DISCONTINUOUS",
+        "HOST_STATUS_DISCONTINUOUS"
+      ],
+      "interpretation": "The model mailbox could not accept the next bar without dropping. This symbol is quarantined.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/modelhost/host.go",
+        "go_symbol": "Host.dispatch",
+        "proto_enum_or_field": "quantram.v1.SkipReason.SKIP_REASON_QUEUE_OVERFLOW",
+        "test_reference": "internal/ingestion/model_path_test.go"
+      },
+      "ui": {
+        "tooltip": "Model mailbox overflow. This symbol is paused.",
+        "popover_title": "Queue overflow",
+        "popover_body": "The host refused to silently drop an older bar. This symbol stays discontinuous until explicit reset or process restart.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "SKIP_TIMEOUT",
+      "term": "TIMEOUT",
+      "display": "Timeout",
+      "type": "REASON",
+      "component": "MODEL_HOST",
+      "plain_meaning": "The step exceeded the host deadline. State was not committed.",
+      "scientific_meaning": "QUANTRAM_MODEL_DEADLINE default 200ms. Timeout leaves committed adaptive/pricing state unchanged.",
+      "does_not_mean": [
+        "Timeout does not reset history."
+      ],
+      "related_terms": [
+        "SKIP_ENGINE_ERROR"
+      ],
+      "interpretation": "The step exceeded the host deadline. State was not committed.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/modelhost/host.go",
+        "go_symbol": "Host.handle",
+        "proto_enum_or_field": "quantram.v1.SkipReason.SKIP_REASON_TIMEOUT",
+        "test_reference": "internal/modelhost/host_test.go"
+      },
+      "ui": {
+        "tooltip": "Step exceeded the deadline. State unchanged.",
+        "popover_title": "Timeout",
+        "popover_body": "Prepare/commit did not finish in time. The prior scientific state remains.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "SKIP_INVALID_INPUT",
+      "term": "INVALID_INPUT",
+      "display": "Invalid input",
+      "type": "REASON",
+      "component": "RUNTIME",
+      "plain_meaning": "A value was not usable, so the step was discarded.",
+      "scientific_meaning": "Non-finite close/volume/event_time, unaligned IntervalStart, or H/C domain checks.",
+      "does_not_mean": [
+        "Not Price Engine color INVALID."
+      ],
+      "related_terms": [
+        "PRICE_COLOR_INVALID"
+      ],
+      "interpretation": "A value was not usable, so the step was discarded.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/engine.go",
+        "go_symbol": "stepLocked",
+        "proto_enum_or_field": "quantram.v1.SkipReason.SKIP_REASON_INVALID_INPUT",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Unusable input. Step discarded.",
+        "popover_title": "Invalid input",
+        "popover_body": "The host or engine rejected non-finite or unaligned input without committing state.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "SKIP_ENGINE_ERROR",
+      "term": "ENGINE_ERROR",
+      "display": "Engine error",
+      "type": "REASON",
+      "component": "MODEL_HOST",
+      "plain_meaning": "The scientific step failed. State was not updated.",
+      "scientific_meaning": "D01/D02/D04 error or pricing prepare failure rolled back as SkipEngineError.",
+      "does_not_mean": [
+        "Not a BUY/SELL decision."
+      ],
+      "related_terms": [
+        "SKIP_ENGINE_PANIC",
+        "SKIP_TIMEOUT"
+      ],
+      "interpretation": "The scientific step failed. State was not updated.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/engine.go",
+        "go_symbol": "stepLocked",
+        "proto_enum_or_field": "quantram.v1.SkipReason.SKIP_REASON_ENGINE_ERROR",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Scientific step failed. State unchanged.",
+        "popover_title": "Engine error",
+        "popover_body": "An engine error skips the minute and does not mutate committed history.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "SKIP_ENGINE_PANIC",
+      "term": "ENGINE_PANIC",
+      "display": "Engine panic",
+      "type": "REASON",
+      "component": "MODEL_HOST",
+      "plain_meaning": "This symbol's worker panicked and was isolated. Other symbols continue.",
+      "scientific_meaning": "Host.handle recover marks SkipEnginePanic and discontinuous for that symbol only.",
+      "does_not_mean": [
+        "Other symbols are not stopped."
+      ],
+      "related_terms": [
+        "SKIP_STATE_DISCONTINUOUS",
+        "HOST_STATUS_DISCONTINUOUS"
+      ],
+      "interpretation": "This symbol's worker panicked and was isolated. Other symbols continue.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/modelhost/host.go",
+        "go_symbol": "Host.handle",
+        "proto_enum_or_field": "quantram.v1.SkipReason.SKIP_REASON_ENGINE_PANIC",
+        "test_reference": "internal/modelhost/host_test.go"
+      },
+      "ui": {
+        "tooltip": "This symbol panicked and was isolated.",
+        "popover_title": "Engine panic",
+        "popover_body": "Panic is contained per symbol. Other workers keep running.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "SKIP_STATE_DISCONTINUOUS",
+      "term": "STATE_DISCONTINUOUS",
+      "display": "Discontinuous",
+      "type": "STATE",
+      "component": "MODEL_HOST",
+      "plain_meaning": "This symbol is quarantined after proven loss. Later bars do not silently repair science.",
+      "scientific_meaning": "After markDisc, later bars emit SkipStateDiscontinuous with the original reason in Detail. Reserved for overflow, panic, or proven INPUT_GAP — not irregular IEX spacing.",
+      "does_not_mean": [
+        "A skipped provider minute does not by itself create this state.",
+        "Other symbols continue."
+      ],
+      "related_terms": [
+        "SKIP_INPUT_GAP",
+        "SKIP_QUEUE_OVERFLOW",
+        "HOST_STATUS_DISCONTINUOUS"
+      ],
+      "interpretation": "This symbol is quarantined after proven loss. Later bars do not silently repair science.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/modelhost/host.go",
+        "go_symbol": "Host.discontinuousSkip",
+        "proto_enum_or_field": "quantram.v1.SkipReason.SKIP_REASON_STATE_DISCONTINUOUS",
+        "test_reference": "internal/modelhost/host_test.go"
+      },
+      "ui": {
+        "tooltip": "Symbol quarantined after proven loss.",
+        "popover_title": "Discontinuous",
+        "popover_body": "Later bars stay skipped until explicit per-symbol reset or process restart. Irregular IEX minutes are not this state.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_COLOR_GREEN",
+      "term": "GREEN",
+      "display": "Green",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Price Engine policy color GREEN for this minute's EXPM cover.",
+      "scientific_meaning": "EmissionPolicy.emit sets raw GREEN when phase is UP_ACCELERATING or TURNING_UP and ProjectedP1 \u003e epsilon, unless confidence is LOW or a decelerating/near-stationary/uncertain phase forced AMBER. Direct GREEN↔RED reversals debounce to AMBER first.",
+      "does_not_mean": [
+        "GREEN is not BUY.",
+        "GREEN is not an execution command.",
+        "Viewer Arrivals ON TIME is a display alias of GREEN."
+      ],
+      "related_terms": [
+        "PRICE_COLOR_AMBER",
+        "PRICE_COLOR_RED",
+        "ADAPTIVE_BUY",
+        "VIEWER_PRICE_ON_TIME"
+      ],
+      "interpretation": "Price Engine policy color GREEN for this minute's EXPM cover.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "EmissionPolicy.emit",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.color",
+        "test_reference": "internal/pricing/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "Price Engine color GREEN. Not a BUY.",
+        "popover_title": "Green",
+        "popover_body": "GREEN is a policy color on the EXPM trajectory. The Arrivals board shows it as ON TIME. It does not confirm Adaptive BUY.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_COLOR_AMBER",
+      "term": "AMBER",
+      "display": "Amber",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Price Engine policy color AMBER: caution / holding color, not Adaptive HOLD.",
+      "scientific_meaning": "Raw AMBER when confidence is LOW or phase is UP_DECELERATING, DOWN_DECELERATING, NEAR_STATIONARY, or UNCERTAIN, or during direct-reversal debounce.",
+      "does_not_mean": [
+        "AMBER is not Adaptive HOLD.",
+        "Viewer Arrivals HOLDING is a display alias of AMBER."
+      ],
+      "related_terms": [
+        "PRICE_COLOR_GREEN",
+        "PRICE_COLOR_RED",
+        "ADAPTIVE_HOLD",
+        "VIEWER_PRICE_HOLDING"
+      ],
+      "interpretation": "Price Engine policy color AMBER: caution / holding color, not Adaptive HOLD.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "EmissionPolicy.emit",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.color",
+        "test_reference": "internal/pricing/policy.go"
+      },
+      "ui": {
+        "tooltip": "Price Engine color AMBER. Not Adaptive HOLD.",
+        "popover_title": "Amber",
+        "popover_body": "AMBER is the caution color. The Arrivals board labels it HOLDING. That word is not the Adaptive HOLD decision.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_COLOR_RED",
+      "term": "RED",
+      "display": "Red",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Price Engine policy color RED for this minute's EXPM cover.",
+      "scientific_meaning": "Raw RED when phase is DOWN_ACCELERATING or TURNING_DOWN and ProjectedP1 \u003c -epsilon, subject to LOW-confidence AMBER override and reversal debounce.",
+      "does_not_mean": [
+        "RED is not SELL.",
+        "Viewer Arrivals DELAYED is a display alias of RED."
+      ],
+      "related_terms": [
+        "PRICE_COLOR_GREEN",
+        "ADAPTIVE_SELL",
+        "VIEWER_PRICE_DELAYED"
+      ],
+      "interpretation": "Price Engine policy color RED for this minute's EXPM cover.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "EmissionPolicy.emit",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.color",
+        "test_reference": "internal/pricing/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "Price Engine color RED. Not a SELL.",
+        "popover_title": "Red",
+        "popover_body": "RED is a policy color. The Arrivals board shows it as DELAYED. It does not confirm Adaptive SELL.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_COLOR_INVALID",
+      "term": "INVALID",
+      "display": "Invalid",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Price emission is invalid this minute (projection failed or non-finite).",
+      "scientific_meaning": "emit() returns color INVALID when !RKSuccess or non-finite trajectory. Reasons RK_FAILURE or NONFINITE_TRAJECTORY.",
+      "does_not_mean": [
+        "Not Adaptive INVALID_INPUT.",
+        "Not a SELL."
+      ],
+      "related_terms": [
+        "PRICE_STATUS_PROJECTION_FAILURE",
+        "SKIP_INVALID_INPUT"
+      ],
+      "interpretation": "Price emission is invalid this minute (projection failed or non-finite).",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "EmissionPolicy.emit",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.color",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Price Engine color INVALID this minute.",
+        "popover_title": "Invalid color",
+        "popover_body": "Projection failed or values were non-finite. No valid GREEN/AMBER/RED.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_PHASE_UP_ACCELERATING",
+      "term": "UP_ACCELERATING",
+      "display": "Up accelerating",
+      "type": "STATE",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Current velocity is up and acceleration is positive.",
+      "scientific_meaning": "phase(): p1 \u003e 0 and p2 \u003e 0 (and not the turning/near-zero branches). p1 is causal-quadratic velocity; p2 is acceleration.",
+      "does_not_mean": [
+        "Not Adaptive UPWARD.",
+        "Not automatically GREEN or BUY."
+      ],
+      "related_terms": [
+        "PRICE_PHASE_UP_DECELERATING",
+        "PRICE_PHASE_DOWN_ACCELERATING",
+        "ADAPTIVE_PATH_UPWARD"
+      ],
+      "interpretation": "Current velocity is up and acceleration is positive.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "phase",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.trajectory_phase",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Trajectory phase: up and accelerating.",
+        "popover_title": "Up accelerating",
+        "popover_body": "p1 \u003e 0 and p2 \u003e 0 on the causal quadratic. Color still depends on confidence and projected p1.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_PHASE_DOWN_ACCELERATING",
+      "term": "DOWN_ACCELERATING",
+      "display": "Down accelerating",
+      "type": "STATE",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Current velocity is down and acceleration is more down.",
+      "scientific_meaning": "phase() default when p1 \u003c= 0 and p2 \u003c= 0 after turning checks.",
+      "does_not_mean": [
+        "Not automatically RED or SELL."
+      ],
+      "related_terms": [
+        "PRICE_PHASE_DOWN_DECELERATING",
+        "PRICE_PHASE_UP_ACCELERATING"
+      ],
+      "interpretation": "Current velocity is down and acceleration is more down.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "phase",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.trajectory_phase",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Trajectory phase: down and accelerating.",
+        "popover_title": "Down accelerating",
+        "popover_body": "Velocity is down and p2 is not lifting it. Not a SELL.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_PHASE_UP_DECELERATING",
+      "term": "UP_DECELERATING",
+      "display": "Up decelerating",
+      "type": "STATE",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Velocity is still up, but acceleration is no longer supporting it.",
+      "scientific_meaning": "phase(): p1 \u003e 0 and p2 \u003c= 0.",
+      "does_not_mean": [
+        "Not Adaptive HOLD.",
+        "This phase forces raw color AMBER."
+      ],
+      "related_terms": [
+        "PRICE_PHASE_UP_ACCELERATING",
+        "PRICE_COLOR_AMBER"
+      ],
+      "interpretation": "Velocity is still up, but acceleration is no longer supporting it.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "phase",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.trajectory_phase",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Trajectory phase: up but decelerating (AMBER).",
+        "popover_title": "Up decelerating",
+        "popover_body": "Still moving up, but p2 is not positive. Policy paints AMBER.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_PHASE_DOWN_DECELERATING",
+      "term": "DOWN_DECELERATING",
+      "display": "Down decelerating",
+      "type": "STATE",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Velocity is down, but acceleration is opposing the decline.",
+      "scientific_meaning": "phase(): p1 \u003c= 0 and p2 \u003e 0.",
+      "does_not_mean": [
+        "Not a BUY.",
+        "This phase forces raw color AMBER."
+      ],
+      "related_terms": [
+        "PRICE_PHASE_DOWN_ACCELERATING",
+        "PRICE_COLOR_AMBER"
+      ],
+      "interpretation": "Velocity is down, but acceleration is opposing the decline.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "phase",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.trajectory_phase",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Trajectory phase: down but decelerating (AMBER).",
+        "popover_title": "Down decelerating",
+        "popover_body": "Decline is losing acceleration. Policy paints AMBER.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_PHASE_TURNING_UP",
+      "term": "TURNING_UP",
+      "display": "Turning up",
+      "type": "STATE",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Velocity is near zero or crossing, with projected velocity up.",
+      "scientific_meaning": "phase(): |p1|\u003c=eps and projectedP1\u003eeps, or p1\u003c -eps and projectedP1\u003e=eps.",
+      "does_not_mean": [
+        "Not Adaptive BUY.",
+        "Not D01 reversal_propensity."
+      ],
+      "related_terms": [
+        "PRICE_PHASE_TURNING_DOWN",
+        "PRICE_COLOR_GREEN"
+      ],
+      "interpretation": "Velocity is near zero or crossing, with projected velocity up.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "phase",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.trajectory_phase",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Trajectory phase: turning up.",
+        "popover_title": "Turning up",
+        "popover_body": "Projected p1 has crossed toward up. Not an Adaptive BUY.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_PHASE_TURNING_DOWN",
+      "term": "TURNING_DOWN",
+      "display": "Turning down",
+      "type": "STATE",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Velocity is near zero or crossing, with projected velocity down.",
+      "scientific_meaning": "phase(): |p1|\u003c=eps and projectedP1\u003c -eps, or p1\u003eeps and projectedP1\u003c= -eps.",
+      "does_not_mean": [
+        "Not Adaptive SELL."
+      ],
+      "related_terms": [
+        "PRICE_PHASE_TURNING_UP",
+        "PRICE_COLOR_RED"
+      ],
+      "interpretation": "Velocity is near zero or crossing, with projected velocity down.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "phase",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.trajectory_phase",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Trajectory phase: turning down.",
+        "popover_title": "Turning down",
+        "popover_body": "Projected p1 has crossed toward down. Not an Adaptive SELL.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_PHASE_NEAR_STATIONARY",
+      "term": "NEAR_STATIONARY",
+      "display": "Near stationary",
+      "type": "STATE",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Velocity is within epsilon and the projected velocity is also near zero.",
+      "scientific_meaning": "phase(): |p1|\u003c=eps and |projectedP1|\u003c=eps. Forces raw AMBER.",
+      "does_not_mean": [
+        "Not Adaptive path FLAT.",
+        "Not HOLD."
+      ],
+      "related_terms": [
+        "PRICE_COLOR_AMBER",
+        "ADAPTIVE_PATH_FLAT"
+      ],
+      "interpretation": "Velocity is within epsilon and the projected velocity is also near zero.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "phase",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.trajectory_phase",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Trajectory phase: near stationary (AMBER).",
+        "popover_title": "Near stationary",
+        "popover_body": "Both current and projected p1 sit inside the policy epsilon.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_CONFIDENCE_HIGH",
+      "term": "HIGH",
+      "display": "High",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Price Engine numerical confidence is HIGH.",
+      "scientific_meaning": "IN_DOMAIN and condition, max Re(λ), and amplification are all \u003c= configured medians.",
+      "does_not_mean": [
+        "Not Adaptive C.",
+        "HIGH is not GREEN."
+      ],
+      "related_terms": [
+        "PRICE_CONFIDENCE_MEDIUM",
+        "PRICE_CONFIDENCE_LOW",
+        "ADAPTIVE_C"
+      ],
+      "interpretation": "Price Engine numerical confidence is HIGH.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "EmissionPolicy.emit",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.confidence_state",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Price Engine confidence HIGH.",
+        "popover_title": "High confidence",
+        "popover_body": "Numerical condition, eigenvalue, and amplification sit at or below policy medians and the cover is in-domain.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_CONFIDENCE_MEDIUM",
+      "term": "MEDIUM",
+      "display": "Medium",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Price Engine numerical confidence is MEDIUM.",
+      "scientific_meaning": "IN_DOMAIN and the three numerical measures sit between medians and q95.",
+      "does_not_mean": [
+        "Not Adaptive C."
+      ],
+      "related_terms": [
+        "PRICE_CONFIDENCE_HIGH",
+        "PRICE_CONFIDENCE_LOW"
+      ],
+      "interpretation": "Price Engine numerical confidence is MEDIUM.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "EmissionPolicy.emit",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.confidence_state",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Price Engine confidence MEDIUM.",
+        "popover_title": "Medium confidence",
+        "popover_body": "Numerical measures are above medians but still within q95.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_CONFIDENCE_LOW",
+      "term": "LOW",
+      "display": "Low",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Price Engine numerical confidence is LOW. Forces AMBER.",
+      "scientific_meaning": "OUT_OF_DOMAIN or any of condition/eigenvalue/amplification exceeds q95. Reasons DOMAIN_EXIT and/or LOW_CONFIDENCE.",
+      "does_not_mean": [
+        "LOW is not SELL.",
+        "LOW · domain exit is two fields, not one fused decision."
+      ],
+      "related_terms": [
+        "PRICE_DOMAIN_EXIT",
+        "PRICE_COLOR_AMBER"
+      ],
+      "interpretation": "Price Engine numerical confidence is LOW. Forces AMBER.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "EmissionPolicy.emit",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.confidence_state",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Price Engine confidence LOW (forces AMBER).",
+        "popover_title": "Low confidence",
+        "popover_body": "Either the cover left the fit domain or numerical measures exceeded q95. Combined dashboard text LOW · domain exit is two independent fields.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_DOMAIN_IN",
+      "term": "IN_DOMAIN",
+      "display": "In domain",
+      "type": "STATE",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "The projected cover stayed inside the F4 window envelope.",
+      "scientific_meaning": "DomainState IN_DOMAIN when numericalRow.DomainExit is false.",
+      "does_not_mean": [
+        "Not Adaptive H."
+      ],
+      "related_terms": [
+        "PRICE_DOMAIN_OUT",
+        "PRICE_DOMAIN_EXIT"
+      ],
+      "interpretation": "The projected cover stayed inside the F4 window envelope.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "EmissionPolicy.emit",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.domain_state",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "EXPM cover stayed in the F4 envelope.",
+        "popover_title": "In domain",
+        "popover_body": "No envelope exit on the one-minute projection.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_DOMAIN_OUT",
+      "term": "OUT_OF_DOMAIN",
+      "display": "Out of domain",
+      "type": "STATE",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "The projected cover left the F4 window min/max envelope.",
+      "scientific_meaning": "DomainState OUT_OF_DOMAIN when DomainExit is true. Adds reason DOMAIN_EXIT and forces LOW confidence.",
+      "does_not_mean": [
+        "Not SELL.",
+        "Not Adaptive H=0."
+      ],
+      "related_terms": [
+        "PRICE_DOMAIN_EXIT",
+        "PRICE_CONFIDENCE_LOW"
+      ],
+      "interpretation": "The projected cover left the F4 window min/max envelope.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "EmissionPolicy.emit",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.domain_state",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "EXPM cover left the F4 envelope.",
+        "popover_title": "Out of domain",
+        "popover_body": "Domain exit is a pricing envelope fact. It is not a SELL.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_DOMAIN_EXIT",
+      "term": "DOMAIN_EXIT",
+      "display": "Domain exit",
+      "type": "EVENT",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "The one-minute cover exited the fitted price/p1/p2 envelope.",
+      "scientific_meaning": "PriceEvent.DomainExit and reason code DOMAIN_EXIT when the EXPM trajectory leaves stored window min/max. Viewer remarks append 'domain exit'.",
+      "does_not_mean": [
+        "Domain exit does not by itself mean SELL.",
+        "Not Adaptive INITIALIZING."
+      ],
+      "related_terms": [
+        "PRICE_DOMAIN_OUT",
+        "PRICE_CONFIDENCE_LOW",
+        "ADAPTIVE_SELL"
+      ],
+      "interpretation": "The one-minute cover exited the fitted price/p1/p2 envelope.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/price.go",
+        "go_symbol": "PriceEvent.DomainExit",
+        "proto_enum_or_field": "quantram.v1.PriceEvent.domain_exit",
+        "test_reference": "internal/pricing/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "Cover left the F4 envelope. Not a SELL.",
+        "popover_title": "Domain exit",
+        "popover_body": "The projection stepped outside the window used to fit F4. Combined with LOW confidence this is still not an Adaptive decision.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_STABILITY_STABLE",
+      "term": "STABLE",
+      "display": "Stable",
+      "type": "STATE",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Companion-matrix max real eigenvalue is \u003c= 0.",
+      "scientific_meaning": "stability STABLE when MaxRealEigenvalue \u003c= 0.",
+      "does_not_mean": [
+        "Not Adaptive coherence."
+      ],
+      "related_terms": [
+        "PRICE_STABILITY_EXPANSIVE"
+      ],
+      "interpretation": "Companion-matrix max real eigenvalue is \u003c= 0.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "EmissionPolicy.emit",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.stability_state",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Local linearization is not expansive.",
+        "popover_title": "Stable",
+        "popover_body": "max Re(λ) of the 3×3 companion is \u003c= 0.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_STABILITY_EXPANSIVE",
+      "term": "LOCALLY_EXPANSIVE",
+      "display": "Locally expansive",
+      "type": "STATE",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "The local linearization has a positive real eigenvalue.",
+      "scientific_meaning": "STABLE vs LOCALLY_EXPANSIVE: MaxRealEigenvalue \u003e 0 adds POSITIVE_MAX_REAL_EIGENVALUE.",
+      "does_not_mean": [
+        "Not a BUY or SELL."
+      ],
+      "related_terms": [
+        "PRICE_STABILITY_STABLE"
+      ],
+      "interpretation": "The local linearization has a positive real eigenvalue.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "EmissionPolicy.emit",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.stability_state",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Local linearization is expansive (positive Re λ).",
+        "popover_title": "Locally expansive",
+        "popover_body": "The 3×3 companion has max Re(λ) \u003e 0.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_STATUS_WARMUP_DERIVATIVE",
+      "term": "WARMUP_DERIVATIVE",
+      "display": "Warm-up derivative",
+      "type": "STATUS",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Price Engine is still filling the 15-point derivative window.",
+      "scientific_meaning": "PricingStatus WARMUP_DERIVATIVE when p1/p2 are not yet finite. Viewer treats this as minute N of 45 boarding.",
+      "does_not_mean": [
+        "Not Adaptive INITIALIZING (that is 15 bars to a decision)."
+      ],
+      "related_terms": [
+        "PRICE_STATUS_WARMUP_F4",
+        "ADAPTIVE_INITIALIZING"
+      ],
+      "interpretation": "Price Engine is still filling the 15-point derivative window.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/price.go",
+        "go_symbol": "PricingStatusWarmupDerivative",
+        "proto_enum_or_field": "quantram.v1.PricingStatus.PRICING_STATUS_WARMUP_DERIVATIVE",
+        "test_reference": "internal/pricing/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "Price Engine derivative warm-up.",
+        "popover_title": "Warm-up derivative",
+        "popover_body": "Causal quadratic is not ready. Adaptive may already be ACTIONABLE.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_STATUS_WARMUP_F4",
+      "term": "WARMUP_F4",
+      "display": "Warm-up F4",
+      "type": "STATUS",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Derivatives exist, but the 30-point F4 window is not ready.",
+      "scientific_meaning": "PricingStatus WARMUP_F4. Together with derivative warm-up, first emission is after 45 accepted minutes on the fixture.",
+      "does_not_mean": [
+        "Not Adaptive INITIALIZING."
+      ],
+      "related_terms": [
+        "PRICE_STATUS_WARMUP_DERIVATIVE",
+        "PRICE_STATUS_EMITTED"
+      ],
+      "interpretation": "Derivatives exist, but the 30-point F4 window is not ready.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/price.go",
+        "go_symbol": "PricingStatusWarmupF4",
+        "proto_enum_or_field": "quantram.v1.PricingStatus.PRICING_STATUS_WARMUP_F4",
+        "test_reference": "internal/pricing/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "Price Engine F4 warm-up.",
+        "popover_title": "Warm-up F4",
+        "popover_body": "Need more accepted minutes before a color. Fixture counts: 15 derivative + 30 F4 + 55 emitted.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_STATUS_F4_UNAVAILABLE",
+      "term": "F4_FIT_UNAVAILABLE",
+      "display": "F4 fit unavailable",
+      "type": "STATUS",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "F4 could not be fit at the active index.",
+      "scientific_meaning": "fit_f4_at_index returned none (scales, finite checks, or newest-index reject).",
+      "does_not_mean": [
+        "Not Adaptive ENGINE_ERROR."
+      ],
+      "related_terms": [
+        "PRICE_STATUS_WARMUP_F4"
+      ],
+      "interpretation": "F4 could not be fit at the active index.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/price.go",
+        "go_symbol": "PricingStatusF4Unavailable",
+        "proto_enum_or_field": "quantram.v1.PricingStatus.PRICING_STATUS_F4_UNAVAILABLE",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "F4 fit unavailable this minute.",
+        "popover_title": "F4 unavailable",
+        "popover_body": "No physical affine coefficients, so no cover.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_STATUS_EMITTED",
+      "term": "EMITTED",
+      "display": "Emitted",
+      "type": "STATUS",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "PriceEngine produced a PriceEmission this minute.",
+      "scientific_meaning": "PricingStatus EMITTED after numerical row + observe. Fixture count 55/100.",
+      "does_not_mean": [
+        "Emitted is not BUY.",
+        "Emitted is not Adaptive ACTIONABLE."
+      ],
+      "related_terms": [
+        "PRICE_COLOR_GREEN",
+        "ADAPTIVE_ACTIONABLE"
+      ],
+      "interpretation": "PriceEngine produced a PriceEmission this minute.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/price.go",
+        "go_symbol": "PricingStatusEmitted",
+        "proto_enum_or_field": "quantram.v1.PricingStatus.PRICING_STATUS_EMITTED",
+        "test_reference": "internal/pricing/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "Price Engine emitted a color/phase this minute.",
+        "popover_title": "Emitted",
+        "popover_body": "A PriceEmission exists. Color is still not an Adaptive decision.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_STATUS_PROJECTION_FAILURE",
+      "term": "PROJECTION_FAILURE",
+      "display": "Projection failure",
+      "type": "STATUS",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "The EXPM cover did not succeed. Color is invalid.",
+      "scientific_meaning": "Canonical current status is PROJECTION_FAILURE. Go production solver is EXPM (time_term false). Proto enum is PRICING_STATUS_PROJECTION_FAILURE. Frozen SADE Pricing Unit Run 001 still stores the CSV string RK45_FAILURE; domain.PricingStatusProjectionFailure keeps that string only so fixture status compares. Field rk_success means projection succeeded, not that RK45 ran.",
+      "does_not_mean": [
+        "Go production did not run RK45.",
+        "Not Adaptive ENGINE_ERROR.",
+        "rk_success false is not permission to port RK45."
+      ],
+      "related_terms": [
+        "PRICE_COLOR_INVALID",
+        "PRICE_SKIP_PROJECTION_FAILURE"
+      ],
+      "interpretation": "The EXPM cover did not succeed. Color is invalid.",
+      "compatibility_aliases": [
+        "RK45_FAILURE"
+      ],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/price.go",
+        "go_symbol": "PricingStatusProjectionFailure",
+        "proto_enum_or_field": "quantram.v1.PricingStatus.PRICING_STATUS_PROJECTION_FAILURE",
+        "test_reference": "internal/pricing/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "Projection failed. Production solver is EXPM.",
+        "popover_title": "Projection failure",
+        "popover_body": "The cover did not succeed, so color is invalid this minute. Historical SADE CSV used the name RK45_FAILURE. QuanTRAM Go does not execute RK45.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_SKIP_PROJECTION_FAILURE",
+      "term": "PROJECTION_FAILURE",
+      "display": "Projection failure skip",
+      "type": "REASON",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Pricing skip: cover failed.",
+      "scientific_meaning": "PricingSkipReason PROJECTION_FAILURE. Same failure family as PRICE_STATUS_PROJECTION_FAILURE. Historical SADE status string RK45_FAILURE is a fixture alias only.",
+      "does_not_mean": [
+        "Not Adaptive SKIP_ENGINE_ERROR."
+      ],
+      "related_terms": [
+        "PRICE_STATUS_PROJECTION_FAILURE"
+      ],
+      "interpretation": "Pricing skip: cover failed.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/price.go",
+        "go_symbol": "PricingSkipProjectionFail",
+        "proto_enum_or_field": "quantram.v1.PricingSkipReason.PRICING_SKIP_REASON_PROJECTION_FAILURE",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Pricing skip: projection failed.",
+        "popover_title": "Projection failure skip",
+        "popover_body": "Typed pricing skip when the cover cannot be packaged.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "RUNTIME_CONTINUITY_NORMAL",
+      "term": "normal",
+      "display": "Normal interval",
+      "type": "CLASSIFICATION",
+      "component": "RUNTIME",
+      "plain_meaning": "This bar is exactly one minute after the last accepted bar.",
+      "scientific_meaning": "ClassifyBarContinuity returns ContinuityNormal when elapsed == time.Minute.",
+      "does_not_mean": [
+        "Normal spacing is not required for scientific continuity."
+      ],
+      "related_terms": [
+        "RUNTIME_CONTINUITY_IRREGULAR"
+      ],
+      "interpretation": "This bar is exactly one minute after the last accepted bar.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/continuity.go",
+        "go_symbol": "ClassifyBarContinuity",
+        "proto_enum_or_field": "",
+        "test_reference": "internal/domain/continuity_test.go"
+      },
+      "ui": {
+        "tooltip": "Exactly one minute after the last accepted bar.",
+        "popover_title": "Normal interval",
+        "popover_body": "Usual IEX cadence. Irregular cadence can also be valid.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "RUNTIME_CONTINUITY_IRREGULAR",
+      "term": "irregular",
+      "display": "Irregular interval",
+      "type": "CLASSIFICATION",
+      "component": "RUNTIME",
+      "plain_meaning": "This bar is later than the last accepted bar by more than one minute, with no proven loss.",
+      "scientific_meaning": "ContinuityIrregular when elapsed is a positive multiple of one minute other than exactly one minute. Host accepts and logs; D01 uses actual dt; P-04 uses actual minutes.",
+      "does_not_mean": [
+        "Not INPUT_GAP.",
+        "Not STATE_DISCONTINUOUS.",
+        "Does not restart 15-bar warm-up."
+      ],
+      "related_terms": [
+        "SKIP_INPUT_GAP",
+        "RUNTIME_CONTINUITY_NORMAL"
+      ],
+      "interpretation": "This bar is later than the last accepted bar by more than one minute, with no proven loss.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/continuity.go",
+        "go_symbol": "ClassifyBarContinuity",
+        "proto_enum_or_field": "",
+        "test_reference": "internal/modelhost/host_test.go"
+      },
+      "ui": {
+        "tooltip": "Valid skipped-minute interval. Not a gap latch.",
+        "popover_title": "Irregular interval",
+        "popover_body": "Example: 10:31 then 10:34 with no 10:33 provider bar. Science continues with the real elapsed time.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "RUNTIME_CONTINUITY_DUPLICATE",
+      "term": "duplicate",
+      "display": "Duplicate",
+      "type": "CLASSIFICATION",
+      "component": "RUNTIME",
+      "plain_meaning": "Same IntervalStart as the last accepted bar.",
+      "scientific_meaning": "ContinuityDuplicate when elapsed == 0.",
+      "does_not_mean": [
+        "Not an irregular interval."
+      ],
+      "related_terms": [
+        "SKIP_DUPLICATE_OR_REGRESSION"
+      ],
+      "interpretation": "Same IntervalStart as the last accepted bar.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/continuity.go",
+        "go_symbol": "ContinuityDuplicate",
+        "proto_enum_or_field": "",
+        "test_reference": "internal/domain/continuity_test.go"
+      },
+      "ui": {
+        "tooltip": "Same minute already accepted.",
+        "popover_title": "Duplicate",
+        "popover_body": "Idempotent reject. No second Step.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "RUNTIME_CONTINUITY_REGRESSION",
+      "term": "regression",
+      "display": "Out of order",
+      "type": "CLASSIFICATION",
+      "component": "RUNTIME",
+      "plain_meaning": "This bar's IntervalStart is earlier than the last accepted bar.",
+      "scientific_meaning": "ContinuityRegression when elapsed \u003c 0.",
+      "does_not_mean": [
+        "Not irregular (later) timing."
+      ],
+      "related_terms": [
+        "SKIP_DUPLICATE_OR_REGRESSION"
+      ],
+      "interpretation": "This bar's IntervalStart is earlier than the last accepted bar.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/continuity.go",
+        "go_symbol": "ContinuityRegression",
+        "proto_enum_or_field": "",
+        "test_reference": "internal/domain/continuity_test.go"
+      },
+      "ui": {
+        "tooltip": "Earlier minute than last accepted.",
+        "popover_title": "Out of order",
+        "popover_body": "Rejected. Scientific state is not walked backward.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "HOST_STATUS_DISCONTINUOUS",
+      "term": "discontinuous",
+      "display": "Discontinuous",
+      "type": "STATUS",
+      "component": "MODEL_HOST",
+      "plain_meaning": "Host health for this symbol is discontinuous.",
+      "scientific_meaning": "SymbolStatus discontinuous after markDisc. GetHealth model/pricing detail may be discontinuous.",
+      "does_not_mean": [
+        "Not irregular interval."
+      ],
+      "related_terms": [
+        "SKIP_STATE_DISCONTINUOUS"
+      ],
+      "interpretation": "Host health for this symbol is discontinuous.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/modelhost/host.go",
+        "go_symbol": "StatusDiscontinuous",
+        "proto_enum_or_field": "",
+        "test_reference": "internal/modelhost/host_test.go"
+      },
+      "ui": {
+        "tooltip": "Host marks this symbol discontinuous.",
+        "popover_title": "Host discontinuous",
+        "popover_body": "Health-level quarantine after proven loss.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "HOST_STATUS_PAUSED",
+      "term": "paused",
+      "display": "Paused",
+      "type": "STATUS",
+      "component": "MODEL_HOST",
+      "plain_meaning": "Infer is off after this symbol has already accepted bars.",
+      "scientific_meaning": "SymbolHealth StatusPaused when infer is false and hasAccepted.",
+      "does_not_mean": [
+        "Paused does not reset science."
+      ],
+      "related_terms": [
+        "SKIP_INFER_OFF"
+      ],
+      "interpretation": "Infer is off after this symbol has already accepted bars.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/modelhost/host.go",
+        "go_symbol": "StatusPaused",
+        "proto_enum_or_field": "",
+        "test_reference": "internal/modelhost/host_test.go"
+      },
+      "ui": {
+        "tooltip": "Host paused on infer-off. State held.",
+        "popover_title": "Paused",
+        "popover_body": "Evaluation is paused globally or for readiness. History remains.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "QUALITY_COMPLETE",
+      "term": "COMPLETE",
+      "display": "Complete",
+      "type": "STATUS",
+      "component": "INGESTION",
+      "plain_meaning": "This 1-minute bar is finalized and complete.",
+      "scientific_meaning": "QualityComplete on live T=b bars. Required for ModelEligible.",
+      "does_not_mean": [
+        "Complete is not Adaptive ACTIONABLE."
+      ],
+      "related_terms": [
+        "QUALITY_PARTIAL",
+        "QUALITY_RECONSTRUCTED",
+        "SKIP_NOT_MODEL_ELIGIBLE"
+      ],
+      "interpretation": "This 1-minute bar is finalized and complete.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/bar.go",
+        "go_symbol": "QualityComplete",
+        "proto_enum_or_field": "quantram.v1.QualityStatus.QUALITY_STATUS_COMPLETE",
+        "test_reference": "internal/domain/quality_test.go"
+      },
+      "ui": {
+        "tooltip": "Finalized complete live bar.",
+        "popover_title": "Complete",
+        "popover_body": "Eligible for Adaptive and Price Engine if not backfilled.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "QUALITY_PARTIAL",
+      "term": "PARTIAL",
+      "display": "Partial",
+      "type": "STATUS",
+      "component": "INGESTION",
+      "plain_meaning": "Forming minute (Alpaca u). Observe-only.",
+      "scientific_meaning": "QualityPartial, IsFinal false. Model path ignores it.",
+      "does_not_mean": [
+        "Partial does not pause Adaptive."
+      ],
+      "related_terms": [
+        "QUALITY_COMPLETE"
+      ],
+      "interpretation": "Forming minute (Alpaca u). Observe-only.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/bar.go",
+        "go_symbol": "QualityPartial",
+        "proto_enum_or_field": "quantram.v1.QualityStatus.QUALITY_STATUS_PARTIAL",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Forming minute. Observe only.",
+        "popover_title": "Partial",
+        "popover_body": "Live Market Bar Data may show it. The model does not.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "QUALITY_RECONSTRUCTED",
+      "term": "RECONSTRUCTED",
+      "display": "Reconstructed",
+      "type": "STATUS",
+      "component": "INGESTION",
+      "plain_meaning": "REST/gap-fill bar. Observe-only. Never Adaptive or Price Engine input.",
+      "scientific_meaning": "QualityReconstructed and IsBackfilled. ModelEligible is false.",
+      "does_not_mean": [
+        "Not a synthetic flat bar invented by QuanTRAM science."
+      ],
+      "related_terms": [
+        "SKIP_NOT_MODEL_ELIGIBLE"
+      ],
+      "interpretation": "REST/gap-fill bar. Observe-only. Never Adaptive or Price Engine input.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/bar.go",
+        "go_symbol": "QualityReconstructed",
+        "proto_enum_or_field": "quantram.v1.QualityStatus.QUALITY_STATUS_RECONSTRUCTED",
+        "test_reference": "internal/domain/quality_test.go"
+      },
+      "ui": {
+        "tooltip": "Gap-fill bar. Not a model input.",
+        "popover_title": "Reconstructed",
+        "popover_body": "REST history may fill the chart. P-03/P-04 do not consume it.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "QUALITY_STALE",
+      "term": "STALE",
+      "display": "Stale",
+      "type": "STATUS",
+      "component": "INGESTION",
+      "plain_meaning": "Quality label STALE exists on Bar. Live freshness is a separate 90s watermark.",
+      "scientific_meaning": "RESERVED. QualityStale is defined on domain.QualityStatus and mapped by toProtoQuality. classifyAlpacaBar writes only QualityReconstructed (backfilled), QualityPartial (forming), or QualityComplete (final live). csv_source writes QualityComplete. No production writer assigns QualityStale. InferReady freshness uses LiveFresh (MaxFinalLateness 90s after IntervalEnd) and does not write this enum. Tests never construct QualityStale.",
+      "does_not_mean": [
+        "STALE quality is not automatically INPUT_GAP.",
+        "LiveFresh false is not QualityStale."
+      ],
+      "related_terms": [
+        "OPS_INFER",
+        "QUALITY_COMPLETE"
+      ],
+      "interpretation": "Quality label STALE exists on Bar. Live freshness is a separate 90s watermark.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": false,
+      "lifecycle_status": "RESERVED",
+      "source": {
+        "go_file": "internal/domain/bar.go",
+        "go_symbol": "QualityStale",
+        "proto_enum_or_field": "quantram.v1.QualityStatus.QUALITY_STATUS_STALE",
+        "test_reference": "internal/marketfeed/decode.go"
+      },
+      "ui": {
+        "tooltip": "Reserved bar-quality enum STALE. Not written on the live Alpaca path.",
+        "popover_title": "Stale",
+        "popover_body": "Freshness uses a 90s LiveFresh watermark. That gate does not assign this enum.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "OPS_INFER",
+      "term": "infer",
+      "display": "Infer",
+      "type": "STATUS",
+      "component": "OPERATIONS",
+      "plain_meaning": "P-02 quality gate that allows the model host to evaluate.",
+      "scientific_meaning": "Readiness.Infer from InferReady: two causally ordered finalized bars, last ModelEligible and LiveFresh, feed HEALTHY.",
+      "does_not_mean": [
+        "Infer false does not reset science.",
+        "Infer is not ACTIONABLE."
+      ],
+      "related_terms": [
+        "SKIP_INFER_OFF",
+        "OPS_OBSERVE"
+      ],
+      "interpretation": "P-02 quality gate that allows the model host to evaluate.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/quality.go",
+        "go_symbol": "InferReady",
+        "proto_enum_or_field": "quantram.v1.ReadinessReport.infer",
+        "test_reference": "internal/domain/quality_test.go"
+      },
+      "ui": {
+        "tooltip": "Quality gate for model evaluation.",
+        "popover_title": "Infer",
+        "popover_body": "When infer is false the host emits INFER_OFF and holds state.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "OPS_OBSERVE",
+      "term": "observe",
+      "display": "Observe",
+      "type": "STATUS",
+      "component": "OPERATIONS",
+      "plain_meaning": "The feed is observable for the dashboard chart.",
+      "scientific_meaning": "Readiness.Observe is true when the breaker is healthy, degraded, or recovering.",
+      "does_not_mean": [
+        "Observe healthy does not mean Adaptive is running."
+      ],
+      "related_terms": [
+        "OPS_INFER",
+        "FEED_HEALTHY"
+      ],
+      "interpretation": "The feed is observable for the dashboard chart.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/health.go",
+        "go_symbol": "Readiness.Observe",
+        "proto_enum_or_field": "quantram.v1.ReadinessReport.observe",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Feed is observable for charts.",
+        "popover_title": "Observe",
+        "popover_body": "The candle page can be healthy while Adaptive is off or initializing.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "FEED_HEALTHY",
+      "term": "HEALTHY",
+      "display": "Healthy",
+      "type": "STATUS",
+      "component": "OPERATIONS",
+      "plain_meaning": "Market feed breaker is healthy.",
+      "scientific_meaning": "FeedState HEALTHY.",
+      "does_not_mean": [
+        "Not proof that Adaptive is ACTIONABLE."
+      ],
+      "related_terms": [
+        "FEED_DEGRADED",
+        "OPS_OBSERVE"
+      ],
+      "interpretation": "Market feed breaker is healthy.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/health.go",
+        "go_symbol": "FeedHealthy",
+        "proto_enum_or_field": "quantram.v1.FeedState.FEED_STATE_HEALTHY",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Feed breaker HEALTHY.",
+        "popover_title": "Healthy feed",
+        "popover_body": "Socket/heartbeats look healthy. Model state is separate.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "FEED_DEGRADED",
+      "term": "DEGRADED",
+      "display": "Degraded",
+      "type": "STATUS",
+      "component": "OPERATIONS",
+      "plain_meaning": "Feed is up but degraded.",
+      "scientific_meaning": "FeedState DEGRADED.",
+      "does_not_mean": [
+        "Not Adaptive ENGINE_ERROR."
+      ],
+      "related_terms": [
+        "FEED_HEALTHY",
+        "FEED_FAILED"
+      ],
+      "interpretation": "Feed is up but degraded.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/health.go",
+        "go_symbol": "FeedDegraded",
+        "proto_enum_or_field": "quantram.v1.FeedState.FEED_STATE_DEGRADED",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Feed breaker DEGRADED.",
+        "popover_title": "Degraded feed",
+        "popover_body": "Observation may continue. Infer can be gated.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "FEED_FAILED",
+      "term": "FAILED",
+      "display": "Failed",
+      "type": "STATUS",
+      "component": "OPERATIONS",
+      "plain_meaning": "Feed breaker failed.",
+      "scientific_meaning": "FeedState FAILED.",
+      "does_not_mean": [
+        "Not Price Engine INVALID."
+      ],
+      "related_terms": [
+        "FEED_RECOVERING"
+      ],
+      "interpretation": "Feed breaker failed.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/health.go",
+        "go_symbol": "FeedFailed",
+        "proto_enum_or_field": "quantram.v1.FeedState.FEED_STATE_FAILED",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Feed breaker FAILED.",
+        "popover_title": "Failed feed",
+        "popover_body": "Live bars are not reliable.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "FEED_RECOVERING",
+      "term": "RECOVERING",
+      "display": "Recovering",
+      "type": "STATUS",
+      "component": "OPERATIONS",
+      "plain_meaning": "Feed is recovering after a problem.",
+      "scientific_meaning": "FeedState RECOVERING. Distinct from ContinuityIrregular.",
+      "does_not_mean": [
+        "Not Price Engine RECOVERING_TOWARD_TURN.",
+        "Not a skipped IEX minute."
+      ],
+      "related_terms": [
+        "FEED_HEALTHY",
+        "RUNTIME_CONTINUITY_IRREGULAR"
+      ],
+      "interpretation": "Feed is recovering after a problem.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/health.go",
+        "go_symbol": "FeedRecovering",
+        "proto_enum_or_field": "quantram.v1.FeedState.FEED_STATE_RECOVERING",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Feed breaker RECOVERING.",
+        "popover_title": "Recovering feed",
+        "popover_body": "A feed-level recovery state, not a Price Engine turning tendency.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "VIEWER_ADAPTIVE_BOARDING",
+      "term": "BOARDING",
+      "display": "Boarding",
+      "type": "STATUS",
+      "component": "VIEWER",
+      "plain_meaning": "Airport-board alias for Adaptive INITIALIZING.",
+      "scientific_meaning": "quantram-dashboard adaptiveFlight maps skipReason INITIALIZING to status BOARDING. Not a Go enum.",
+      "does_not_mean": [
+        "Not a QuanTRAM domain enum.",
+        "Not Price Engine boarding (that is pricing warm-up)."
+      ],
+      "related_terms": [
+        "ADAPTIVE_INITIALIZING",
+        "VIEWER_PRICE_BOARDING"
+      ],
+      "interpretation": "Airport-board alias for Adaptive INITIALIZING.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [
+        "ADAPTIVE_INITIALIZING"
+      ],
+      "presentation_only": true,
+      "persistence_policy": "RENDER_ONLY",
+      "live_path_proven": false,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "quantram-dashboard/src/lib/pipeline.ts",
+        "go_symbol": "adaptiveFlight",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Viewer word for Adaptive warm-up.",
+        "popover_title": "Boarding",
+        "popover_body": "Departures BOARDING means Adaptive INITIALIZING, minutes 1–15.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "VIEWER_ADAPTIVE_CLEARED",
+      "term": "CLEARED",
+      "display": "Cleared",
+      "type": "STATUS",
+      "component": "VIEWER",
+      "plain_meaning": "Airport-board alias for Adaptive BUY or SELL.",
+      "scientific_meaning": "adaptiveFlight sets CLEARED when kind is decision and side is not HOLD.",
+      "does_not_mean": [
+        "Not a risk clearance.",
+        "Not Price Engine GREEN."
+      ],
+      "related_terms": [
+        "ADAPTIVE_BUY",
+        "ADAPTIVE_SELL",
+        "VIEWER_ADAPTIVE_HOLDING"
+      ],
+      "interpretation": "Airport-board alias for Adaptive BUY or SELL.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [
+        "ADAPTIVE_BUY",
+        "ADAPTIVE_SELL"
+      ],
+      "presentation_only": true,
+      "persistence_policy": "RENDER_ONLY",
+      "live_path_proven": false,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "quantram-dashboard/src/lib/pipeline.ts",
+        "go_symbol": "adaptiveFlight",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Viewer word for Adaptive BUY or SELL.",
+        "popover_title": "Cleared",
+        "popover_body": "Departures CLEARED is a flight-board skin over BUY or SELL.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "VIEWER_ADAPTIVE_HOLDING",
+      "term": "HOLDING",
+      "display": "Holding",
+      "type": "STATUS",
+      "component": "VIEWER",
+      "plain_meaning": "Airport-board alias for Adaptive HOLD. Not Price Engine HOLDING.",
+      "scientific_meaning": "adaptiveFlight sets HOLDING when Decision.side is HOLD.",
+      "does_not_mean": [
+        "Not VIEWER_PRICE_HOLDING.",
+        "Not PRICE_COLOR_AMBER."
+      ],
+      "related_terms": [
+        "ADAPTIVE_HOLD",
+        "VIEWER_PRICE_HOLDING"
+      ],
+      "interpretation": "Airport-board alias for Adaptive HOLD. Not Price Engine HOLDING.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [
+        "ADAPTIVE_HOLD"
+      ],
+      "presentation_only": true,
+      "persistence_policy": "RENDER_ONLY",
+      "live_path_proven": false,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "quantram-dashboard/src/lib/pipeline.ts",
+        "go_symbol": "adaptiveFlight",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Departures HOLDING means Adaptive HOLD.",
+        "popover_title": "Adaptive holding",
+        "popover_body": "Same English as Arrivals HOLDING, different science. This one is Adaptive HOLD.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "VIEWER_ADAPTIVE_DELAYED",
+      "term": "DELAYED",
+      "display": "Delayed",
+      "type": "STATUS",
+      "component": "VIEWER",
+      "plain_meaning": "Airport-board alias for Adaptive INFER_OFF or TIMEOUT.",
+      "scientific_meaning": "adaptiveFlight DELAYED for INFER_OFF or TIMEOUT.",
+      "does_not_mean": [
+        "Not VIEWER_PRICE_DELAYED (that is RED)."
+      ],
+      "related_terms": [
+        "SKIP_INFER_OFF",
+        "SKIP_TIMEOUT",
+        "VIEWER_PRICE_DELAYED"
+      ],
+      "interpretation": "Airport-board alias for Adaptive INFER_OFF or TIMEOUT.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [
+        "SKIP_INFER_OFF",
+        "SKIP_TIMEOUT"
+      ],
+      "presentation_only": true,
+      "persistence_policy": "RENDER_ONLY",
+      "live_path_proven": false,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "quantram-dashboard/src/lib/pipeline.ts",
+        "go_symbol": "adaptiveFlight",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Departures DELAYED means infer-off or timeout.",
+        "popover_title": "Adaptive delayed",
+        "popover_body": "Not Arrivals DELAYED, which means Price Engine RED.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "VIEWER_ADAPTIVE_GROUNDED",
+      "term": "GROUNDED",
+      "display": "Grounded",
+      "type": "STATUS",
+      "component": "VIEWER",
+      "plain_meaning": "Airport-board alias for Adaptive INPUT_GAP, QUEUE_OVERFLOW, or STATE_DISCONTINUOUS.",
+      "scientific_meaning": "adaptiveFlight GROUNDED for those skip reasons.",
+      "does_not_mean": [
+        "A valid irregular IEX minute should not appear here after the continuity fix."
+      ],
+      "related_terms": [
+        "SKIP_INPUT_GAP",
+        "SKIP_QUEUE_OVERFLOW",
+        "SKIP_STATE_DISCONTINUOUS"
+      ],
+      "interpretation": "Airport-board alias for Adaptive INPUT_GAP, QUEUE_OVERFLOW, or STATE_DISCONTINUOUS.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [
+        "SKIP_INPUT_GAP",
+        "SKIP_QUEUE_OVERFLOW",
+        "SKIP_STATE_DISCONTINUOUS"
+      ],
+      "presentation_only": true,
+      "persistence_policy": "RENDER_ONLY",
+      "live_path_proven": false,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "quantram-dashboard/src/lib/pipeline.ts",
+        "go_symbol": "adaptiveFlight",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Departures GROUNDED means proven pause/quarantine.",
+        "popover_title": "Grounded",
+        "popover_body": "Reserved for overflow, proven gap, or discontinuous latch — not a normal skipped IEX minute.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "VIEWER_ADAPTIVE_DIVERTED",
+      "term": "DIVERTED",
+      "display": "Diverted",
+      "type": "STATUS",
+      "component": "VIEWER",
+      "plain_meaning": "Airport-board alias for other Adaptive skips.",
+      "scientific_meaning": "adaptiveFlight default status DIVERTED.",
+      "does_not_mean": [
+        "Not a Price Engine phase."
+      ],
+      "related_terms": [
+        "SKIP_ENGINE_ERROR",
+        "SKIP_INVALID_INPUT"
+      ],
+      "interpretation": "Airport-board alias for other Adaptive skips.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [
+        "SKIP_ENGINE_ERROR",
+        "SKIP_INVALID_INPUT"
+      ],
+      "presentation_only": true,
+      "persistence_policy": "RENDER_ONLY",
+      "live_path_proven": false,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "quantram-dashboard/src/lib/pipeline.ts",
+        "go_symbol": "adaptiveFlight",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Departures DIVERTED means another Adaptive skip.",
+        "popover_title": "Diverted",
+        "popover_body": "Catch-all flight status for skips that are not boarding, cleared, holding, delayed, or grounded.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "VIEWER_PRICE_ON_TIME",
+      "term": "ON TIME",
+      "display": "On time",
+      "type": "STATUS",
+      "component": "VIEWER",
+      "plain_meaning": "Airport-board alias for Price Engine GREEN.",
+      "scientific_meaning": "pricingFlight maps color GREEN to ON TIME. Not a Go enum.",
+      "does_not_mean": [
+        "Not Adaptive CLEARED.",
+        "Not a schedule or fill-quality metric."
+      ],
+      "related_terms": [
+        "PRICE_COLOR_GREEN",
+        "VIEWER_PRICE_HOLDING",
+        "VIEWER_PRICE_DELAYED"
+      ],
+      "interpretation": "Airport-board alias for Price Engine GREEN.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [
+        "PRICE_COLOR_GREEN"
+      ],
+      "presentation_only": true,
+      "persistence_policy": "RENDER_ONLY",
+      "live_path_proven": false,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "quantram-dashboard/src/lib/pipeline.ts",
+        "go_symbol": "pricingFlight",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Arrivals ON TIME means Price Engine GREEN.",
+        "popover_title": "On time",
+        "popover_body": "Viewer skin only. The server field is Color GREEN.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "VIEWER_PRICE_HOLDING",
+      "term": "HOLDING",
+      "display": "Holding",
+      "type": "STATUS",
+      "component": "VIEWER",
+      "plain_meaning": "Airport-board alias for Price Engine AMBER. Not Adaptive HOLD.",
+      "scientific_meaning": "pricingFlight maps color AMBER to HOLDING.",
+      "does_not_mean": [
+        "Not ADAPTIVE_HOLD.",
+        "Not VIEWER_ADAPTIVE_HOLDING.",
+        "Not TrajectoryPhase."
+      ],
+      "related_terms": [
+        "PRICE_COLOR_AMBER",
+        "ADAPTIVE_HOLD",
+        "VIEWER_ADAPTIVE_HOLDING"
+      ],
+      "interpretation": "Airport-board alias for Price Engine AMBER. Not Adaptive HOLD.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [
+        "PRICE_COLOR_AMBER"
+      ],
+      "presentation_only": true,
+      "persistence_policy": "RENDER_ONLY",
+      "live_path_proven": false,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "quantram-dashboard/src/lib/pipeline.ts",
+        "go_symbol": "pricingFlight",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Arrivals HOLDING means Price Engine AMBER, not Adaptive HOLD.",
+        "popover_title": "Price holding",
+        "popover_body": "This is the most collision-prone English word in the viewer. Adaptive HOLD is a different field.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "VIEWER_PRICE_DELAYED",
+      "term": "DELAYED",
+      "display": "Delayed",
+      "type": "STATUS",
+      "component": "VIEWER",
+      "plain_meaning": "Airport-board alias for Price Engine RED.",
+      "scientific_meaning": "pricingFlight maps color RED to DELAYED.",
+      "does_not_mean": [
+        "Not Adaptive DELAYED (infer-off/timeout).",
+        "Not SELL."
+      ],
+      "related_terms": [
+        "PRICE_COLOR_RED",
+        "VIEWER_ADAPTIVE_DELAYED"
+      ],
+      "interpretation": "Airport-board alias for Price Engine RED.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [
+        "PRICE_COLOR_RED"
+      ],
+      "presentation_only": true,
+      "persistence_policy": "RENDER_ONLY",
+      "live_path_proven": false,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "quantram-dashboard/src/lib/pipeline.ts",
+        "go_symbol": "pricingFlight",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Arrivals DELAYED means Price Engine RED.",
+        "popover_title": "Price delayed",
+        "popover_body": "Not Departures DELAYED. Not a SELL.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "VIEWER_PRICE_BOARDING",
+      "term": "BOARDING",
+      "display": "Boarding",
+      "type": "STATUS",
+      "component": "VIEWER",
+      "plain_meaning": "Airport-board alias for Price Engine warm-up (minutes 1–45).",
+      "scientific_meaning": "pricingFlight BOARDING when status is WARMUP_DERIVATIVE, WARMUP_F4, or F4_FIT_UNAVAILABLE.",
+      "does_not_mean": [
+        "Not Adaptive BOARDING (15 bars)."
+      ],
+      "related_terms": [
+        "PRICE_STATUS_WARMUP_DERIVATIVE",
+        "PRICE_STATUS_WARMUP_F4",
+        "VIEWER_ADAPTIVE_BOARDING"
+      ],
+      "interpretation": "Airport-board alias for Price Engine warm-up (minutes 1–45).",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [
+        "PRICE_STATUS_WARMUP_DERIVATIVE",
+        "PRICE_STATUS_WARMUP_F4",
+        "PRICE_STATUS_F4_UNAVAILABLE"
+      ],
+      "presentation_only": true,
+      "persistence_policy": "RENDER_ONLY",
+      "live_path_proven": false,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "quantram-dashboard/src/lib/pipeline.ts",
+        "go_symbol": "pricingFlight",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Arrivals BOARDING means Price Engine warm-up.",
+        "popover_title": "Price boarding",
+        "popover_body": "Warm-up through minute 45. Adaptive boarding is only 15.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "VIEWER_PRICE_DIVERTED",
+      "term": "DIVERTED",
+      "display": "Diverted",
+      "type": "STATUS",
+      "component": "VIEWER",
+      "plain_meaning": "Airport-board alias for Price Engine INVALID or unknown color.",
+      "scientific_meaning": "pricingFlight DIVERTED when color is not GREEN/AMBER/RED.",
+      "does_not_mean": [
+        "Not Adaptive DIVERTED."
+      ],
+      "related_terms": [
+        "PRICE_COLOR_INVALID",
+        "VIEWER_ADAPTIVE_DIVERTED"
+      ],
+      "interpretation": "Airport-board alias for Price Engine INVALID or unknown color.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [
+        "PRICE_COLOR_INVALID"
+      ],
+      "presentation_only": true,
+      "persistence_policy": "RENDER_ONLY",
+      "live_path_proven": false,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "quantram-dashboard/src/lib/pipeline.ts",
+        "go_symbol": "pricingFlight",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Arrivals DIVERTED means invalid/unknown price color.",
+        "popover_title": "Price diverted",
+        "popover_body": "Usually INVALID projection. Not Adaptive DIVERTED.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_DIR_UP",
+      "term": "UP",
+      "display": "Up",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Signed velocity is above policy epsilon.",
+      "scientific_meaning": "direction(p1, epsilon) returns UP when value \u003e epsilon.",
+      "does_not_mean": [
+        "Not Adaptive path UPWARD.",
+        "Not BUY."
+      ],
+      "related_terms": [
+        "PRICE_DIR_DOWN",
+        "PRICE_DIR_NEAR_ZERO",
+        "ADAPTIVE_PATH_UPWARD"
+      ],
+      "interpretation": "Signed velocity is above policy epsilon.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "direction",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.current_direction",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Price Engine direction UP (p1 \u003e epsilon).",
+        "popover_title": "Up",
+        "popover_body": "Signed p1 classification. Independent of Adaptive path.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_DIR_DOWN",
+      "term": "DOWN",
+      "display": "Down",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Signed velocity is below −epsilon.",
+      "scientific_meaning": "direction() returns DOWN when value \u003c -epsilon.",
+      "does_not_mean": [
+        "Not SELL."
+      ],
+      "related_terms": [
+        "PRICE_DIR_UP"
+      ],
+      "interpretation": "Signed velocity is below −epsilon.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "direction",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.current_direction",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Price Engine direction DOWN (p1 \u003c −epsilon).",
+        "popover_title": "Down",
+        "popover_body": "Signed p1 classification. Not a SELL.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_DIR_NEAR_ZERO",
+      "term": "NEAR_ZERO",
+      "display": "Near zero",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Signed velocity is inside ±epsilon.",
+      "scientific_meaning": "direction() returns NEAR_ZERO otherwise.",
+      "does_not_mean": [
+        "Not Adaptive FLAT."
+      ],
+      "related_terms": [
+        "PRICE_PHASE_NEAR_STATIONARY"
+      ],
+      "interpretation": "Signed velocity is inside ±epsilon.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "direction",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.current_direction",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Price Engine direction near zero.",
+        "popover_title": "Near zero",
+        "popover_body": "p1 is inside the frozen policy epsilon.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_COCKPIT_PERSISTENCE",
+      "term": "persistence_state",
+      "display": "Cockpit persistence",
+      "type": "STATE",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Cockpit interpreter persistence of opposing deceleration.",
+      "scientific_meaning": "PriceCockpit.PersistenceState NONE or UP/DOWN_DECELERATION from opposingDir counts. Not D01 persistence.",
+      "does_not_mean": [
+        "Not Adaptive persistence."
+      ],
+      "related_terms": [
+        "ADAPTIVE_PERSISTENCE"
+      ],
+      "interpretation": "Cockpit interpreter persistence of opposing deceleration.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/cockpit.go",
+        "go_symbol": "cockpitInterpreter.observe",
+        "proto_enum_or_field": "quantram.v1.PriceCockpit.persistence_state",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Price cockpit persistence, not D01 persistence.",
+        "popover_title": "Cockpit persistence",
+        "popover_body": "Counts opposing deceleration observations. Different from Adaptive persistence.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_TENDENCY_NONE",
+      "term": "NONE",
+      "display": "No turning tendency",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "No additional turning-tendency label beyond the phase.",
+      "scientific_meaning": "turningTendency returns NONE when no cross/deteriorate/recover/p2-reversal rule hits.",
+      "does_not_mean": [
+        "NONE is not Adaptive HOLD."
+      ],
+      "related_terms": [
+        "PRICE_PHASE_TURNING_UP",
+        "PRICE_TENDENCY_TURNING_UP"
+      ],
+      "interpretation": "No additional turning-tendency label beyond the phase.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "turningTendency",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.turning_tendency",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "No extra turning-tendency flag.",
+        "popover_title": "No turning tendency",
+        "popover_body": "Phase still exists. Tendency is NONE.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_TENDENCY_TURNING_UP",
+      "term": "TURNING_UP",
+      "display": "Turning up (tendency)",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Turning-tendency flag: current p1 is down and projected p1 is up.",
+      "scientific_meaning": "turningTendency: p1 \u003c -epsilon \u0026\u0026 projectedP1 \u003e= epsilon. Same English as PRICE_PHASE_TURNING_UP but a different function and field (turning_tendency, not trajectory_phase).",
+      "does_not_mean": [
+        "Not the same object as PRICE_PHASE_TURNING_UP.",
+        "Not Adaptive UPWARD.",
+        "Not a BUY."
+      ],
+      "related_terms": [
+        "PRICE_PHASE_TURNING_UP",
+        "PRICE_TENDENCY_TURNING_DOWN",
+        "PRICE_TENDENCY_NONE"
+      ],
+      "interpretation": "Turning-tendency flag: current p1 is down and projected p1 is up.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "turningTendency",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.turning_tendency",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Tendency TURNING_UP — not the phase field.",
+        "popover_title": "Turning up (tendency)",
+        "popover_body": "A separate PriceEmission field from trajectory_phase. Both can display TURNING UP.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_TENDENCY_TURNING_DOWN",
+      "term": "TURNING_DOWN",
+      "display": "Turning down (tendency)",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Turning-tendency flag: current p1 is up and projected p1 is down.",
+      "scientific_meaning": "turningTendency: p1 \u003e epsilon \u0026\u0026 projectedP1 \u003c= -epsilon. Distinct from PRICE_PHASE_TURNING_DOWN.",
+      "does_not_mean": [
+        "Not the same object as PRICE_PHASE_TURNING_DOWN.",
+        "Not a SELL."
+      ],
+      "related_terms": [
+        "PRICE_PHASE_TURNING_DOWN",
+        "PRICE_TENDENCY_TURNING_UP"
+      ],
+      "interpretation": "Turning-tendency flag: current p1 is up and projected p1 is down.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "turningTendency",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.turning_tendency",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Tendency TURNING_DOWN — not the phase field.",
+        "popover_title": "Turning down (tendency)",
+        "popover_body": "A separate field from trajectory_phase.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_TENDENCY_DETERIORATING",
+      "term": "DETERIORATING_TOWARD_TURN",
+      "display": "Deteriorating toward turn",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Upward velocity is already decelerating and projected p1 is weaker than current p1.",
+      "scientific_meaning": "turningTendency: p1 \u003e epsilon \u0026\u0026 p2 \u003c 0 \u0026\u0026 projectedP1 \u003c p1.",
+      "does_not_mean": [
+        "Not Adaptive reversal.",
+        "Not a SELL."
+      ],
+      "related_terms": [
+        "PRICE_PHASE_UP_DECELERATING",
+        "PRICE_TENDENCY_RECOVERING"
+      ],
+      "interpretation": "Upward velocity is already decelerating and projected p1 is weaker than current p1.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "turningTendency",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.turning_tendency",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Tendency: deteriorating toward a turn.",
+        "popover_title": "Deteriorating toward turn",
+        "popover_body": "Not an execution instruction.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_TENDENCY_RECOVERING",
+      "term": "RECOVERING_TOWARD_TURN",
+      "display": "Recovering toward turn",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Downward velocity is already decelerating and projected p1 is less negative than current p1.",
+      "scientific_meaning": "turningTendency: p1 \u003c -epsilon \u0026\u0026 p2 \u003e 0 \u0026\u0026 projectedP1 \u003e p1.",
+      "does_not_mean": [
+        "Not FeedState RECOVERING.",
+        "Not Adaptive BUY."
+      ],
+      "related_terms": [
+        "FEED_RECOVERING",
+        "PRICE_PHASE_DOWN_DECELERATING",
+        "PRICE_TENDENCY_DETERIORATING"
+      ],
+      "interpretation": "Downward velocity is already decelerating and projected p1 is less negative than current p1.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "turningTendency",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.turning_tendency",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Price tendency recovering toward turn — not feed recovery.",
+        "popover_title": "Recovering toward turn",
+        "popover_body": "A Price Engine turning_tendency. Feed RECOVERING is a different enum.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_TENDENCY_P2_REVERSAL",
+      "term": "PROJECTED_P2_REVERSAL",
+      "display": "Projected p2 reversal",
+      "type": "CLASSIFICATION",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Current and projected curvature have opposite signs.",
+      "scientific_meaning": "turningTendency: p2 * projectedP2 \u003c 0.",
+      "does_not_mean": [
+        "Not Adaptive reversal score.",
+        "Not a BUY or SELL."
+      ],
+      "related_terms": [
+        "ADAPTIVE_REVERSAL",
+        "PRICE_TENDENCY_NONE"
+      ],
+      "interpretation": "Current and projected curvature have opposite signs.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/policy.go",
+        "go_symbol": "turningTendency",
+        "proto_enum_or_field": "quantram.v1.PriceEmission.turning_tendency",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Projected curvature sign change.",
+        "popover_title": "Projected p2 reversal",
+        "popover_body": "Not the Adaptive reversal measure.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_SKIP_TIME_TERM",
+      "term": "ANALYTIC_TIME_TERM_UNSUPPORTED",
+      "display": "Time-term unsupported",
+      "type": "REASON",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Go production pricing refuses time_term true. EXPM only.",
+      "scientific_meaning": "projection.solve_cover / mapper returns ANALYTIC_TIME_TERM_UNSUPPORTED when time_term is true. PricingSkipReason TIME_TERM.",
+      "does_not_mean": [
+        "Not permission to port RK45."
+      ],
+      "related_terms": [
+        "PRICE_STATUS_PROJECTION_FAILURE",
+        "PRICE_ENGINE_NOUN"
+      ],
+      "interpretation": "Go production pricing refuses time_term true. EXPM only.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/projection.go",
+        "go_symbol": "solveCover",
+        "proto_enum_or_field": "quantram.v1.PricingSkipReason.PRICING_SKIP_REASON_TIME_TERM",
+        "test_reference": "internal/pricing/mapper_test.go"
+      },
+      "ui": {
+        "tooltip": "time_term is unsupported. EXPM only.",
+        "popover_title": "Time-term unsupported",
+        "popover_body": "Go production pricing is EXPM. RK45 is not on the live path.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_SKIP_NUMERICALLY_UNSTABLE",
+      "term": "NUMERICALLY_UNSTABLE",
+      "display": "Numerically unstable",
+      "type": "REASON",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "The EXPM cover was rejected as numerically unstable.",
+      "scientific_meaning": "projection returns Unstable true with NUMERICALLY_UNSTABLE. PricingSkipReason NUMERICALLY_UNSTABLE.",
+      "does_not_mean": [
+        "Not Adaptive ENGINE_ERROR.",
+        "Not a SELL."
+      ],
+      "related_terms": [
+        "PRICE_STATUS_PROJECTION_FAILURE",
+        "PRICE_SKIP_PROJECTION_FAILURE"
+      ],
+      "interpretation": "The EXPM cover was rejected as numerically unstable.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/projection.go",
+        "go_symbol": "solveCover",
+        "proto_enum_or_field": "quantram.v1.PricingSkipReason.PRICING_SKIP_REASON_NUMERICALLY_UNSTABLE",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "EXPM cover rejected as unstable.",
+        "popover_title": "Numerically unstable",
+        "popover_body": "No valid color this minute.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_HOLDING",
+      "term": "HOLDING",
+      "display": "Holding",
+      "type": "STATE",
+      "component": "VIEWER",
+      "plain_meaning": "Arrivals-board alias for Price Engine AMBER.",
+      "scientific_meaning": "quantram-dashboard pricingFlight maps color AMBER to status HOLDING. Not a Price Engine enum. Canonical viewer twin of VIEWER_PRICE_HOLDING.",
+      "does_not_mean": [
+        "This does not mean the Adaptive Emitter decision HOLD.",
+        "This is not independently a BUY or SELL instruction.",
+        "This is not a Price Engine phase named HOLDING."
+      ],
+      "related_terms": [
+        "VIEWER_PRICE_HOLDING",
+        "PRICE_COLOR_AMBER",
+        "ADAPTIVE_HOLD",
+        "VIEWER_ADAPTIVE_HOLDING"
+      ],
+      "interpretation": "Arrivals-board alias for Price Engine AMBER.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [
+        "PRICE_COLOR_AMBER"
+      ],
+      "presentation_only": true,
+      "persistence_policy": "RENDER_ONLY",
+      "live_path_proven": false,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "quantram-dashboard/src/lib/pipeline.ts",
+        "go_symbol": "pricingFlight",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Price trajectory is currently in a holding phase relative to its projected progression.",
+        "popover_title": "Holding (Price arrivals)",
+        "popover_body": "Airport-board label for AMBER. Independent of Adaptive HOLD. Not an order.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_ON_TIME",
+      "term": "ON TIME",
+      "display": "On time",
+      "type": "STATE",
+      "component": "VIEWER",
+      "plain_meaning": "Arrivals-board alias for Price Engine GREEN.",
+      "scientific_meaning": "pricingFlight maps color GREEN to status ON TIME. Not a Price Engine enum.",
+      "does_not_mean": [
+        "ON TIME is not a BUY.",
+        "Not Adaptive ACTIONABLE."
+      ],
+      "related_terms": [
+        "VIEWER_PRICE_ON_TIME",
+        "PRICE_COLOR_GREEN"
+      ],
+      "interpretation": "Arrivals-board alias for Price Engine GREEN.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [
+        "PRICE_COLOR_GREEN"
+      ],
+      "presentation_only": true,
+      "persistence_policy": "RENDER_ONLY",
+      "live_path_proven": false,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "quantram-dashboard/src/lib/pipeline.ts",
+        "go_symbol": "pricingFlight",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Arrivals alias for GREEN.",
+        "popover_title": "On time",
+        "popover_body": "Viewer label only. GREEN is the scientific color.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_DELAYED",
+      "term": "DELAYED",
+      "display": "Delayed",
+      "type": "STATE",
+      "component": "VIEWER",
+      "plain_meaning": "Arrivals-board alias for Price Engine RED.",
+      "scientific_meaning": "pricingFlight maps color RED to status DELAYED. Distinct from VIEWER_ADAPTIVE_DELAYED (infer-off / timeout).",
+      "does_not_mean": [
+        "Not Adaptive DELAYED.",
+        "Not a SELL."
+      ],
+      "related_terms": [
+        "VIEWER_PRICE_DELAYED",
+        "PRICE_COLOR_RED",
+        "VIEWER_ADAPTIVE_DELAYED"
+      ],
+      "interpretation": "Arrivals-board alias for Price Engine RED.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [
+        "PRICE_COLOR_RED"
+      ],
+      "presentation_only": true,
+      "persistence_policy": "RENDER_ONLY",
+      "live_path_proven": false,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "quantram-dashboard/src/lib/pipeline.ts",
+        "go_symbol": "pricingFlight",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Arrivals alias for RED — not Adaptive DELAYED.",
+        "popover_title": "Delayed (Price arrivals)",
+        "popover_body": "Viewer label for RED. Adaptive DELAYED means infer-off or timeout.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "D01_STATE",
+      "term": "D01",
+      "display": "D01",
+      "type": "NOUN",
+      "component": "D01",
+      "plain_meaning": "Adaptive evolving-state model (kinematics, channels, half-life).",
+      "scientific_meaning": "internal/adaptive D01V02Model.Step. EventTime is IntervalStart unix seconds. dt is actual elapsed seconds.",
+      "does_not_mean": [
+        "D01 is not the Price Engine."
+      ],
+      "related_terms": [
+        "D02_SHAPE",
+        "D04_ENVELOPE"
+      ],
+      "interpretation": "Adaptive evolving-state model (kinematics, channels, half-life).",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/d01.go",
+        "go_symbol": "D01V02Model.Step",
+        "proto_enum_or_field": "",
+        "test_reference": "internal/adaptive/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "Adaptive D01 evolving state.",
+        "popover_title": "D01",
+        "popover_body": "Recursive state model stepped on each accepted eligible bar.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "D02_SHAPE",
+      "term": "D02",
+      "display": "D02",
+      "type": "NOUN",
+      "component": "D02",
+      "plain_meaning": "Elastic return shape built from D01 outputs.",
+      "scientific_meaning": "BuildReturnShape(dmo, fmo) → ReturnShape including PathDirection and channel scalars.",
+      "does_not_mean": [
+        "D02 is not an order envelope."
+      ],
+      "related_terms": [
+        "D01_STATE",
+        "D04_ENVELOPE",
+        "ADAPTIVE_PATH_UPWARD"
+      ],
+      "interpretation": "Elastic return shape built from D01 outputs.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/d02.go",
+        "go_symbol": "BuildReturnShape",
+        "proto_enum_or_field": "",
+        "test_reference": "internal/adaptive/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "D02 elastic return shape.",
+        "popover_title": "D02",
+        "popover_body": "Shape, path, and channel scores used by D04.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "D04_ENVELOPE",
+      "term": "D04",
+      "display": "D04",
+      "type": "NOUN",
+      "component": "D04",
+      "plain_meaning": "Trading envelope: H, Q_G, Q_S, Q_R, and capturability C.",
+      "scientific_meaning": "EvaluateCapturability(shape, ProductionContext(event_time)).",
+      "does_not_mean": [
+        "D04 is not P-05 risk."
+      ],
+      "related_terms": [
+        "ADAPTIVE_H",
+        "ADAPTIVE_C",
+        "ADAPTIVE_EMITTER_NOUN"
+      ],
+      "interpretation": "Trading envelope: H, Q_G, Q_S, Q_R, and capturability C.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/d04.go",
+        "go_symbol": "EvaluateCapturability",
+        "proto_enum_or_field": "",
+        "test_reference": "internal/adaptive/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "D04 trading envelope and capturability.",
+        "popover_title": "D04",
+        "popover_body": "Produces H and C used by the emitter. Not OMS risk.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "ADAPTIVE_EMITTER_NOUN",
+      "term": "Emitter",
+      "display": "Emitter",
+      "type": "NOUN",
+      "component": "ADAPTIVE_EMITTER",
+      "plain_meaning": "The Adaptive decision stage that emits BUY, SELL, or HOLD.",
+      "scientific_meaning": "AdaptiveEngine decide() plus emitter position state.",
+      "does_not_mean": [
+        "Not the Price Engine.",
+        "HOLD is a decision."
+      ],
+      "related_terms": [
+        "ADAPTIVE_BUY",
+        "ADAPTIVE_HOLD",
+        "PRICE_ENGINE_NOUN"
+      ],
+      "interpretation": "The Adaptive decision stage that emits BUY, SELL, or HOLD.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/adaptive/engine.go",
+        "go_symbol": "AdaptiveEngine.stepLocked",
+        "proto_enum_or_field": "",
+        "test_reference": "internal/adaptive/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "Adaptive Emitter: BUY, SELL, or HOLD.",
+        "popover_title": "Emitter",
+        "popover_body": "Sibling of Price Engine on the same accepted bar. They do not consume each other.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "PRICE_ENGINE_NOUN",
+      "term": "Price Engine",
+      "display": "Price Engine",
+      "type": "NOUN",
+      "component": "PRICE_ENGINE",
+      "plain_meaning": "Collocated EXPM pricing engine that emits color, phase, and confidence.",
+      "scientific_meaning": "internal/pricing PricingEngine on the same accepted eligible bar as Adaptive. time_term false only. Does not emit BUY/SELL/HOLD.",
+      "does_not_mean": [
+        "Not a confirmation of Adaptive BUY/SELL.",
+        "Not P-05."
+      ],
+      "related_terms": [
+        "ADAPTIVE_EMITTER_NOUN",
+        "PRICE_COLOR_GREEN",
+        "PRICE_STATUS_EMITTED"
+      ],
+      "interpretation": "Collocated EXPM pricing engine that emits color, phase, and confidence.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/pricing/pipeline.go",
+        "go_symbol": "Engine.PrepareStep",
+        "proto_enum_or_field": "quantram.v1.ModelService.StreamPriceEvents",
+        "test_reference": "internal/pricing/equivalence_test.go"
+      },
+      "ui": {
+        "tooltip": "Price Engine: EXPM color, not a buy or sell.",
+        "popover_title": "Price Engine",
+        "popover_body": "Sibling science on the same accepted bar. GREEN/AMBER/RED are not Adaptive decisions.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "QUALITY_DEGRADED",
+      "term": "DEGRADED",
+      "display": "Degraded quality",
+      "type": "STATUS",
+      "component": "INGESTION",
+      "plain_meaning": "Reserved bar-quality enum DEGRADED. Not written on the live Alpaca path.",
+      "scientific_meaning": "RESERVED. QualityDegraded is defined on domain.QualityStatus and mapped by toProtoQuality. classifyAlpacaBar writes only QualityReconstructed, QualityPartial, or QualityComplete. csv_source writes QualityComplete. No production writer assigns QualityDegraded. Tests never construct QualityDegraded. Distinct from FeedState DEGRADED.",
+      "does_not_mean": [
+        "Not FeedState DEGRADED automatically.",
+        "Not a live-path quality label today."
+      ],
+      "related_terms": [
+        "FEED_DEGRADED",
+        "QUALITY_COMPLETE"
+      ],
+      "interpretation": "Reserved bar-quality enum DEGRADED. Not written on the live Alpaca path.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": false,
+      "lifecycle_status": "RESERVED",
+      "source": {
+        "go_file": "internal/domain/bar.go",
+        "go_symbol": "QualityDegraded",
+        "proto_enum_or_field": "quantram.v1.QualityStatus.QUALITY_STATUS_DEGRADED",
+        "test_reference": "internal/marketfeed/decode.go"
+      },
+      "ui": {
+        "tooltip": "Reserved bar-quality enum DEGRADED. Not written on the live Alpaca path.",
+        "popover_title": "Degraded quality",
+        "popover_body": "A reserved bar-level label. Feed DEGRADED is a different enum.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "HOST_STATUS_INITIALIZING",
+      "term": "initializing",
+      "display": "Host initializing",
+      "type": "STATUS",
+      "component": "MODEL_HOST",
+      "plain_meaning": "This symbol has accepted bars but Adaptive is still in the 15-bar context.",
+      "scientific_meaning": "SymbolStatus initializing from SymbolHealth when warmup is active.",
+      "does_not_mean": [
+        "Not Price Engine 45-bar warm-up by itself."
+      ],
+      "related_terms": [
+        "ADAPTIVE_INITIALIZING",
+        "HOST_STATUS_READY"
+      ],
+      "interpretation": "This symbol has accepted bars but Adaptive is still in the 15-bar context.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/modelhost/host.go",
+        "go_symbol": "StatusInitializing",
+        "proto_enum_or_field": "",
+        "test_reference": "internal/modelhost/host_test.go"
+      },
+      "ui": {
+        "tooltip": "Host health: symbol still initializing.",
+        "popover_title": "Host initializing",
+        "popover_body": "Health view of Adaptive warm-up for this symbol.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "HOST_STATUS_READY",
+      "term": "ready",
+      "display": "Host ready",
+      "type": "STATUS",
+      "component": "MODEL_HOST",
+      "plain_meaning": "This symbol is past Adaptive warm-up and evaluating.",
+      "scientific_meaning": "SymbolStatus ready.",
+      "does_not_mean": [
+        "Not Readiness.Ready (observe alias).",
+        "Not P-05 permission."
+      ],
+      "related_terms": [
+        "ADAPTIVE_ACTIONABLE",
+        "OPS_INFER"
+      ],
+      "interpretation": "This symbol is past Adaptive warm-up and evaluating.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/modelhost/host.go",
+        "go_symbol": "StatusReady",
+        "proto_enum_or_field": "",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Host health: symbol ready.",
+        "popover_title": "Host ready",
+        "popover_body": "Adaptive context is complete for this symbol.",
+        "show_scientific_detail": true
+      }
+    },
+    {
+      "id": "SKIP_INITIALIZING",
+      "term": "INITIALIZING",
+      "display": "Initializing skip",
+      "type": "REASON",
+      "component": "ADAPTIVE_EMITTER",
+      "plain_meaning": "Skip reason INITIALIZING — same science as ADAPTIVE_INITIALIZING.",
+      "scientific_meaning": "SkipReason INITIALIZING. Alias ID so skip-reason lookups resolve.",
+      "does_not_mean": [
+        "Not a host-gate failure."
+      ],
+      "related_terms": [
+        "ADAPTIVE_INITIALIZING"
+      ],
+      "interpretation": "Skip reason INITIALIZING — same science as ADAPTIVE_INITIALIZING.",
+      "compatibility_aliases": [],
+      "canonical_source_ids": [],
+      "presentation_only": false,
+      "persistence_policy": "PERSIST",
+      "live_path_proven": true,
+      "lifecycle_status": "ACTIVE",
+      "source": {
+        "go_file": "internal/domain/decision.go",
+        "go_symbol": "SkipInitializing",
+        "proto_enum_or_field": "quantram.v1.SkipReason.SKIP_REASON_INITIALIZING",
+        "test_reference": ""
+      },
+      "ui": {
+        "tooltip": "Skip reason INITIALIZING (warm-up).",
+        "popover_title": "Initializing skip",
+        "popover_body": "Typed skip while building 15-bar context. State is committed.",
+        "show_scientific_detail": true
+      }
+    }
+  ]
+}

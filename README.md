@@ -33,7 +33,9 @@ go run ./cmd/quantram-ingest-client -operation decisions -symbols AAPL -max-bars
 
 `StreamDecisions` requires `QUANTRAM_MODEL=adaptive`. Default is `off` (`FailedPrecondition`).
 
-`StreamPriceEvents` requires `QUANTRAM_PRICING=expm` **and** `QUANTRAM_MODEL=adaptive`. Default pricing is `off` (`FailedPrecondition`). Unknown `QUANTRAM_PRICING` fails startup. Price Engine color needs 45 consecutive accepted eligible minutes after a cold start. A host-gate `INPUT_GAP` is a missing adjacent minute (not silence); restart the server to resume that symbol.
+`StreamPriceEvents` requires `QUANTRAM_PRICING=expm` **and** `QUANTRAM_MODEL=adaptive`. Default pricing is `off` (`FailedPrecondition`). Unknown `QUANTRAM_PRICING` fails startup. Price Engine color needs 45 consecutive accepted eligible minutes after a cold start. After the 2 Sep continuity fix, a skipped IEX no-trade minute is an irregular interval, not `INPUT_GAP`. `INPUT_GAP` is reserved for proven missing eligible bars.
+
+`SemanticService` (`GetTerm`, `ListTerms`, `GetSemanticContract`) is read-only. Contract: `internal/semantics/data/quantram_semantics_v1.json` version `1.0`. Authoring source: `internal/semantics/catalog/v1.go`. Tooling: `go run ./cmd/quantram-semantics validate|audit|build`. See [Semantic Contract V1](docs/design/QuanTRAM_SEMANTIC_CONTRACT_V1_090226.md).
 
 ## Alpaca test feed (outside regular hours)
 

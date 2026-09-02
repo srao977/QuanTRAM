@@ -526,11 +526,12 @@ func (SkipReason) EnumDescriptor() ([]byte, []int) {
 type PricingStatus int32
 
 const (
-	PricingStatus_PRICING_STATUS_UNSPECIFIED        PricingStatus = 0
-	PricingStatus_PRICING_STATUS_WARMUP_DERIVATIVE  PricingStatus = 1
-	PricingStatus_PRICING_STATUS_WARMUP_F4          PricingStatus = 2
-	PricingStatus_PRICING_STATUS_F4_UNAVAILABLE     PricingStatus = 3
-	PricingStatus_PRICING_STATUS_EMITTED            PricingStatus = 4
+	PricingStatus_PRICING_STATUS_UNSPECIFIED       PricingStatus = 0
+	PricingStatus_PRICING_STATUS_WARMUP_DERIVATIVE PricingStatus = 1
+	PricingStatus_PRICING_STATUS_WARMUP_F4         PricingStatus = 2
+	PricingStatus_PRICING_STATUS_F4_UNAVAILABLE    PricingStatus = 3
+	PricingStatus_PRICING_STATUS_EMITTED           PricingStatus = 4
+	// Canonical current status. Historical SADE CSV used the string RK45_FAILURE.
 	PricingStatus_PRICING_STATUS_PROJECTION_FAILURE PricingStatus = 5
 )
 
@@ -2118,20 +2119,21 @@ func (x *StreamDecisionsRequest) GetMaxEvents() uint32 {
 }
 
 type PriceEmission struct {
-	state                     protoimpl.MessageState `protogen:"open.v1"`
-	Color                     string                 `protobuf:"bytes,1,opt,name=color,proto3" json:"color,omitempty"`
-	TrajectoryPhase           string                 `protobuf:"bytes,2,opt,name=trajectory_phase,json=trajectoryPhase,proto3" json:"trajectory_phase,omitempty"`
-	TurningTendency           string                 `protobuf:"bytes,3,opt,name=turning_tendency,json=turningTendency,proto3" json:"turning_tendency,omitempty"`
-	ConfidenceState           string                 `protobuf:"bytes,4,opt,name=confidence_state,json=confidenceState,proto3" json:"confidence_state,omitempty"`
-	DomainState               string                 `protobuf:"bytes,5,opt,name=domain_state,json=domainState,proto3" json:"domain_state,omitempty"`
-	StabilityState            string                 `protobuf:"bytes,6,opt,name=stability_state,json=stabilityState,proto3" json:"stability_state,omitempty"`
-	CurrentDirection          string                 `protobuf:"bytes,7,opt,name=current_direction,json=currentDirection,proto3" json:"current_direction,omitempty"`
-	ProjectedDirection        string                 `protobuf:"bytes,8,opt,name=projected_direction,json=projectedDirection,proto3" json:"projected_direction,omitempty"`
-	ReasonCodes               []string               `protobuf:"bytes,9,rep,name=reason_codes,json=reasonCodes,proto3" json:"reason_codes,omitempty"`
-	RkSuccess                 bool                   `protobuf:"varint,10,opt,name=rk_success,json=rkSuccess,proto3" json:"rk_success,omitempty"`
-	ConditionNumber           float64                `protobuf:"fixed64,11,opt,name=condition_number,json=conditionNumber,proto3" json:"condition_number,omitempty"`
-	MaxRealEigenvalue         float64                `protobuf:"fixed64,12,opt,name=max_real_eigenvalue,json=maxRealEigenvalue,proto3" json:"max_real_eigenvalue,omitempty"`
-	PerturbationAmplification float64                `protobuf:"fixed64,13,opt,name=perturbation_amplification,json=perturbationAmplification,proto3" json:"perturbation_amplification,omitempty"`
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Color              string                 `protobuf:"bytes,1,opt,name=color,proto3" json:"color,omitempty"`
+	TrajectoryPhase    string                 `protobuf:"bytes,2,opt,name=trajectory_phase,json=trajectoryPhase,proto3" json:"trajectory_phase,omitempty"`
+	TurningTendency    string                 `protobuf:"bytes,3,opt,name=turning_tendency,json=turningTendency,proto3" json:"turning_tendency,omitempty"`
+	ConfidenceState    string                 `protobuf:"bytes,4,opt,name=confidence_state,json=confidenceState,proto3" json:"confidence_state,omitempty"`
+	DomainState        string                 `protobuf:"bytes,5,opt,name=domain_state,json=domainState,proto3" json:"domain_state,omitempty"`
+	StabilityState     string                 `protobuf:"bytes,6,opt,name=stability_state,json=stabilityState,proto3" json:"stability_state,omitempty"`
+	CurrentDirection   string                 `protobuf:"bytes,7,opt,name=current_direction,json=currentDirection,proto3" json:"current_direction,omitempty"`
+	ProjectedDirection string                 `protobuf:"bytes,8,opt,name=projected_direction,json=projectedDirection,proto3" json:"projected_direction,omitempty"`
+	ReasonCodes        []string               `protobuf:"bytes,9,rep,name=reason_codes,json=reasonCodes,proto3" json:"reason_codes,omitempty"`
+	// SADE/CSV boolean “projection succeeded”. Go production solver is EXPM, not RK45.
+	RkSuccess                 bool    `protobuf:"varint,10,opt,name=rk_success,json=rkSuccess,proto3" json:"rk_success,omitempty"`
+	ConditionNumber           float64 `protobuf:"fixed64,11,opt,name=condition_number,json=conditionNumber,proto3" json:"condition_number,omitempty"`
+	MaxRealEigenvalue         float64 `protobuf:"fixed64,12,opt,name=max_real_eigenvalue,json=maxRealEigenvalue,proto3" json:"max_real_eigenvalue,omitempty"`
+	PerturbationAmplification float64 `protobuf:"fixed64,13,opt,name=perturbation_amplification,json=perturbationAmplification,proto3" json:"perturbation_amplification,omitempty"`
 	unknownFields             protoimpl.UnknownFields
 	sizeCache                 protoimpl.SizeCache
 }
@@ -2405,12 +2407,13 @@ type PriceEvent struct {
 	Status              PricingStatus          `protobuf:"varint,8,opt,name=status,proto3,enum=quantram.v1.PricingStatus" json:"status,omitempty"`
 	Emitted             bool                   `protobuf:"varint,9,opt,name=emitted,proto3" json:"emitted,omitempty"`
 	DomainExit          bool                   `protobuf:"varint,10,opt,name=domain_exit,json=domainExit,proto3" json:"domain_exit,omitempty"`
-	RkSuccess           bool                   `protobuf:"varint,11,opt,name=rk_success,json=rkSuccess,proto3" json:"rk_success,omitempty"`
-	Emission            *PriceEmission         `protobuf:"bytes,12,opt,name=emission,proto3" json:"emission,omitempty"`
-	Skip                *PricingSkip           `protobuf:"bytes,13,opt,name=skip,proto3" json:"skip,omitempty"`
-	Cockpit             *PriceCockpit          `protobuf:"bytes,14,opt,name=cockpit,proto3" json:"cockpit,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// SADE/CSV boolean “projection succeeded”. Go production solver is EXPM, not RK45.
+	RkSuccess     bool           `protobuf:"varint,11,opt,name=rk_success,json=rkSuccess,proto3" json:"rk_success,omitempty"`
+	Emission      *PriceEmission `protobuf:"bytes,12,opt,name=emission,proto3" json:"emission,omitempty"`
+	Skip          *PricingSkip   `protobuf:"bytes,13,opt,name=skip,proto3" json:"skip,omitempty"`
+	Cockpit       *PriceCockpit  `protobuf:"bytes,14,opt,name=cockpit,proto3" json:"cockpit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PriceEvent) Reset() {
@@ -2592,6 +2595,496 @@ func (x *StreamPriceEventsRequest) GetMaxEvents() uint32 {
 		return x.MaxEvents
 	}
 	return 0
+}
+
+type GetSemanticTermRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSemanticTermRequest) Reset() {
+	*x = GetSemanticTermRequest{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSemanticTermRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSemanticTermRequest) ProtoMessage() {}
+
+func (x *GetSemanticTermRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSemanticTermRequest.ProtoReflect.Descriptor instead.
+func (*GetSemanticTermRequest) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *GetSemanticTermRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type ListSemanticTermsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Component     string                 `protobuf:"bytes,1,opt,name=component,proto3" json:"component,omitempty"`
+	Type          string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSemanticTermsRequest) Reset() {
+	*x = ListSemanticTermsRequest{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSemanticTermsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSemanticTermsRequest) ProtoMessage() {}
+
+func (x *ListSemanticTermsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSemanticTermsRequest.ProtoReflect.Descriptor instead.
+func (*ListSemanticTermsRequest) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *ListSemanticTermsRequest) GetComponent() string {
+	if x != nil {
+		return x.Component
+	}
+	return ""
+}
+
+func (x *ListSemanticTermsRequest) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+type GetSemanticContractRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSemanticContractRequest) Reset() {
+	*x = GetSemanticContractRequest{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSemanticContractRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSemanticContractRequest) ProtoMessage() {}
+
+func (x *GetSemanticContractRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSemanticContractRequest.ProtoReflect.Descriptor instead.
+func (*GetSemanticContractRequest) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{26}
+}
+
+type SemanticContractInfo struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Name      string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Version   string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	Date      string                 `protobuf:"bytes,3,opt,name=date,proto3" json:"date,omitempty"`
+	Status    string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
+	TermCount uint32                 `protobuf:"varint,5,opt,name=term_count,json=termCount,proto3" json:"term_count,omitempty"`
+	// Persist canonical domain values; render presentation aliases in the viewer.
+	PersistencePolicy string `protobuf:"bytes,6,opt,name=persistence_policy,json=persistencePolicy,proto3" json:"persistence_policy,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *SemanticContractInfo) Reset() {
+	*x = SemanticContractInfo{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SemanticContractInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SemanticContractInfo) ProtoMessage() {}
+
+func (x *SemanticContractInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SemanticContractInfo.ProtoReflect.Descriptor instead.
+func (*SemanticContractInfo) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *SemanticContractInfo) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SemanticContractInfo) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *SemanticContractInfo) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *SemanticContractInfo) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *SemanticContractInfo) GetTermCount() uint32 {
+	if x != nil {
+		return x.TermCount
+	}
+	return 0
+}
+
+func (x *SemanticContractInfo) GetPersistencePolicy() string {
+	if x != nil {
+		return x.PersistencePolicy
+	}
+	return ""
+}
+
+type SemanticTerm struct {
+	state                   protoimpl.MessageState `protogen:"open.v1"`
+	Id                      string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Term                    string                 `protobuf:"bytes,2,opt,name=term,proto3" json:"term,omitempty"`
+	Display                 string                 `protobuf:"bytes,3,opt,name=display,proto3" json:"display,omitempty"`
+	Type                    string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Component               string                 `protobuf:"bytes,5,opt,name=component,proto3" json:"component,omitempty"`
+	PlainMeaning            string                 `protobuf:"bytes,6,opt,name=plain_meaning,json=plainMeaning,proto3" json:"plain_meaning,omitempty"`
+	ScientificMeaning       string                 `protobuf:"bytes,7,opt,name=scientific_meaning,json=scientificMeaning,proto3" json:"scientific_meaning,omitempty"`
+	Interpretation          string                 `protobuf:"bytes,8,opt,name=interpretation,proto3" json:"interpretation,omitempty"`
+	DoesNotMean             []string               `protobuf:"bytes,9,rep,name=does_not_mean,json=doesNotMean,proto3" json:"does_not_mean,omitempty"`
+	RelatedTerms            []string               `protobuf:"bytes,10,rep,name=related_terms,json=relatedTerms,proto3" json:"related_terms,omitempty"`
+	Tooltip                 string                 `protobuf:"bytes,11,opt,name=tooltip,proto3" json:"tooltip,omitempty"`
+	PopoverTitle            string                 `protobuf:"bytes,12,opt,name=popover_title,json=popoverTitle,proto3" json:"popover_title,omitempty"`
+	PopoverBody             string                 `protobuf:"bytes,13,opt,name=popover_body,json=popoverBody,proto3" json:"popover_body,omitempty"`
+	ShowScientificDetail    bool                   `protobuf:"varint,14,opt,name=show_scientific_detail,json=showScientificDetail,proto3" json:"show_scientific_detail,omitempty"`
+	SemanticContractVersion string                 `protobuf:"bytes,15,opt,name=semantic_contract_version,json=semanticContractVersion,proto3" json:"semantic_contract_version,omitempty"`
+	// Safe source metadata only. Filesystem paths are not exposed.
+	GoSymbol             string   `protobuf:"bytes,16,opt,name=go_symbol,json=goSymbol,proto3" json:"go_symbol,omitempty"`
+	ProtoEnumOrField     string   `protobuf:"bytes,17,opt,name=proto_enum_or_field,json=protoEnumOrField,proto3" json:"proto_enum_or_field,omitempty"`
+	PresentationOnly     bool     `protobuf:"varint,18,opt,name=presentation_only,json=presentationOnly,proto3" json:"presentation_only,omitempty"`
+	LifecycleStatus      string   `protobuf:"bytes,19,opt,name=lifecycle_status,json=lifecycleStatus,proto3" json:"lifecycle_status,omitempty"`
+	CanonicalSourceIds   []string `protobuf:"bytes,20,rep,name=canonical_source_ids,json=canonicalSourceIds,proto3" json:"canonical_source_ids,omitempty"`
+	CompatibilityAliases []string `protobuf:"bytes,21,rep,name=compatibility_aliases,json=compatibilityAliases,proto3" json:"compatibility_aliases,omitempty"`
+	LivePathProven       bool     `protobuf:"varint,22,opt,name=live_path_proven,json=livePathProven,proto3" json:"live_path_proven,omitempty"`
+	PersistencePolicy    string   `protobuf:"bytes,23,opt,name=persistence_policy,json=persistencePolicy,proto3" json:"persistence_policy,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *SemanticTerm) Reset() {
+	*x = SemanticTerm{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SemanticTerm) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SemanticTerm) ProtoMessage() {}
+
+func (x *SemanticTerm) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SemanticTerm.ProtoReflect.Descriptor instead.
+func (*SemanticTerm) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *SemanticTerm) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetTerm() string {
+	if x != nil {
+		return x.Term
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetDisplay() string {
+	if x != nil {
+		return x.Display
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetComponent() string {
+	if x != nil {
+		return x.Component
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetPlainMeaning() string {
+	if x != nil {
+		return x.PlainMeaning
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetScientificMeaning() string {
+	if x != nil {
+		return x.ScientificMeaning
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetInterpretation() string {
+	if x != nil {
+		return x.Interpretation
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetDoesNotMean() []string {
+	if x != nil {
+		return x.DoesNotMean
+	}
+	return nil
+}
+
+func (x *SemanticTerm) GetRelatedTerms() []string {
+	if x != nil {
+		return x.RelatedTerms
+	}
+	return nil
+}
+
+func (x *SemanticTerm) GetTooltip() string {
+	if x != nil {
+		return x.Tooltip
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetPopoverTitle() string {
+	if x != nil {
+		return x.PopoverTitle
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetPopoverBody() string {
+	if x != nil {
+		return x.PopoverBody
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetShowScientificDetail() bool {
+	if x != nil {
+		return x.ShowScientificDetail
+	}
+	return false
+}
+
+func (x *SemanticTerm) GetSemanticContractVersion() string {
+	if x != nil {
+		return x.SemanticContractVersion
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetGoSymbol() string {
+	if x != nil {
+		return x.GoSymbol
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetProtoEnumOrField() string {
+	if x != nil {
+		return x.ProtoEnumOrField
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetPresentationOnly() bool {
+	if x != nil {
+		return x.PresentationOnly
+	}
+	return false
+}
+
+func (x *SemanticTerm) GetLifecycleStatus() string {
+	if x != nil {
+		return x.LifecycleStatus
+	}
+	return ""
+}
+
+func (x *SemanticTerm) GetCanonicalSourceIds() []string {
+	if x != nil {
+		return x.CanonicalSourceIds
+	}
+	return nil
+}
+
+func (x *SemanticTerm) GetCompatibilityAliases() []string {
+	if x != nil {
+		return x.CompatibilityAliases
+	}
+	return nil
+}
+
+func (x *SemanticTerm) GetLivePathProven() bool {
+	if x != nil {
+		return x.LivePathProven
+	}
+	return false
+}
+
+func (x *SemanticTerm) GetPersistencePolicy() string {
+	if x != nil {
+		return x.PersistencePolicy
+	}
+	return ""
+}
+
+type ListSemanticTermsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Contract      *SemanticContractInfo  `protobuf:"bytes,1,opt,name=contract,proto3" json:"contract,omitempty"`
+	Terms         []*SemanticTerm        `protobuf:"bytes,2,rep,name=terms,proto3" json:"terms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSemanticTermsResponse) Reset() {
+	*x = ListSemanticTermsResponse{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSemanticTermsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSemanticTermsResponse) ProtoMessage() {}
+
+func (x *ListSemanticTermsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSemanticTermsResponse.ProtoReflect.Descriptor instead.
+func (*ListSemanticTermsResponse) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *ListSemanticTermsResponse) GetContract() *SemanticContractInfo {
+	if x != nil {
+		return x.Contract
+	}
+	return nil
+}
+
+func (x *ListSemanticTermsResponse) GetTerms() []*SemanticTerm {
+	if x != nil {
+		return x.Terms
+	}
+	return nil
 }
 
 var File_quantram_v1_quantram_proto protoreflect.FileDescriptor
@@ -2776,7 +3269,49 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	"\x18StreamPriceEventsRequest\x12\x18\n" +
 	"\asymbols\x18\x01 \x03(\tR\asymbols\x12\x1d\n" +
 	"\n" +
-	"max_events\x18\x02 \x01(\rR\tmaxEvents*\x80\x01\n" +
+	"max_events\x18\x02 \x01(\rR\tmaxEvents\"(\n" +
+	"\x16GetSemanticTermRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"L\n" +
+	"\x18ListSemanticTermsRequest\x12\x1c\n" +
+	"\tcomponent\x18\x01 \x01(\tR\tcomponent\x12\x12\n" +
+	"\x04type\x18\x02 \x01(\tR\x04type\"\x1c\n" +
+	"\x1aGetSemanticContractRequest\"\xbe\x01\n" +
+	"\x14SemanticContractInfo\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\x12\x12\n" +
+	"\x04date\x18\x03 \x01(\tR\x04date\x12\x16\n" +
+	"\x06status\x18\x04 \x01(\tR\x06status\x12\x1d\n" +
+	"\n" +
+	"term_count\x18\x05 \x01(\rR\ttermCount\x12-\n" +
+	"\x12persistence_policy\x18\x06 \x01(\tR\x11persistencePolicy\"\xfb\x06\n" +
+	"\fSemanticTerm\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04term\x18\x02 \x01(\tR\x04term\x12\x18\n" +
+	"\adisplay\x18\x03 \x01(\tR\adisplay\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\x12\x1c\n" +
+	"\tcomponent\x18\x05 \x01(\tR\tcomponent\x12#\n" +
+	"\rplain_meaning\x18\x06 \x01(\tR\fplainMeaning\x12-\n" +
+	"\x12scientific_meaning\x18\a \x01(\tR\x11scientificMeaning\x12&\n" +
+	"\x0einterpretation\x18\b \x01(\tR\x0einterpretation\x12\"\n" +
+	"\rdoes_not_mean\x18\t \x03(\tR\vdoesNotMean\x12#\n" +
+	"\rrelated_terms\x18\n" +
+	" \x03(\tR\frelatedTerms\x12\x18\n" +
+	"\atooltip\x18\v \x01(\tR\atooltip\x12#\n" +
+	"\rpopover_title\x18\f \x01(\tR\fpopoverTitle\x12!\n" +
+	"\fpopover_body\x18\r \x01(\tR\vpopoverBody\x124\n" +
+	"\x16show_scientific_detail\x18\x0e \x01(\bR\x14showScientificDetail\x12:\n" +
+	"\x19semantic_contract_version\x18\x0f \x01(\tR\x17semanticContractVersion\x12\x1b\n" +
+	"\tgo_symbol\x18\x10 \x01(\tR\bgoSymbol\x12-\n" +
+	"\x13proto_enum_or_field\x18\x11 \x01(\tR\x10protoEnumOrField\x12+\n" +
+	"\x11presentation_only\x18\x12 \x01(\bR\x10presentationOnly\x12)\n" +
+	"\x10lifecycle_status\x18\x13 \x01(\tR\x0flifecycleStatus\x120\n" +
+	"\x14canonical_source_ids\x18\x14 \x03(\tR\x12canonicalSourceIds\x123\n" +
+	"\x15compatibility_aliases\x18\x15 \x03(\tR\x14compatibilityAliases\x12(\n" +
+	"\x10live_path_proven\x18\x16 \x01(\bR\x0elivePathProven\x12-\n" +
+	"\x12persistence_policy\x18\x17 \x01(\tR\x11persistencePolicy\"\x8b\x01\n" +
+	"\x19ListSemanticTermsResponse\x12=\n" +
+	"\bcontract\x18\x01 \x01(\v2!.quantram.v1.SemanticContractInfoR\bcontract\x12/\n" +
+	"\x05terms\x18\x02 \x03(\v2\x19.quantram.v1.SemanticTermR\x05terms*\x80\x01\n" +
 	"\x0eInstrumentType\x12\x1f\n" +
 	"\x1bINSTRUMENT_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15INSTRUMENT_TYPE_STOCK\x10\x01\x12\x17\n" +
@@ -2868,7 +3403,11 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	"\fGetReadiness\x12 .quantram.v1.GetReadinessRequest\x1a\x1c.quantram.v1.ReadinessReport2\xbb\x01\n" +
 	"\fModelService\x12T\n" +
 	"\x0fStreamDecisions\x12#.quantram.v1.StreamDecisionsRequest\x1a\x1a.quantram.v1.DecisionEvent0\x01\x12U\n" +
-	"\x11StreamPriceEvents\x12%.quantram.v1.StreamPriceEventsRequest\x1a\x17.quantram.v1.PriceEvent0\x01B%Z#quantram/gen/quantram/v1;quantramv1b\x06proto3"
+	"\x11StreamPriceEvents\x12%.quantram.v1.StreamPriceEventsRequest\x1a\x17.quantram.v1.PriceEvent0\x012\x9b\x02\n" +
+	"\x0fSemanticService\x12I\n" +
+	"\aGetTerm\x12#.quantram.v1.GetSemanticTermRequest\x1a\x19.quantram.v1.SemanticTerm\x12Z\n" +
+	"\tListTerms\x12%.quantram.v1.ListSemanticTermsRequest\x1a&.quantram.v1.ListSemanticTermsResponse\x12a\n" +
+	"\x13GetSemanticContract\x12'.quantram.v1.GetSemanticContractRequest\x1a!.quantram.v1.SemanticContractInfoB%Z#quantram/gen/quantram/v1;quantramv1b\x06proto3"
 
 var (
 	file_quantram_v1_quantram_proto_rawDescOnce sync.Once
@@ -2883,43 +3422,49 @@ func file_quantram_v1_quantram_proto_rawDescGZIP() []byte {
 }
 
 var file_quantram_v1_quantram_proto_enumTypes = make([]protoimpl.EnumInfo, 11)
-var file_quantram_v1_quantram_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_quantram_v1_quantram_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
 var file_quantram_v1_quantram_proto_goTypes = []any{
-	(InstrumentType)(0),              // 0: quantram.v1.InstrumentType
-	(QualityStatus)(0),               // 1: quantram.v1.QualityStatus
-	(FeedState)(0),                   // 2: quantram.v1.FeedState
-	(ComponentState)(0),              // 3: quantram.v1.ComponentState
-	(Side)(0),                        // 4: quantram.v1.Side
-	(PathDirection)(0),               // 5: quantram.v1.PathDirection
-	(EmitterPosition)(0),             // 6: quantram.v1.EmitterPosition
-	(ModelStatus)(0),                 // 7: quantram.v1.ModelStatus
-	(SkipReason)(0),                  // 8: quantram.v1.SkipReason
-	(PricingStatus)(0),               // 9: quantram.v1.PricingStatus
-	(PricingSkipReason)(0),           // 10: quantram.v1.PricingSkipReason
-	(*Bar)(nil),                      // 11: quantram.v1.Bar
-	(*GetFeedHealthRequest)(nil),     // 12: quantram.v1.GetFeedHealthRequest
-	(*FeedHealth)(nil),               // 13: quantram.v1.FeedHealth
-	(*GetActiveSourceRequest)(nil),   // 14: quantram.v1.GetActiveSourceRequest
-	(*ActiveSource)(nil),             // 15: quantram.v1.ActiveSource
-	(*StreamBarsRequest)(nil),        // 16: quantram.v1.StreamBarsRequest
-	(*GetBarWindowRequest)(nil),      // 17: quantram.v1.GetBarWindowRequest
-	(*BarWindow)(nil),                // 18: quantram.v1.BarWindow
-	(*TriggerGapFillRequest)(nil),    // 19: quantram.v1.TriggerGapFillRequest
-	(*GapFillResult)(nil),            // 20: quantram.v1.GapFillResult
-	(*GetHealthRequest)(nil),         // 21: quantram.v1.GetHealthRequest
-	(*ComponentHealth)(nil),          // 22: quantram.v1.ComponentHealth
-	(*HealthReport)(nil),             // 23: quantram.v1.HealthReport
-	(*GetReadinessRequest)(nil),      // 24: quantram.v1.GetReadinessRequest
-	(*ReadinessReport)(nil),          // 25: quantram.v1.ReadinessReport
-	(*Decision)(nil),                 // 26: quantram.v1.Decision
-	(*Skip)(nil),                     // 27: quantram.v1.Skip
-	(*DecisionEvent)(nil),            // 28: quantram.v1.DecisionEvent
-	(*StreamDecisionsRequest)(nil),   // 29: quantram.v1.StreamDecisionsRequest
-	(*PriceEmission)(nil),            // 30: quantram.v1.PriceEmission
-	(*PriceCockpit)(nil),             // 31: quantram.v1.PriceCockpit
-	(*PricingSkip)(nil),              // 32: quantram.v1.PricingSkip
-	(*PriceEvent)(nil),               // 33: quantram.v1.PriceEvent
-	(*StreamPriceEventsRequest)(nil), // 34: quantram.v1.StreamPriceEventsRequest
+	(InstrumentType)(0),                // 0: quantram.v1.InstrumentType
+	(QualityStatus)(0),                 // 1: quantram.v1.QualityStatus
+	(FeedState)(0),                     // 2: quantram.v1.FeedState
+	(ComponentState)(0),                // 3: quantram.v1.ComponentState
+	(Side)(0),                          // 4: quantram.v1.Side
+	(PathDirection)(0),                 // 5: quantram.v1.PathDirection
+	(EmitterPosition)(0),               // 6: quantram.v1.EmitterPosition
+	(ModelStatus)(0),                   // 7: quantram.v1.ModelStatus
+	(SkipReason)(0),                    // 8: quantram.v1.SkipReason
+	(PricingStatus)(0),                 // 9: quantram.v1.PricingStatus
+	(PricingSkipReason)(0),             // 10: quantram.v1.PricingSkipReason
+	(*Bar)(nil),                        // 11: quantram.v1.Bar
+	(*GetFeedHealthRequest)(nil),       // 12: quantram.v1.GetFeedHealthRequest
+	(*FeedHealth)(nil),                 // 13: quantram.v1.FeedHealth
+	(*GetActiveSourceRequest)(nil),     // 14: quantram.v1.GetActiveSourceRequest
+	(*ActiveSource)(nil),               // 15: quantram.v1.ActiveSource
+	(*StreamBarsRequest)(nil),          // 16: quantram.v1.StreamBarsRequest
+	(*GetBarWindowRequest)(nil),        // 17: quantram.v1.GetBarWindowRequest
+	(*BarWindow)(nil),                  // 18: quantram.v1.BarWindow
+	(*TriggerGapFillRequest)(nil),      // 19: quantram.v1.TriggerGapFillRequest
+	(*GapFillResult)(nil),              // 20: quantram.v1.GapFillResult
+	(*GetHealthRequest)(nil),           // 21: quantram.v1.GetHealthRequest
+	(*ComponentHealth)(nil),            // 22: quantram.v1.ComponentHealth
+	(*HealthReport)(nil),               // 23: quantram.v1.HealthReport
+	(*GetReadinessRequest)(nil),        // 24: quantram.v1.GetReadinessRequest
+	(*ReadinessReport)(nil),            // 25: quantram.v1.ReadinessReport
+	(*Decision)(nil),                   // 26: quantram.v1.Decision
+	(*Skip)(nil),                       // 27: quantram.v1.Skip
+	(*DecisionEvent)(nil),              // 28: quantram.v1.DecisionEvent
+	(*StreamDecisionsRequest)(nil),     // 29: quantram.v1.StreamDecisionsRequest
+	(*PriceEmission)(nil),              // 30: quantram.v1.PriceEmission
+	(*PriceCockpit)(nil),               // 31: quantram.v1.PriceCockpit
+	(*PricingSkip)(nil),                // 32: quantram.v1.PricingSkip
+	(*PriceEvent)(nil),                 // 33: quantram.v1.PriceEvent
+	(*StreamPriceEventsRequest)(nil),   // 34: quantram.v1.StreamPriceEventsRequest
+	(*GetSemanticTermRequest)(nil),     // 35: quantram.v1.GetSemanticTermRequest
+	(*ListSemanticTermsRequest)(nil),   // 36: quantram.v1.ListSemanticTermsRequest
+	(*GetSemanticContractRequest)(nil), // 37: quantram.v1.GetSemanticContractRequest
+	(*SemanticContractInfo)(nil),       // 38: quantram.v1.SemanticContractInfo
+	(*SemanticTerm)(nil),               // 39: quantram.v1.SemanticTerm
+	(*ListSemanticTermsResponse)(nil),  // 40: quantram.v1.ListSemanticTermsResponse
 }
 var file_quantram_v1_quantram_proto_depIdxs = []int32{
 	0,  // 0: quantram.v1.Bar.instrument_type:type_name -> quantram.v1.InstrumentType
@@ -2943,29 +3488,37 @@ var file_quantram_v1_quantram_proto_depIdxs = []int32{
 	30, // 18: quantram.v1.PriceEvent.emission:type_name -> quantram.v1.PriceEmission
 	32, // 19: quantram.v1.PriceEvent.skip:type_name -> quantram.v1.PricingSkip
 	31, // 20: quantram.v1.PriceEvent.cockpit:type_name -> quantram.v1.PriceCockpit
-	12, // 21: quantram.v1.MarketFeedService.GetFeedHealth:input_type -> quantram.v1.GetFeedHealthRequest
-	14, // 22: quantram.v1.MarketFeedService.GetActiveSource:input_type -> quantram.v1.GetActiveSourceRequest
-	16, // 23: quantram.v1.IngestionService.StreamBars:input_type -> quantram.v1.StreamBarsRequest
-	17, // 24: quantram.v1.IngestionService.GetBarWindow:input_type -> quantram.v1.GetBarWindowRequest
-	19, // 25: quantram.v1.IngestionService.TriggerGapFill:input_type -> quantram.v1.TriggerGapFillRequest
-	21, // 26: quantram.v1.OperationsService.GetHealth:input_type -> quantram.v1.GetHealthRequest
-	24, // 27: quantram.v1.OperationsService.GetReadiness:input_type -> quantram.v1.GetReadinessRequest
-	29, // 28: quantram.v1.ModelService.StreamDecisions:input_type -> quantram.v1.StreamDecisionsRequest
-	34, // 29: quantram.v1.ModelService.StreamPriceEvents:input_type -> quantram.v1.StreamPriceEventsRequest
-	13, // 30: quantram.v1.MarketFeedService.GetFeedHealth:output_type -> quantram.v1.FeedHealth
-	15, // 31: quantram.v1.MarketFeedService.GetActiveSource:output_type -> quantram.v1.ActiveSource
-	11, // 32: quantram.v1.IngestionService.StreamBars:output_type -> quantram.v1.Bar
-	18, // 33: quantram.v1.IngestionService.GetBarWindow:output_type -> quantram.v1.BarWindow
-	20, // 34: quantram.v1.IngestionService.TriggerGapFill:output_type -> quantram.v1.GapFillResult
-	23, // 35: quantram.v1.OperationsService.GetHealth:output_type -> quantram.v1.HealthReport
-	25, // 36: quantram.v1.OperationsService.GetReadiness:output_type -> quantram.v1.ReadinessReport
-	28, // 37: quantram.v1.ModelService.StreamDecisions:output_type -> quantram.v1.DecisionEvent
-	33, // 38: quantram.v1.ModelService.StreamPriceEvents:output_type -> quantram.v1.PriceEvent
-	30, // [30:39] is the sub-list for method output_type
-	21, // [21:30] is the sub-list for method input_type
-	21, // [21:21] is the sub-list for extension type_name
-	21, // [21:21] is the sub-list for extension extendee
-	0,  // [0:21] is the sub-list for field type_name
+	38, // 21: quantram.v1.ListSemanticTermsResponse.contract:type_name -> quantram.v1.SemanticContractInfo
+	39, // 22: quantram.v1.ListSemanticTermsResponse.terms:type_name -> quantram.v1.SemanticTerm
+	12, // 23: quantram.v1.MarketFeedService.GetFeedHealth:input_type -> quantram.v1.GetFeedHealthRequest
+	14, // 24: quantram.v1.MarketFeedService.GetActiveSource:input_type -> quantram.v1.GetActiveSourceRequest
+	16, // 25: quantram.v1.IngestionService.StreamBars:input_type -> quantram.v1.StreamBarsRequest
+	17, // 26: quantram.v1.IngestionService.GetBarWindow:input_type -> quantram.v1.GetBarWindowRequest
+	19, // 27: quantram.v1.IngestionService.TriggerGapFill:input_type -> quantram.v1.TriggerGapFillRequest
+	21, // 28: quantram.v1.OperationsService.GetHealth:input_type -> quantram.v1.GetHealthRequest
+	24, // 29: quantram.v1.OperationsService.GetReadiness:input_type -> quantram.v1.GetReadinessRequest
+	29, // 30: quantram.v1.ModelService.StreamDecisions:input_type -> quantram.v1.StreamDecisionsRequest
+	34, // 31: quantram.v1.ModelService.StreamPriceEvents:input_type -> quantram.v1.StreamPriceEventsRequest
+	35, // 32: quantram.v1.SemanticService.GetTerm:input_type -> quantram.v1.GetSemanticTermRequest
+	36, // 33: quantram.v1.SemanticService.ListTerms:input_type -> quantram.v1.ListSemanticTermsRequest
+	37, // 34: quantram.v1.SemanticService.GetSemanticContract:input_type -> quantram.v1.GetSemanticContractRequest
+	13, // 35: quantram.v1.MarketFeedService.GetFeedHealth:output_type -> quantram.v1.FeedHealth
+	15, // 36: quantram.v1.MarketFeedService.GetActiveSource:output_type -> quantram.v1.ActiveSource
+	11, // 37: quantram.v1.IngestionService.StreamBars:output_type -> quantram.v1.Bar
+	18, // 38: quantram.v1.IngestionService.GetBarWindow:output_type -> quantram.v1.BarWindow
+	20, // 39: quantram.v1.IngestionService.TriggerGapFill:output_type -> quantram.v1.GapFillResult
+	23, // 40: quantram.v1.OperationsService.GetHealth:output_type -> quantram.v1.HealthReport
+	25, // 41: quantram.v1.OperationsService.GetReadiness:output_type -> quantram.v1.ReadinessReport
+	28, // 42: quantram.v1.ModelService.StreamDecisions:output_type -> quantram.v1.DecisionEvent
+	33, // 43: quantram.v1.ModelService.StreamPriceEvents:output_type -> quantram.v1.PriceEvent
+	39, // 44: quantram.v1.SemanticService.GetTerm:output_type -> quantram.v1.SemanticTerm
+	40, // 45: quantram.v1.SemanticService.ListTerms:output_type -> quantram.v1.ListSemanticTermsResponse
+	38, // 46: quantram.v1.SemanticService.GetSemanticContract:output_type -> quantram.v1.SemanticContractInfo
+	35, // [35:47] is the sub-list for method output_type
+	23, // [23:35] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_quantram_v1_quantram_proto_init() }
@@ -2983,9 +3536,9 @@ func file_quantram_v1_quantram_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_quantram_v1_quantram_proto_rawDesc), len(file_quantram_v1_quantram_proto_rawDesc)),
 			NumEnums:      11,
-			NumMessages:   24,
+			NumMessages:   30,
 			NumExtensions: 0,
-			NumServices:   4,
+			NumServices:   5,
 		},
 		GoTypes:           file_quantram_v1_quantram_proto_goTypes,
 		DependencyIndexes: file_quantram_v1_quantram_proto_depIdxs,

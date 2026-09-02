@@ -259,6 +259,7 @@ enum PricingStatus {
   PRICING_STATUS_WARMUP_F4 = 2;
   PRICING_STATUS_F4_UNAVAILABLE = 3;
   PRICING_STATUS_EMITTED = 4;
+  // Canonical current status. Historical SADE CSV used the string RK45_FAILURE.
   PRICING_STATUS_PROJECTION_FAILURE = 5;
 }
 
@@ -286,6 +287,7 @@ message PriceEmission {
   string current_direction = 7;
   string projected_direction = 8;
   repeated string reason_codes = 9;
+  // SADE/CSV boolean “projection succeeded”. Go production solver is EXPM, not RK45.
   bool rk_success = 10;
   double condition_number = 11;
   double max_real_eigenvalue = 12;
@@ -317,6 +319,7 @@ message PriceEvent {
   PricingStatus status = 8;
   bool emitted = 9;
   bool domain_exit = 10;
+  // SADE/CSV boolean “projection succeeded”. Go production solver is EXPM, not RK45.
   bool rk_success = 11;
   PriceEmission emission = 12;
   PricingSkip skip = 13;
@@ -332,4 +335,64 @@ message StreamPriceEventsRequest {
 service ModelService {
   rpc StreamDecisions(StreamDecisionsRequest) returns (stream DecisionEvent);
   rpc StreamPriceEvents(StreamPriceEventsRequest) returns (stream PriceEvent);
+}
+
+// SemanticService is read-only. It explains vocabulary; it does not drive science.
+service SemanticService {
+  rpc GetTerm(GetSemanticTermRequest) returns (SemanticTerm);
+  rpc ListTerms(ListSemanticTermsRequest) returns (ListSemanticTermsResponse);
+  rpc GetSemanticContract(GetSemanticContractRequest) returns (SemanticContractInfo);
+}
+
+message GetSemanticTermRequest {
+  string id = 1;
+}
+
+message ListSemanticTermsRequest {
+  string component = 1;
+  string type = 2;
+}
+
+message GetSemanticContractRequest {}
+
+message SemanticContractInfo {
+  string name = 1;
+  string version = 2;
+  string date = 3;
+  string status = 4;
+  uint32 term_count = 5;
+  // Persist canonical domain values; render presentation aliases in the viewer.
+  string persistence_policy = 6;
+}
+
+message SemanticTerm {
+  string id = 1;
+  string term = 2;
+  string display = 3;
+  string type = 4;
+  string component = 5;
+  string plain_meaning = 6;
+  string scientific_meaning = 7;
+  string interpretation = 8;
+  repeated string does_not_mean = 9;
+  repeated string related_terms = 10;
+  string tooltip = 11;
+  string popover_title = 12;
+  string popover_body = 13;
+  bool show_scientific_detail = 14;
+  string semantic_contract_version = 15;
+  // Safe source metadata only. Filesystem paths are not exposed.
+  string go_symbol = 16;
+  string proto_enum_or_field = 17;
+  bool presentation_only = 18;
+  string lifecycle_status = 19;
+  repeated string canonical_source_ids = 20;
+  repeated string compatibility_aliases = 21;
+  bool live_path_proven = 22;
+  string persistence_policy = 23;
+}
+
+message ListSemanticTermsResponse {
+  SemanticContractInfo contract = 1;
+  repeated SemanticTerm terms = 2;
 }

@@ -625,3 +625,185 @@ var ModelService_ServiceDesc = grpc.ServiceDesc{
 	},
 	Metadata: "quantram/v1/quantram.proto",
 }
+
+const (
+	SemanticService_GetTerm_FullMethodName             = "/quantram.v1.SemanticService/GetTerm"
+	SemanticService_ListTerms_FullMethodName           = "/quantram.v1.SemanticService/ListTerms"
+	SemanticService_GetSemanticContract_FullMethodName = "/quantram.v1.SemanticService/GetSemanticContract"
+)
+
+// SemanticServiceClient is the client API for SemanticService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// SemanticService is read-only. It explains vocabulary; it does not drive science.
+type SemanticServiceClient interface {
+	GetTerm(ctx context.Context, in *GetSemanticTermRequest, opts ...grpc.CallOption) (*SemanticTerm, error)
+	ListTerms(ctx context.Context, in *ListSemanticTermsRequest, opts ...grpc.CallOption) (*ListSemanticTermsResponse, error)
+	GetSemanticContract(ctx context.Context, in *GetSemanticContractRequest, opts ...grpc.CallOption) (*SemanticContractInfo, error)
+}
+
+type semanticServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewSemanticServiceClient(cc grpc.ClientConnInterface) SemanticServiceClient {
+	return &semanticServiceClient{cc}
+}
+
+func (c *semanticServiceClient) GetTerm(ctx context.Context, in *GetSemanticTermRequest, opts ...grpc.CallOption) (*SemanticTerm, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SemanticTerm)
+	err := c.cc.Invoke(ctx, SemanticService_GetTerm_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *semanticServiceClient) ListTerms(ctx context.Context, in *ListSemanticTermsRequest, opts ...grpc.CallOption) (*ListSemanticTermsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSemanticTermsResponse)
+	err := c.cc.Invoke(ctx, SemanticService_ListTerms_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *semanticServiceClient) GetSemanticContract(ctx context.Context, in *GetSemanticContractRequest, opts ...grpc.CallOption) (*SemanticContractInfo, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SemanticContractInfo)
+	err := c.cc.Invoke(ctx, SemanticService_GetSemanticContract_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// SemanticServiceServer is the server API for SemanticService service.
+// All implementations must embed UnimplementedSemanticServiceServer
+// for forward compatibility.
+//
+// SemanticService is read-only. It explains vocabulary; it does not drive science.
+type SemanticServiceServer interface {
+	GetTerm(context.Context, *GetSemanticTermRequest) (*SemanticTerm, error)
+	ListTerms(context.Context, *ListSemanticTermsRequest) (*ListSemanticTermsResponse, error)
+	GetSemanticContract(context.Context, *GetSemanticContractRequest) (*SemanticContractInfo, error)
+	mustEmbedUnimplementedSemanticServiceServer()
+}
+
+// UnimplementedSemanticServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedSemanticServiceServer struct{}
+
+func (UnimplementedSemanticServiceServer) GetTerm(context.Context, *GetSemanticTermRequest) (*SemanticTerm, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTerm not implemented")
+}
+func (UnimplementedSemanticServiceServer) ListTerms(context.Context, *ListSemanticTermsRequest) (*ListSemanticTermsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTerms not implemented")
+}
+func (UnimplementedSemanticServiceServer) GetSemanticContract(context.Context, *GetSemanticContractRequest) (*SemanticContractInfo, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSemanticContract not implemented")
+}
+func (UnimplementedSemanticServiceServer) mustEmbedUnimplementedSemanticServiceServer() {}
+func (UnimplementedSemanticServiceServer) testEmbeddedByValue()                         {}
+
+// UnsafeSemanticServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SemanticServiceServer will
+// result in compilation errors.
+type UnsafeSemanticServiceServer interface {
+	mustEmbedUnimplementedSemanticServiceServer()
+}
+
+func RegisterSemanticServiceServer(s grpc.ServiceRegistrar, srv SemanticServiceServer) {
+	// If the following call panics, it indicates UnimplementedSemanticServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&SemanticService_ServiceDesc, srv)
+}
+
+func _SemanticService_GetTerm_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSemanticTermRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SemanticServiceServer).GetTerm(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SemanticService_GetTerm_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SemanticServiceServer).GetTerm(ctx, req.(*GetSemanticTermRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SemanticService_ListTerms_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSemanticTermsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SemanticServiceServer).ListTerms(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SemanticService_ListTerms_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SemanticServiceServer).ListTerms(ctx, req.(*ListSemanticTermsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SemanticService_GetSemanticContract_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSemanticContractRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SemanticServiceServer).GetSemanticContract(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SemanticService_GetSemanticContract_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SemanticServiceServer).GetSemanticContract(ctx, req.(*GetSemanticContractRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// SemanticService_ServiceDesc is the grpc.ServiceDesc for SemanticService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var SemanticService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "quantram.v1.SemanticService",
+	HandlerType: (*SemanticServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetTerm",
+			Handler:    _SemanticService_GetTerm_Handler,
+		},
+		{
+			MethodName: "ListTerms",
+			Handler:    _SemanticService_ListTerms_Handler,
+		},
+		{
+			MethodName: "GetSemanticContract",
+			Handler:    _SemanticService_GetSemanticContract_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "quantram/v1/quantram.proto",
+}

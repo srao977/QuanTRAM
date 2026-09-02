@@ -15,6 +15,7 @@ import (
 	"quantram/internal/ingestion"
 	"quantram/internal/marketfeed"
 	"quantram/internal/modelhost"
+	"quantram/internal/semantics"
 	"quantram/internal/server"
 
 	"google.golang.org/grpc"
@@ -61,10 +62,17 @@ func main() {
 	default:
 		quantramServer = server.New(pipeline, nil)
 	}
+	if dict, err := semantics.LoadEmbedded(); err != nil {
+		log.Printf("semantic dictionary unavailable: %v", err)
+	} else {
+		quantramServer.SetSemantics(dict)
+		log.Printf("semantic contract %s (%d terms)", dict.Version(), dict.TermCount())
+	}
 	quantramv1.RegisterMarketFeedServiceServer(grpcServer, quantramServer)
 	quantramv1.RegisterIngestionServiceServer(grpcServer, quantramServer)
 	quantramv1.RegisterOperationsServiceServer(grpcServer, quantramServer)
 	quantramv1.RegisterModelServiceServer(grpcServer, quantramServer)
+	quantramv1.RegisterSemanticServiceServer(grpcServer, quantramServer)
 
 	ctx, stopSignals := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stopSignals()

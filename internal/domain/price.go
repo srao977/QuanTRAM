@@ -6,11 +6,14 @@ import "time"
 type PricingStatus string
 
 const (
-	PricingStatusUnspecified       PricingStatus = ""
-	PricingStatusWarmupDerivative  PricingStatus = "WARMUP_DERIVATIVE"
-	PricingStatusWarmupF4          PricingStatus = "WARMUP_F4"
-	PricingStatusF4Unavailable     PricingStatus = "F4_FIT_UNAVAILABLE"
-	PricingStatusEmitted           PricingStatus = "EMITTED"
+	PricingStatusUnspecified      PricingStatus = ""
+	PricingStatusWarmupDerivative PricingStatus = "WARMUP_DERIVATIVE"
+	PricingStatusWarmupF4         PricingStatus = "WARMUP_F4"
+	PricingStatusF4Unavailable    PricingStatus = "F4_FIT_UNAVAILABLE"
+	PricingStatusEmitted          PricingStatus = "EMITTED"
+	// PricingStatusProjectionFailure is the Go symbol. The stored string remains
+	// RK45_FAILURE so frozen SADE Pricing Unit Run 001 CSV status compares.
+	// Canonical semantic ID is PRICE_STATUS_PROJECTION_FAILURE. Production solver is EXPM.
 	PricingStatusProjectionFailure PricingStatus = "RK45_FAILURE"
 )
 
