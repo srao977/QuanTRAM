@@ -252,6 +252,84 @@ message StreamDecisionsRequest {
   uint32 max_events = 2;
 }
 
+// P-04 PriceEngine. Color is not BUY/SELL/HOLD. Warm-up skips are not errors.
+enum PricingStatus {
+  PRICING_STATUS_UNSPECIFIED = 0;
+  PRICING_STATUS_WARMUP_DERIVATIVE = 1;
+  PRICING_STATUS_WARMUP_F4 = 2;
+  PRICING_STATUS_F4_UNAVAILABLE = 3;
+  PRICING_STATUS_EMITTED = 4;
+  PRICING_STATUS_PROJECTION_FAILURE = 5;
+}
+
+enum PricingSkipReason {
+  PRICING_SKIP_REASON_UNSPECIFIED = 0;
+  PRICING_SKIP_REASON_WARMUP_DERIVATIVE = 1;
+  PRICING_SKIP_REASON_WARMUP_F4 = 2;
+  PRICING_SKIP_REASON_F4_UNAVAILABLE = 3;
+  PRICING_SKIP_REASON_PROJECTION_FAILURE = 4;
+  PRICING_SKIP_REASON_NUMERICALLY_UNSTABLE = 5;
+  PRICING_SKIP_REASON_INVALID_INPUT = 6;
+  PRICING_SKIP_REASON_TIMEOUT = 7;
+  PRICING_SKIP_REASON_ENGINE_ERROR = 8;
+  PRICING_SKIP_REASON_ENGINE_PANIC = 9;
+  PRICING_SKIP_REASON_TIME_TERM = 10;
+}
+
+message PriceEmission {
+  string color = 1;
+  string trajectory_phase = 2;
+  string turning_tendency = 3;
+  string confidence_state = 4;
+  string domain_state = 5;
+  string stability_state = 6;
+  string current_direction = 7;
+  string projected_direction = 8;
+  repeated string reason_codes = 9;
+  bool rk_success = 10;
+  double condition_number = 11;
+  double max_real_eigenvalue = 12;
+  double perturbation_amplification = 13;
+}
+
+message PriceCockpit {
+  string cockpit_color = 1;
+  string refined_internal_state = 2;
+  string persistence_state = 3;
+  string turn_candidate = 4;
+  string domain_state = 5;
+  string confidence_state = 6;
+}
+
+message PricingSkip {
+  PricingSkipReason reason = 1;
+  string detail = 2;
+}
+
+message PriceEvent {
+  string event_id = 1;
+  string symbol = 2;
+  int64 interval_start_unix_ms = 3;
+  string market_snapshot_id = 4;
+  string source_timestamp = 5;
+  uint64 accepted_sequence = 6;
+  int64 latency_ms = 7;
+  PricingStatus status = 8;
+  bool emitted = 9;
+  bool domain_exit = 10;
+  bool rk_success = 11;
+  PriceEmission emission = 12;
+  PricingSkip skip = 13;
+  PriceCockpit cockpit = 14;
+}
+
+message StreamPriceEventsRequest {
+  repeated string symbols = 1;
+  // Zero means stream until the client cancels.
+  uint32 max_events = 2;
+}
+
 service ModelService {
   rpc StreamDecisions(StreamDecisionsRequest) returns (stream DecisionEvent);
+  rpc StreamPriceEvents(StreamPriceEventsRequest) returns (stream PriceEvent);
 }

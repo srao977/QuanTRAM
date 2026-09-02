@@ -13,6 +13,7 @@ import (
 	"quantram/internal/config"
 	"quantram/internal/domain"
 	"quantram/internal/ingestion"
+	"quantram/internal/pricing"
 )
 
 const (
@@ -30,6 +31,10 @@ type Unavailable struct{}
 
 func (Unavailable) Health() domain.ComponentHealth {
 	return domain.ComponentHealth{Name: "model", State: domain.ComponentUnavailable, Detail: "unavailable"}
+}
+
+func (Unavailable) PricingHealth() domain.ComponentHealth {
+	return domain.ComponentHealth{Name: "pricing", State: domain.ComponentHealthy, Detail: "off"}
 }
 
 type SymbolStatus string
@@ -54,6 +59,7 @@ type BarSource interface {
 
 type Options struct {
 	Mode      config.ModelMode
+	Pricing   config.PricingMode
 	Deadline  time.Duration
 	Delay     time.Duration
 	PanicOn   string
@@ -61,28 +67,34 @@ type Options struct {
 }
 
 type Host struct {
-	src     BarSource
-	symbols []string
-	opts    Options
-	workers map[string]*worker
-	seq     atomic.Uint64
-	enabled atomic.Bool
-	unavail atomic.Bool
-	started atomic.Bool
-	nextSub atomic.Uint64
+	src            BarSource
+	symbols        []string
+	opts           Options
+	workers        map[string]*worker
+	seq            atomic.Uint64
+	enabled        atomic.Bool
+	unavail        atomic.Bool
+	pricingUnavail atomic.Bool
+	failPricing    atomic.Bool
+	started        atomic.Bool
+	nextSub        atomic.Uint64
+	nextPriceSub   atomic.Uint64
 
-	mu         sync.Mutex
-	closed     bool
-	cancel     context.CancelFunc
-	subs       map[uint64]chan domain.DecisionEvent
-	lastBySym  map[string]domain.DecisionEvent
-	eventsOnce sync.Once
-	events     <-chan domain.DecisionEvent
+	mu           sync.Mutex
+	closed       bool
+	cancel       context.CancelFunc
+	subs         map[uint64]chan domain.DecisionEvent
+	priceSubs    map[uint64]chan domain.PriceEvent
+	lastBySym    map[string]domain.DecisionEvent
+	lastPriceSym map[string]domain.PriceEvent
+	eventsOnce   sync.Once
+	events       <-chan domain.DecisionEvent
 }
 
 type worker struct {
 	symbol       string
 	engine       *adaptive.Engine
+	pricing      *pricing.Engine
 	inbox        chan domain.Bar
 	lastAccepted time.Time
 	hasAccepted  bool
@@ -93,6 +105,7 @@ type worker struct {
 	timeouts     atomic.Uint32
 	errors       atomic.Uint32
 	lastOutcome  atomic.Value
+	lastPrice    atomic.Value
 }
 
 type SymbolHealth struct {
@@ -107,6 +120,15 @@ type SymbolHealth struct {
 func New(src BarSource, symbols []string, opts Options) (*Host, error) {
 	if opts.Mode == "" {
 		opts.Mode = config.ModelOff
+	}
+	if opts.Pricing == "" {
+		opts.Pricing = config.PricingOff
+	}
+	if opts.Pricing != config.PricingOff && opts.Pricing != config.PricingExpm {
+		return nil, fmt.Errorf("unknown pricing mode %q", opts.Pricing)
+	}
+	if err := config.ValidatePricingRequiresAdaptive(opts.Pricing, opts.Mode); err != nil {
+		return nil, err
 	}
 	if opts.Mode == config.ModelOff {
 		return nil, nil
@@ -138,8 +160,10 @@ func New(src BarSource, symbols []string, opts Options) (*Host, error) {
 		symbols:   append([]string(nil), symbols...),
 		opts:      opts,
 		workers:   make(map[string]*worker, len(symbols)),
-		subs:      make(map[uint64]chan domain.DecisionEvent),
-		lastBySym: make(map[string]domain.DecisionEvent, len(symbols)),
+		subs:         make(map[uint64]chan domain.DecisionEvent),
+		priceSubs:    make(map[uint64]chan domain.PriceEvent),
+		lastBySym:    make(map[string]domain.DecisionEvent, len(symbols)),
+		lastPriceSym: make(map[string]domain.PriceEvent, len(symbols)),
 	}
 	for _, symbol := range h.symbols {
 		h.workers[symbol] = &worker{
@@ -148,8 +172,29 @@ func New(src BarSource, symbols []string, opts Options) (*Host, error) {
 			inbox:  make(chan domain.Bar, inbox),
 		}
 	}
+	if opts.Pricing == config.PricingExpm {
+		for _, symbol := range h.symbols {
+			eng, err := pricing.NewEngine(symbol)
+			if err != nil {
+				h.pricingUnavail.Store(true)
+				break
+			}
+			h.workers[symbol].pricing = eng
+		}
+		if h.pricingUnavail.Load() {
+			for _, w := range h.workers {
+				w.pricing = nil
+			}
+		}
+	}
 	h.enabled.Store(true)
 	return h, nil
+}
+
+func (h *Host) FailNextPricing() {
+	if h != nil {
+		h.failPricing.Store(true)
+	}
 }
 
 func (h *Host) Started() bool {
@@ -215,6 +260,59 @@ func (h *Host) LastEvents() []domain.DecisionEvent {
 	return out
 }
 
+func (h *Host) SubscribePriceEvents(buffer int) (uint64, <-chan domain.PriceEvent) {
+	if h == nil {
+		ch := make(chan domain.PriceEvent)
+		close(ch)
+		return 0, ch
+	}
+	if buffer <= 0 {
+		buffer = eventBuffer
+	}
+	ch := make(chan domain.PriceEvent, buffer)
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.closed {
+		close(ch)
+		return 0, ch
+	}
+	id := h.nextPriceSub.Add(1)
+	h.priceSubs[id] = ch
+	return id, ch
+}
+
+func (h *Host) UnsubscribePriceEvents(id uint64) {
+	if h == nil || id == 0 {
+		return
+	}
+	h.mu.Lock()
+	ch, ok := h.priceSubs[id]
+	if ok {
+		delete(h.priceSubs, id)
+	}
+	h.mu.Unlock()
+	if ok {
+		close(ch)
+	}
+}
+
+func (h *Host) LastPriceEvents() []domain.PriceEvent {
+	if h == nil {
+		return nil
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	out := make([]domain.PriceEvent, 0, len(h.lastPriceSym))
+	for _, ev := range h.lastPriceSym {
+		out = append(out, ev)
+	}
+	return out
+}
+
+func (h *Host) PricingEnabled() bool {
+	return h != nil && h.opts.Pricing == config.PricingExpm && !h.pricingUnavail.Load()
+}
+
 func (h *Host) Run(ctx context.Context) error {
 	if h == nil {
 		return nil
@@ -250,8 +348,13 @@ func (h *Host) Run(ctx context.Context) error {
 		h.closed = true
 		subs := h.subs
 		h.subs = make(map[uint64]chan domain.DecisionEvent)
+		priceSubs := h.priceSubs
+		h.priceSubs = make(map[uint64]chan domain.PriceEvent)
 		h.mu.Unlock()
 		for _, ch := range subs {
+			close(ch)
+		}
+		for _, ch := range priceSubs {
 			close(ch)
 		}
 	}()
@@ -373,7 +476,25 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 		h.emit(ev)
 		return
 	}
-	event, working, commit := w.engine.PrepareStep(bar)
+	event, working, commitA := w.engine.PrepareStep(bar)
+	var priceEv domain.PriceEvent
+	var priceWork *pricing.Engine
+	commitP := true
+	if w.pricing != nil {
+		if h.failPricing.CompareAndSwap(true, false) {
+			commitP = false
+			priceEv = domain.PriceEvent{
+				Symbol:           bar.Symbol,
+				IntervalStart:    bar.IntervalStart,
+				MarketSnapshotID: bar.MarketSnapshotID,
+				SourceTimestamp:  bar.SourceTimestamp,
+				Status:           domain.PricingStatusUnspecified,
+				Skip:             &domain.PricingSkip{Reason: domain.PricingSkipEngineError, Detail: "injected pricing failure"},
+			}
+		} else {
+			priceEv, priceWork, commitP = w.pricing.PrepareStep(bar)
+		}
+	}
 	if time.Since(started) > h.opts.Deadline {
 		w.timeouts.Add(1)
 		event.Decision = nil
@@ -385,16 +506,37 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 		h.emit(event)
 		return
 	}
-	if commit {
+	if commitA && commitP {
 		w.engine.Commit(working)
+		if w.pricing != nil {
+			w.pricing.Commit(priceWork)
+			if priceEv.EventID == "" {
+				priceEv.EventID = fmt.Sprintf("%s:price:%d", w.symbol, h.seq.Add(1))
+			}
+			w.lastPrice.Store(priceEv)
+			h.emitPrice(priceEv)
+		}
 		w.lastAccepted = bar.IntervalStart
 		w.hasAccepted = true
+	} else if w.pricing != nil && commitA && !commitP {
+		event.Decision = nil
+		detail := "pricing prepare failed"
+		if priceEv.Skip != nil && priceEv.Skip.Detail != "" {
+			detail = priceEv.Skip.Detail
+		}
+		event.Skip = &domain.Skip{Reason: domain.SkipEngineError, Detail: detail}
+		event.PostStateHash = pre
+		event.SignalID = ""
+		event.DecisionID = ""
 	}
 	if event.Skip != nil {
 		w.lastSkip.Store(event.Skip.Reason)
 	}
 	if event.Decision != nil {
 		w.lastOutcome.Store(event.Decision.Side)
+	}
+	if w.pricing != nil && commitA && commitP && priceEv.Emission != nil {
+		log.Printf("pricing emit symbol=%s color=%s interval=%s", bar.Symbol, priceEv.Emission.Color, bar.IntervalStart.UTC().Format(time.RFC3339))
 	}
 	h.emit(event)
 }
@@ -447,6 +589,21 @@ func (h *Host) emit(ev domain.DecisionEvent) {
 	} else if ev.Skip != nil {
 		log.Printf("model skip symbol=%s reason=%s interval=%s", ev.Symbol, ev.Skip.Reason, ev.IntervalStart.UTC().Format(time.RFC3339))
 	}
+}
+
+func (h *Host) emitPrice(ev domain.PriceEvent) {
+	h.mu.Lock()
+	if !h.closed {
+		h.lastPriceSym[ev.Symbol] = ev
+		for id, ch := range h.priceSubs {
+			select {
+			case ch <- ev:
+			default:
+				log.Printf("pricing event buffer full subscriber=%d symbol=%s", id, ev.Symbol)
+			}
+		}
+	}
+	h.mu.Unlock()
 }
 
 func (w *worker) markDisc(reason domain.SkipReason) bool {
@@ -555,4 +712,104 @@ func (h *Host) WorkerHash(symbol string) string {
 		return ""
 	}
 	return h.workers[symbol].engine.StateHash()
+}
+
+func (h *Host) WorkerPricingHash(symbol string) string {
+	if h == nil || h.workers[symbol] == nil || h.workers[symbol].pricing == nil {
+		return ""
+	}
+	return h.workers[symbol].pricing.StateHash()
+}
+
+func (h *Host) WorkerPricingReceived(symbol string) int {
+	if h == nil || h.workers[symbol] == nil || h.workers[symbol].pricing == nil {
+		return 0
+	}
+	return h.workers[symbol].pricing.Received()
+}
+
+func (h *Host) PricingHealth() domain.ComponentHealth {
+	if h == nil {
+		return domain.ComponentHealth{Name: "pricing", State: domain.ComponentHealthy, Detail: "off"}
+	}
+	if h.pricingUnavail.Load() {
+		return domain.ComponentHealth{Name: "pricing", State: domain.ComponentUnavailable, Detail: "unavailable"}
+	}
+	if h.opts.Pricing != config.PricingExpm {
+		return domain.ComponentHealth{Name: "pricing", State: domain.ComponentHealthy, Detail: "off"}
+	}
+	anyDisc, anyInit, anyPause, anyErr, anyReady := false, false, false, false, false
+	allCold := len(h.symbols) > 0
+	for _, symbol := range h.symbols {
+		st := h.pricingSymbolStatus(symbol)
+		if st != StatusCold && st != StatusOff {
+			allCold = false
+		}
+		switch st {
+		case StatusDiscontinuous:
+			anyDisc = true
+		case StatusInitializing:
+			anyInit = true
+		case StatusPaused:
+			anyPause = true
+		case StatusError:
+			anyErr = true
+		case StatusReady:
+			anyReady = true
+		case StatusCold:
+			anyInit = true
+		}
+	}
+	switch {
+	case anyErr && allPricingFailed(h):
+		return domain.ComponentHealth{Name: "pricing", State: domain.ComponentUnavailable, Detail: "error"}
+	case anyDisc || anyErr:
+		return domain.ComponentHealth{Name: "pricing", State: domain.ComponentDegraded, Detail: "discontinuous"}
+	case allCold:
+		return domain.ComponentHealth{Name: "pricing", State: domain.ComponentDegraded, Detail: "cold"}
+	case anyPause && !anyInit:
+		return domain.ComponentHealth{Name: "pricing", State: domain.ComponentDegraded, Detail: "paused"}
+	case anyInit || anyPause:
+		return domain.ComponentHealth{Name: "pricing", State: domain.ComponentDegraded, Detail: "initializing"}
+	case anyReady:
+		return domain.ComponentHealth{Name: "pricing", State: domain.ComponentHealthy, Detail: "expm"}
+	default:
+		return domain.ComponentHealth{Name: "pricing", State: domain.ComponentHealthy, Detail: "expm"}
+	}
+}
+
+func (h *Host) pricingSymbolStatus(symbol string) SymbolStatus {
+	w := h.workers[symbol]
+	if w == nil || w.pricing == nil {
+		return StatusOff
+	}
+	received := w.pricing.Received()
+	warmup := w.pricing.WarmupBars()
+	switch {
+	case w.disc.Load():
+		return StatusDiscontinuous
+	case !h.src.Readiness().Infer && w.hasAccepted:
+		return StatusPaused
+	case w.errors.Load() > 0:
+		return StatusError
+	case received == 0:
+		return StatusCold
+	case received <= warmup:
+		return StatusInitializing
+	default:
+		return StatusReady
+	}
+}
+
+func allPricingFailed(h *Host) bool {
+	if len(h.symbols) == 0 {
+		return false
+	}
+	for _, symbol := range h.symbols {
+		st := h.pricingSymbolStatus(symbol)
+		if st != StatusError && st != StatusDiscontinuous {
+			return false
+		}
+	}
+	return true
 }

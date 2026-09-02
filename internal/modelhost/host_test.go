@@ -17,6 +17,7 @@ type fakeSource struct {
 	mu     sync.Mutex
 	bars   chan domain.Bar
 	infer  bool
+	subs   int
 	status map[string]ingestion.ModelPathStatus
 }
 
@@ -29,6 +30,9 @@ func newFake(buffer int) *fakeSource {
 }
 
 func (f *fakeSource) SubscribeModelBars(int) (uint64, <-chan domain.Bar) {
+	f.mu.Lock()
+	f.subs++
+	f.mu.Unlock()
 	return 1, f.bars
 }
 func (f *fakeSource) Unsubscribe(uint64) {}
@@ -54,6 +58,12 @@ func (f *fakeSource) setStatus(symbol string, st ingestion.ModelPathStatus) {
 	f.status[symbol] = st
 }
 func (f *fakeSource) push(bar domain.Bar) { f.bars <- bar }
+
+func (f *fakeSource) subscribeCount() int {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.subs
+}
 
 func finalBar(symbol string, start time.Time, close float64) domain.Bar {
 	return domain.Bar{
@@ -107,6 +117,7 @@ func startHost(t *testing.T, src BarSource, symbols []string, opts Options) (*Ho
 		}
 		time.Sleep(5 * time.Millisecond)
 	}
+	_ = host.Events()
 	t.Cleanup(cancel)
 	return host, cancel
 }
@@ -387,6 +398,167 @@ func TestPanicDoesNotStopPipelineObserve(t *testing.T) {
 	}
 	if msft.Skip.Reason != domain.SkipInitializing && msft.Skip.Reason != domain.SkipInferOff {
 		t.Fatalf("MSFT should initialize or infer-off, got %+v", msft.Skip)
+	}
+}
+
+func TestNewExpmRequiresAdaptive(t *testing.T) {
+	_, err := New(newFake(1), []string{"AAPL"}, Options{Mode: config.ModelOff, Pricing: config.PricingExpm})
+	if err == nil {
+		t.Fatal("expm without adaptive must fail")
+	}
+	_, err = New(newFake(1), []string{"AAPL"}, Options{Mode: config.ModelAdaptive, Pricing: "rk45", Deadline: time.Millisecond})
+	if err == nil {
+		t.Fatal("unknown pricing must fail")
+	}
+}
+
+func TestPricingOffDoesNotAllocate(t *testing.T) {
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{})
+	src.push(finalBar("AAPL", time.Date(2026, 9, 1, 13, 30, 0, 0, time.UTC), 100))
+	_ = collect(t, host.Events(), 1, time.Second)
+	if host.WorkerPricingReceived("AAPL") != 0 || host.PricingHealth().Detail != "off" {
+		t.Fatalf("pricing should stay off, health=%+v received=%d", host.PricingHealth(), host.WorkerPricingReceived("AAPL"))
+	}
+}
+
+func TestPricingSharesOneMailbox(t *testing.T) {
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{Pricing: config.PricingExpm})
+	if src.subscribeCount() != 1 {
+		t.Fatalf("pricing must not open a second mailbox, got %d", src.subs)
+	}
+	h := host.PricingHealth()
+	if h.Name != "pricing" || h.Detail != "cold" {
+		t.Fatalf("expm host before bars should be cold, got %+v", h)
+	}
+}
+
+func TestPricingInitializingStillWarms(t *testing.T) {
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{Pricing: config.PricingExpm})
+	start := time.Date(2026, 9, 1, 13, 30, 0, 0, time.UTC)
+	src.push(finalBar("AAPL", start, 100))
+	ev := collect(t, host.Events(), 1, time.Second)[0]
+	if !ev.IsSkip() || ev.Skip.Reason != domain.SkipInitializing {
+		t.Fatalf("adaptive want INITIALIZING, got %+v", ev.Skip)
+	}
+	if host.WorkerCompleted("AAPL") != 1 || host.WorkerPricingReceived("AAPL") != 1 {
+		t.Fatalf("INITIALIZING must still commit pricing warmup completed=%d pricing=%d", host.WorkerCompleted("AAPL"), host.WorkerPricingReceived("AAPL"))
+	}
+	if host.PricingHealth().Detail != "initializing" {
+		t.Fatalf("pricing health %+v", host.PricingHealth())
+	}
+}
+
+func TestPricingInferPauseDoesNotReset(t *testing.T) {
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{Pricing: config.PricingExpm})
+	start := time.Date(2026, 9, 1, 13, 30, 0, 0, time.UTC)
+	src.push(finalBar("AAPL", start, 100))
+	src.push(finalBar("AAPL", start.Add(time.Minute), 101))
+	_ = collect(t, host.Events(), 2, time.Second)
+	hashA, hashP := host.WorkerHash("AAPL"), host.WorkerPricingHash("AAPL")
+	src.setInfer(false)
+	src.push(finalBar("AAPL", start.Add(2*time.Minute), 102))
+	ev := collect(t, host.Events(), 1, time.Second)[0]
+	if !ev.IsSkip() || ev.Skip.Reason != domain.SkipInferOff {
+		t.Fatalf("want INFER_OFF, got %+v", ev.Skip)
+	}
+	if host.WorkerHash("AAPL") != hashA || host.WorkerPricingHash("AAPL") != hashP {
+		t.Fatal("infer pause reset adaptive or pricing state")
+	}
+	if host.WorkerPricingReceived("AAPL") != 2 {
+		t.Fatalf("pricing received %d", host.WorkerPricingReceived("AAPL"))
+	}
+}
+
+func TestPricingGapDoesNotStep(t *testing.T) {
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{Pricing: config.PricingExpm})
+	start := time.Date(2026, 9, 1, 13, 30, 0, 0, time.UTC)
+	src.push(finalBar("AAPL", start, 100))
+	_ = collect(t, host.Events(), 1, time.Second)
+	hashP := host.WorkerPricingHash("AAPL")
+	src.push(finalBar("AAPL", start.Add(3*time.Minute), 103))
+	ev := collect(t, host.Events(), 1, time.Second)[0]
+	if !ev.IsSkip() || ev.Skip.Reason != domain.SkipInputGap {
+		t.Fatalf("want INPUT_GAP, got %+v", ev.Skip)
+	}
+	if host.WorkerPricingHash("AAPL") != hashP || host.WorkerPricingReceived("AAPL") != 1 {
+		t.Fatal("gap stepped pricing")
+	}
+}
+
+func TestPricingReconstructedNeverSteps(t *testing.T) {
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{Pricing: config.PricingExpm})
+	events := host.Events()
+	start := time.Date(2026, 9, 1, 13, 30, 0, 0, time.UTC)
+	bar := finalBar("AAPL", start, 100)
+	bar.IsBackfilled = true
+	bar.QualityStatus = domain.QualityReconstructed
+	src.push(bar)
+	ev := collect(t, events, 1, time.Second)[0]
+	if !ev.IsSkip() || ev.Skip.Reason != domain.SkipNotModelEligible {
+		t.Fatalf("want NOT_MODEL_ELIGIBLE, got %+v", ev.Skip)
+	}
+	if host.WorkerPricingReceived("AAPL") != 0 {
+		t.Fatal("reconstructed bar priced")
+	}
+}
+
+func TestPricingFailRollsBackAdaptiveAndReplays(t *testing.T) {
+	start := time.Date(2026, 9, 1, 13, 30, 0, 0, time.UTC)
+	bars := []domain.Bar{
+		finalBar("AAPL", start, 100),
+		finalBar("AAPL", start.Add(time.Minute), 101),
+		finalBar("AAPL", start.Add(2*time.Minute), 102),
+	}
+
+	cleanSrc := newFake(8)
+	clean, _ := startHost(t, cleanSrc, []string{"AAPL"}, Options{Pricing: config.PricingExpm})
+	cleanSrc.push(bars[0])
+	cleanSrc.push(bars[1])
+	_ = collect(t, clean.Events(), 2, time.Second)
+	after2A, after2P := clean.WorkerHash("AAPL"), clean.WorkerPricingHash("AAPL")
+	cleanSrc.push(bars[2])
+	cleanEv := collect(t, clean.Events(), 1, time.Second)[0]
+	after3P := clean.WorkerPricingHash("AAPL")
+
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{Pricing: config.PricingExpm})
+	src.push(bars[0])
+	src.push(bars[1])
+	_ = collect(t, host.Events(), 2, time.Second)
+	if host.WorkerHash("AAPL") != after2A || host.WorkerPricingHash("AAPL") != after2P {
+		t.Fatal("prefix hashes drifted vs clean run")
+	}
+	host.FailNextPricing()
+	src.push(bars[2])
+	ev := collect(t, host.Events(), 1, time.Second)[0]
+	if !ev.IsSkip() || ev.Skip.Reason != domain.SkipEngineError {
+		t.Fatalf("want ENGINE_ERROR after pricing fail, got %+v", ev.Skip)
+	}
+	if host.WorkerHash("AAPL") != after2A || host.WorkerPricingHash("AAPL") != after2P {
+		t.Fatal("pricing fail committed adaptive or pricing state")
+	}
+	if host.WorkerCompleted("AAPL") != 2 || host.WorkerPricingReceived("AAPL") != 2 {
+		t.Fatal("pricing fail advanced counts")
+	}
+	src.push(bars[2])
+	replay := collect(t, host.Events(), 1, time.Second)[0]
+	if replay.Skip == nil || cleanEv.Skip == nil || replay.Skip.Reason != cleanEv.Skip.Reason {
+		t.Fatalf("replay skip %+v want %+v", replay.Skip, cleanEv.Skip)
+	}
+	if host.WorkerHash("AAPL") == after2A || host.WorkerPricingHash("AAPL") == after2P {
+		t.Fatal("replay did not advance rolled-back state")
+	}
+	if host.WorkerPricingHash("AAPL") != after3P {
+		t.Fatal("replay pricing hash must match a clean run")
+	}
+	if host.WorkerCompleted("AAPL") != 3 || host.WorkerPricingReceived("AAPL") != 3 {
+		t.Fatal("replay did not commit both engines")
 	}
 }
 

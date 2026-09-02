@@ -1,14 +1,16 @@
 # QuanTRAM Process Model
 
 **Date:** August 29, 2026  
-**Status:** Process decomposition and service-contract proposal  
+**Last updated:** September 2, 2026  
+**Status:** Process decomposition and service-contract proposal. P-01–P-04 are in-process (P-04 Go PriceEngine/EXPM landed 2 Sep, default `QUANTRAM_PRICING=off`).  
 **Parent Architecture:** [QuanTRAM System Specification](QuanTRAM_hi-level_design_082826.md)  
 **Derived Artifact Specification:** [E2E QuanTRAM Artifacts](E2E_QuanTRAM_ARTIFACTS.md)  
 **Open Design Gaps:** [QuanTRAM Decision Integrity and Design Gap Analysis](QuanTRAM_DECISION_INTEGRITY_GAP_ANALYSIS_082826.md)
 
 **Increment 1 (P-01 / P-02):** [QuanTRAM Ingestion Increment 1](QuanTRAM_INGESTION_INCREMENT_1_083026.md)  
 **Increment 1 continuation (P-02 quality):** [P-02 Data Quality](QuanTRAM_INGESTION_P02_DATA_QUALITY_083126.md)  
-**Next increment (P-03 design):** [Adaptive Model Host](QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md) · [Implementation](QuanTRAM_P03_IMPLEMENTATION_083126.md)
+**P-03 (landed):** [Adaptive Model Host](QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md) · [Implementation](QuanTRAM_P03_IMPLEMENTATION_083126.md)  
+**P-04 (landed, default off):** [Price Engine](QuanTRAM_P04_PRICE_ENGINE_090226.md) · [Implementation](QuanTRAM_P04_IMPLEMENTATION_090226.md)
 
 ## 1. Purpose and Authority
 
@@ -20,7 +22,7 @@ The parent architecture remains authoritative for system intent and end-to-end b
 - required versus optional runtime paths
 - east-west and northbound service surfaces
 - local paper-trading topology and later Azure scale-out
-- how the existing Python adaptive model joins the live path
+- how adaptive (P-03, Go) and PriceEngine (P-04, Go EXPM) join the live path; Python is an offline oracle, not a sidecar
 
 Process names here do not force one container per process on day one. A process is a **logical runtime unit** with a contract, a scale axis, and a failure domain. A binary or container may host one or more processes until an independent-scaling or isolation need is demonstrated.
 
@@ -51,7 +53,7 @@ The answer used throughout this document: **gRPC defines service contracts; a du
 3. **Ticks do not cross unary gRPC.** Trade and quote ingress stays inside the feed and ingestion processes. Downstream consumers see **finalized bars** and snapshots, not raw tick RPCs.
 4. **Decisions are request-response.** Model evaluation, risk evaluation, and order submit are unary (or short client-stream) RPCs so deadlines, idempotency keys, and rejection reasons stay explicit.
 5. **Execution facts are events.** Broker acknowledgments, fills, cancels, and rejects are append-only stream records. Ledger and benchmark are independent consumers.
-6. **Python is an inference worker, not the control plane.** The existing offline-tested model stays behind a versioned inference contract. Go owns identifiers, quality gating, risk, routing, and recording.
+6. **Python is an offline scientific oracle, not the control plane.** Adaptive and PriceEngine run in Go. Frozen SADE (and SADE RK45) stay outside the live path. Go owns identifiers, quality gating, risk, routing, and recording.
 7. **Contracts outlive topology.** Local single-binary, local multi-process, and Azure AKS must implement the same proto and event envelopes.
 8. **Fail closed on the live path.** Unknown data quality, expired decisions, non-tradable indices, and kill switches produce auditable rejects. Observation may continue when submission must stop.
 9. **Open integrity gaps remain open.** This model names the processes that will enforce DI/RV/OP decisions; it does not close those gaps.
@@ -65,7 +67,7 @@ Processes are numbered `P-01` through `P-10`. `C-01` is a client, not a core ser
 | P-01 | Market Feed | Alpaca SIP, Databento | Required data | Connection and universe shard | Go |
 | P-02 | Ingestion and Data Quality | Circuit breaker, failover, OHLCV aggregator, REST gap-filler | Required data | Symbol shard | Go |
 | P-03 | Adaptive Model Host | Adaptive Model Engine (Go orchestration) | Required decision | Symbol shard | Go |
-| P-04 | Model Inference Worker | Adaptive Model Engine (existing Python model) | Required decision | Symbol shard / replica | Python |
+| P-04 | Price Engine | PriceEngine on analytic EXPM trajectories | Required decision | Symbol shard | Go |
 | P-05 | OMS and Risk | OMS and Risk Guardrails | Required decision | Account (single writer) | Go |
 | P-06 | Execution | Execution Router, Live Broker Adapter | Required execution | Account / venue connection | Go |
 | P-07 | Live Execution Event Stream | Live Execution Events sink | Required recording | Partition by account or order | Log (not a domain RPC) |
@@ -106,7 +108,7 @@ flowchart TD
 
     subgraph DECISION["Decision plane"]
         P03["P-03 Adaptive Model Host"]
-        P04["P-04 Python Inference Worker"]
+        P04["P-04 Price Engine (Go EXPM)"]
         P05["P-05 OMS and Risk"]
     end
 
@@ -129,9 +131,9 @@ flowchart TD
     DB -.-> P01
     P01 -->|"normalized market events"| P02
     P02 -->|"finalized Bar stream"| P03
-    P03 -->|"Predict RPC"| P04
-    P04 -->|"raw signal"| P03
-    P03 -->|"DecisionVector"| P05
+    P03 -->|"accepted eligible bar"| P04
+    P03 -->|"DecisionEvent (not orders)"| P05
+    P04 -->|"PriceEvent (not orders)"| P05
     P05 -->|"approved OrderIntent"| P06
     P06 --> BROKER
     P06 -->|"ExecutionEvent"| P07
@@ -141,6 +143,8 @@ flowchart TD
     P09 -.-> P10
     P10 --> C01
 ```
+
+P-03 and P-04 are collocated Go siblings on the accepted eligible bar. They do not call each other over gRPC. Adaptive BUY/SELL/HOLD is not an input to PriceEngine. GREEN/AMBER/RED is not an input to Adaptive. How (or whether) P-05 later joins the two events is undesigned and outside P-04. The arrows into P-05 are a provisional topology sketch only.
 
 ## 6. Process Catalog
 
@@ -188,45 +192,49 @@ Each process lists what it owns, what it consumes and produces, how it fails, ho
 
 ### 6.3 P-03 Adaptive Model Host
 
-**Owns:** Subscription to finalized bars, feature-window assembly, `signal_id` / `decision_id` generation, model-deadline watchdog, mapping of Python output into a QuanTRAM `DecisionVector`, decision provenance records.
+**Owns:** Subscription to the P-02 model-consumer path (`SubscribeModelBars`), per-symbol adaptive scientific state (D01 → D02 → D04 → emitter), `DecisionEvent` identifiers, model-deadline watchdog, decision provenance.
 
-**Consumes:** Finalized bars and quality metadata from P-02; model version and raw scores from P-04.
+**Consumes:** Finalized, model-eligible bars from P-02. Does **not** consume PriceEngine output and does not call a Python worker.
 
-**Produces:** Versioned `DecisionVector` (side, confidence, target size, entry/exit conditions, quality and regime fields) or an explicit skip. Never sends orders.
+**Produces:** Versioned `DecisionEvent` (`oneof` decision | skip). HOLD is a decision. Never sends orders. After a bar is accepted, the same host may invoke P-04.
 
-**Does not own:** Risk limits, broker calls, or the Python numeric model.
+**Does not own:** Risk limits, broker calls, F4/EXPM/PriceEngine mathematics (P-04).
 
-**Failure domain:** Inference timeout, sidecar unavailability, or stale bars produce **no new order**, not a reused previous signal (OP-05). P-03 stays up and reports model-host health separately from feed health.
+**Failure domain:** Inference timeout or stale/discontinuous bars produce **no new DecisionEvent reuse** (OP-05). P-03 stays up and reports model-host health separately from feed health.
 
-**Scale:** Horizontal by symbol shard. Stateless with respect to portfolio. Rolling feature state is either rebuilt from P-02 windows or owned per shard with explicit reset on session boundary.
+**Scale:** Horizontal by symbol shard. One keyed worker per symbol; no concurrent `Step`.
 
-**Proto:** `ModelService` — `Evaluate` (east-west, used when a caller pushes a snapshot), `StreamDecisions` (server stream of decisions as bars finalize), `GetModelInfo`.
+**Proto:** `ModelService` — `StreamDecisions` (live). `Evaluate` / `GetModelInfo` remain later. `ModelInferenceService` is **not** used for adaptive.
 
 **Gaps:** DI-06, DI-07, MV-01, OP-05.
 
-### 6.4 P-04 Model Inference Worker
+**Local Phase 0:** Collocated in `quantram-server`. `QUANTRAM_MODEL=off` by default; `adaptive` enables the host. Live IEX DecisionEvents observed 1 Sep.
 
-**Owns:** The existing Python adaptive model, its weights or rule parameters, and the numeric transform already validated on offline OHLCV CSV.
+### 6.4 P-04 Price Engine
 
-**Consumes:** `PredictRequest`: ordered bar window, optional precomputed features, instrument id, interval, quality flags, model-config version. The window must be the same contract used by the offline CSV harness.
+**Owns:** Bounded per-symbol pricing history (default 31 rows), causal quadratic derivatives, F4 ridge fit, analytic EXPM cover (`time_term == false`), numerical assembly, `EmissionPolicy` / `PriceEngine`, optional cockpit, `PriceEvent` identifiers.
 
-**Produces:** `PredictResponse`: raw signal class or score, confidence, optional size hint, model version, and any internal diagnostics the host is allowed to persist.
+**Consumes:** The **same accepted eligible bar** the P-03 worker just accepted (OHLCV + `IntervalStart`). Not `Decision.side`. Not the lossy observe stream. Not a `PredictRequest` window RPC.
 
-**Does not own:** Identifiers, risk, tradability, session calendar, or broker semantics. It must not call Alpaca.
+**Produces:** `PriceEvent` (`oneof` PriceEmission | pricing skip). Colors GREEN/AMBER/RED/INVALID; trajectory phase and confidence. **Does not** produce BUY/SELL/HOLD and must not call Alpaca.
 
-**Failure domain:** A worker crash is contained. P-03 marks inference unhealthy and skips. Restart must not require P-02 or P-06 restart.
+**Does not own:** Adaptive emitter state, risk, tradability, or broker semantics.
 
-**Scale:** Replicas behind P-03. Prefer sticky symbol assignment if the model is stateful; prefer any replica if it is stateless per request. Document which of those the current Python model is.
+**Failure domain:** A pricing panic or timeout is contained in the symbol worker. Host marks pricing unhealthy and emits a typed skip; do not reset adaptive state because pricing failed unless the shared transactional prepare explicitly rolls both back (see P-04 implementation Phase H). Restart of pricing must not require P-02 restart.
 
-**Proto:** `ModelInferenceService` in the same `quantram.v1` package. Implemented by Python `grpcio`. Go generated stubs are clients only.
+**Scale:** Same symbol shard / keyed worker as P-03. Collocated Go. Replicas are not a Python pool.
 
-**Local Phase 0:** One sidecar on localhost. Load the same model artifact used for CSV tests. A replay mode must accept a recorded bar window and return the same `PredictResponse` as the offline path within a documented numeric tolerance.
+**Proto:** `ModelService.StreamPriceEvents` fans out `PriceEvent` the way `StreamDecisions` fans out `DecisionEvent`. Off → `FailedPrecondition`; unavailable → `Unavailable`. Last-per-symbol catch-up, no durable history. Do **not** implement `ModelInferenceService`.
+
+**Local Phase 0:** Collocated in `quantram-server`. `QUANTRAM_PRICING=off` by default; `expm` requires `QUANTRAM_MODEL=adaptive`. Phases A–I landed 2 Sep. A host-gate `INPUT_GAP` means a later eligible bar was not exactly one minute after the last accepted bar (not “no more bars”). Recovery is a server restart (cold start: 15 Adaptive + 45 Price Engine consecutive accepted minutes).
+
+**Oracle:** SADE `solve_cover_rk45_reference` stays outside QuanTRAM. Go production is EXPM only (`gonum` v0.17.0 `Dense.Exp`).
 
 ### 6.5 P-05 OMS and Risk
 
 **Owns:** Risk policy version, limit evaluation, pending-exposure reservation, kill switches, last-moment data-age and tradability checks, machine-readable reject/resize reasons.
 
-**Consumes:** `DecisionVector` from P-03; portfolio, cash, and working-order state from P-08 (and local reservation memory); current spread/snapshot age from P-02 or a snapshot reference on the decision.
+**Consumes:** `DecisionEvent` from P-03 and, when P-04 is live, `PriceEvent`. Portfolio, cash, and working-order state from P-08 (and local reservation memory); current spread/snapshot age from P-02 or a snapshot reference on the decision. P-05 is **not** started in the P-04 increment.
 
 **Produces:** `RiskDecision`: approved, resized, or rejected `OrderIntent` with `decision_id` preserved. Approved intents are the only inputs P-06 may submit.
 
@@ -336,7 +344,7 @@ sequenceDiagram
     participant P01 as P-01 Feed
     participant P02 as P-02 Ingestion
     participant P03 as P-03 Model Host
-    participant P04 as P-04 Python model
+    participant P04 as P-04 Price Engine
     participant P05 as P-05 Risk
     participant P06 as P-06 Execution
     participant AlpacaP as Alpaca paper API
@@ -350,9 +358,11 @@ sequenceDiagram
     alt quality or deadline fails
         P03-->>P03: skip, record reason
     else eligible
-        P03->>P04: Predict
-        P04-->>P03: signal
-        P03->>P05: DecisionVector
+        P03->>P03: AdaptiveEngine DecisionEvent
+        P03->>P04: accepted bar (OHLCV)
+        P04-->>P03: PriceEvent
+        Note over P05: P-05 not implemented; both events stop here today
+        P03->>P05: DecisionEvent + PriceEvent (later)
         P05->>P08: read positions/reservations
         alt rejected or resized to flat
             P05-->>P07: risk reject event via P-06 publish path
@@ -378,18 +388,19 @@ Identifier chain on a successful order: `market_snapshot_id` → `signal_id` →
 
 ### 7.3 Offline CSV versus live inference
 
-The Python model has already been tested on offline OHLCV CSV. Live trading is only valid if that path and P-04 share one contract.
+SADE Unit Run 001 (adaptive) and Pricing Unit Run 001 are the numerical authorities. Live trading is only valid if QuanTRAM Go engines reproduce those frozen sequences, not a Python sidecar.
 
 | Step | Offline harness | Live path |
 | :--- | :--- | :--- |
-| Bar source | CSV rows | P-02 finalized bars |
-| Window | Same length, interval, and column set | Same `PredictRequest` window |
-| Features | Computed in Python or precomputed in the harness | P-03 may precompute; fields must match |
-| Output | Signal used for backtest metrics | `PredictResponse` wrapped as `DecisionVector` |
-| Risk / broker | Usually absent | P-05 then P-06 |
+| Bar source | Checked-in CSV OHLCV | P-02 model-eligible finalized bars |
+| Time | `source_timestamp` → `IntervalStart` | `Bar.IntervalStart` |
+| Adaptive | `internal/adaptive` Step | Same engine in the host |
+| Pricing | `internal/pricing` Step on the same bars | Same engine after accept |
+| Output | DecisionEvent + PriceEvent | Same domain events; proto fan-out later |
+| Risk / broker | Absent | P-05 then P-06 (not this increment) |
 | Provenance | File name and row range | `market_snapshot_id`, versions, quality |
 
-Promotion rule (MV-01, still open): a live decision is not trusted until a replay of stored `PredictRequest` bodies reproduces the offline and live scores. P-03 must persist enough input to do that replay without reading mutable current bars.
+Promotion rule (MV-01, still open): a live scientific outcome is not trusted until replay of stored accepted bars reproduces offline scores. Persist enough input to replay without reading mutable current bars. This is **not** a `PredictRequest` body.
 
 ### 7.4 Optional benchmark path
 
@@ -415,13 +426,15 @@ Three planes, three transports.
 
 ### 8.1 Collocated transport rule
 
-While P-01, P-02, P-03, P-05, P-06, and P-08 share a process, they **call Go interfaces**, not loopback gRPC. Generated proto types stay at the process edge. This matches the artifact specification and keeps the local hot path off the serialization tax.
+While P-01, P-02, P-03, P-04, P-05, P-06, and P-08 share a process, they **call Go interfaces**, not loopback gRPC. Generated proto types stay at the process edge. This matches the artifact specification and keeps the local hot path off the serialization tax.
 
 When a process is split out, the same interface is satisfied by a gRPC adapter. That is the move from “one binary” to “microservice” without redesigning the domain.
 
-### 8.2 P-04 is always out of process
+### 8.2 P-04 is collocated Go (supersedes Python sidecar)
 
-The Python worker is a separate OS process even in Phase 0. The host uses localhost gRPC (or a UDS on Linux; TCP `127.0.0.1` on this Windows machine). That is the one east-west RPC that exists from the first integration test.
+The August 29 rule that P-04 is always an out-of-process Python worker is **withdrawn**. Adaptive inference is in-process P-03. PriceEngine is in-process P-04 in the same keyed symbol worker. There is no Phase 0 `Predict` RPC.
+
+A future split of P-04 into its own binary would use a Go adapter over the same domain `PriceEvent` contract, not `ModelInferenceService`.
 
 ### 8.3 Backpressure
 
@@ -429,7 +442,7 @@ The Python worker is a separate OS process even in Phase 0. The host uses localh
 | :--- | :--- |
 | Alpaca WS → P-01 | Provider-limited. If local queues fill, drop quotes before trades and mark quality degraded. Never block the socket read until memory is exhausted. |
 | P-02 → P-03 | P-03 consumes finalized bars only. If inference lags, skip the bar and record a deadline miss; do not let an unbounded queue replay stale bars as if they were live. |
-| P-03 → P-04 | RPC deadline from OP-05 (provisional: 50 ms for 1s bars, 200 ms for 1m bars). On timeout, skip. |
+| P-03 → P-04 | In-process call on the same accepted bar. No second mailbox. Timeout/skip per P-04 implementation Phase H (prepare both, commit both or neither). |
 | P-05 | In-process, account-serialized. No queue of unreserved intents. |
 | P-06 → venue | Broker rate limits. Excess intents reject with `RATE_LIMIT`. |
 | P-06 → P-07 | Publish with timeout. Failure degrades submit capability. |
@@ -469,6 +482,8 @@ service ModelService {
 }
 
 service ModelInferenceService {
+  // Reserved in the August 29 sketch. Not implemented.
+  // Adaptive is P-03 in-process Go. Pricing is P-04 in-process Go EXPM.
   rpc Predict(PredictRequest) returns (PredictResponse);
   rpc GetModelVersion(GetModelVersionRequest) returns (ModelVersion);
   rpc ResetState(ResetStateRequest) returns (ResetStateResponse);
@@ -560,7 +575,7 @@ Split a collocated process into its own service when one of these is true:
 | Trigger | First split |
 | :--- | :--- |
 | Ingestion CPU or memory grows with universe size | P-01+P-02 out of the decision binary |
-| Python inference latency or RAM contends with Go | already split (P-04); add P-04 replicas |
+| Python inference latency or RAM contends with Go | withdrawn: no Python sidecar; split P-03/P-04 binaries only if Go CPU contends |
 | Risk evaluation blocks on ledger reads | cache account state in P-05; keep P-08 as source of truth |
 | Dashboard or replay queries slow ledger writes | read replica or separate query API in front of P-08 |
 | Benchmark backlog | scale P-10 only |
@@ -574,12 +589,12 @@ OP-05 is still open. Until it is closed, use these as engineering targets, not p
 | :--- | :--- | :--- |
 | Tick apply inside P-02 | 2 ms p99 | 2 ms p99 |
 | Bar finalize to P-03 start | 5 ms | 20 ms |
-| P-04 Predict | 50 ms deadline | 200 ms deadline |
+| P-03 + P-04 Step (adaptive + EXPM) | inside 200 ms host deadline | 200 ms deadline |
 | P-05 Evaluate | 10 ms | 10 ms |
 | P-06 submit call start | 10 ms local | 10 ms local |
 | Venue RTT | Alpaca-bound | Alpaca-bound |
 
-If Predict exceeds its deadline, skip. Prefer no order over a late order.
+If the combined adaptive+pricing step exceeds its deadline, skip and leave committed scientific state unchanged. Prefer no order over a late order (when P-05 exists).
 
 ### 10.4 State that prevents naive scale-out
 
@@ -596,18 +611,17 @@ Goal: exercise the required path with live market data and non-live money.
 
 ```text
 localhost
-  quantram-core.exe          P-01 P-02 P-03 P-05 P-06 P-08 + Operations
-       | localhost gRPC
-  python model_worker        P-04 ModelInferenceService
+  quantram-server            P-01 P-02 P-03 P-04 + Operations
+                             (P-05 P-06 P-08 compiled later, not started)
        |
   optional NATS or Postgres  P-07 (or core-embedded outbox)
        |
   Alpaca data WS/REST        live quotes/trades/bars
-  Alpaca paper-api           orders, fills
+  quantram-dashboard         C-01 observe + Adaptive Pipeline (not required path)
 ```
 
-**On:** P-01 (Alpaca), P-02, P-03, P-04, P-05, P-06 (paper venue), P-07, P-08.  
-**Off:** Databento, P-09, P-10, C-01, live venue.
+**On today:** P-01 (Alpaca), P-02, P-03 (`QUANTRAM_MODEL=adaptive`), P-04 (`QUANTRAM_PRICING=expm` opt-in; default `off`). Viewer Price Engine cards and airport boards landed 2 Sep.  
+**Off:** Python model worker, Databento, P-05–P-10, live venue. Dashboard is optional observation.
 
 **Suggested local config**
 
@@ -621,15 +635,14 @@ localhost
 | `kill_switch` | on until an operator enables submit |
 | `universe` | small symbol list used in CSV tests |
 
-**Suggested commands / packages** (aligns with the artifact tree, adds the Python worker):
+**Suggested commands / packages** (aligns with the artifact tree; no Python worker):
 
 ```text
-cmd/quantram-server          collocated Go processes
-cmd/quantram-model-worker    optional Go wrapper; or python -m quantram.inference
-internal/marketfeed
+cmd/quantram-server          collocated Go processes (P-01–P-04)
 internal/ingestion
-internal/analytics
-internal/model/grpcclient
+internal/adaptive
+internal/pricing             P-04 (landed 2 Sep; default off)
+internal/modelhost
 internal/risk
 internal/execution
 internal/liveevents
@@ -646,7 +659,7 @@ Split only if Phase 0 proves contention:
 
 ```text
 quantram-ingest     P-01 P-02
-quantram-model      P-03 + sidecar P-04
+quantram-model      P-03 + P-04 (same binary until CPU split)
 quantram-risk       P-05
 quantram-exec       P-06
 quantram-ledger     P-08
@@ -667,7 +680,7 @@ Same processes, different hosts.
 | :--- | :--- |
 | P-01, P-02 | AKS Deployment, HPA on CPU; or Container Apps |
 | P-03 | AKS, symbol-sharded |
-| P-04 | AKS sidecar or dedicated inference Deployment; GPU node pool only if the model needs it |
+| P-04 | AKS, same shard as P-03 until CPU split; no GPU/Python pool |
 | P-05, P-06 | AKS, replica 1 per account writer; pod anti-affinity later |
 | P-07 | Event Hubs or managed NATS; keep the Go ports |
 | P-08 | AKS + Azure Database for PostgreSQL |
@@ -689,7 +702,7 @@ RV-03 requires independent health domains. Until that gap closes, processes must
 | All required processes healthy, venue connected | yes | yes | yes | yes | yes | if enabled |
 | Feed degraded, bars still finalized with quality flag | yes | strategy policy | P-05 recheck | yes | yes | if enabled |
 | Ingestion reconciling / gap filling | yes | no | no | yes | yes | if enabled |
-| P-04 down | yes | no | no | yes | yes | if enabled |
+| P-04 down | yes | yes (adaptive may continue) | no | yes | yes | if enabled |
 | P-05 kill switch | yes | optional | no | yes | yes | if enabled |
 | Venue disconnected | yes | optional | no | no* | yes | if enabled |
 | P-07 publish failing | yes | no** | no | yes | yes | no |
@@ -706,14 +719,14 @@ This replaces “start coding services in diagram order” with a contract-first
 | :--- | :--- | :--- | :--- | :--- |
 | S0 | **Partial** | `quantram.proto` increment-1 services generated in Go. Risk, execution, ledger, benchmark, and Python stubs are not in the file yet. | contracts | Ingestion/ops RPCs compile. Full-file golden round-trip still open. |
 | S1 | **Partial** | Alpaca IEX/test WebSocket, REST historical client, CSV replay, thin reconnect, bar window, `StreamBars`. Full circuit breaker is **not completed** and is **deferred**. See [Increment 1](QuanTRAM_INGESTION_INCREMENT_1_083026.md). | P-01, P-02 | CSV and Alpaca test-feed bars received 2026-08-30. Near-term exit is IEX RTH. Failover, live gap-fill proof, and DI-01 qualification are later. |
-| S2 | **Partial** | Adaptive model as a Go black box (Phases A–C). Pricing later: Go EXPM only; oracle is SADE `solve_cover_rk45_reference` (frozen APTF `run_test_013b_qqq_validation.py::solve_cover`), not an APTF repo dependency and not a runtime call. | P-03 | Frozen CSV replay matches the Python baseline (Unit Run 001 done). |
-| S3 | Not started | Model host assigns IDs and skips on quality/deadline | P-03 | No decision without snapshot id and quality |
+| S2 | **Partial** | Adaptive Go black box + host + `StreamDecisions` (Phases A–E, live IEX 1 Sep). Pricing: Go EXPM PriceEngine + `StreamPriceEvents` (Phases A–I, 2 Sep). Oracle SADE `solve_cover_rk45_reference` (not in Go, not APTF). | P-03 done; P-04 landed, default off | Unit Run 001 adaptive done. Pricing Unit Run 001 semantic PASS 15/30/55. Live IEX color not yet claimed. |
+| S3 | **Partial** | Model host assigns IDs and skips on quality/deadline | P-03 | Landed 1 Sep (`DecisionEvent`, typed skips). |
 | S4 | Not started | Risk rules + kill switch; index intents rejected | P-05 | Auditable reject reasons |
 | S5 | Not started | Alpaca paper submit/cancel + event publish + ledger | P-06, P-07, P-08 | Paper fill appears in ledger; restart is idempotent |
 | S6 | Deferred | Databento adapter and **full circuit breaker** (failover, failback, production trip rules). Thin Alpaca reconnect in increment 1 does not count as done. | P-01, P-02 | Only after IEX E2E, the model/paper slice, and DI-01/DI-03 policy |
 | S7 | Not started | Internal paper + correlation + dashboard client | P-09, P-10, C-01 | Benchmark stop does not affect paper-venue orders |
 
-S1–S5 are the local paper-trading slice. S6–S7 are scale and measurement. S2 no longer assumes a whole-pipeline Python sidecar; that decision is recorded in the SADE Go investigation and the 2026-08-29 review.
+S1–S5 are the local paper-trading slice. S6–S7 are scale and measurement. S2 is adaptive-in-Go (done) plus PriceEngine-in-Go (landed 2 Sep, default off). A Python sidecar is not part of the live path.
 
 ## 14. Mapping to Existing Documents
 
@@ -722,10 +735,12 @@ S1–S5 are the local paper-trading slice. S6–S7 are scale and measurement. S2
 | Layered architecture, feed SLAs, dashboard views, parent diagram | System specification |
 | Go interfaces, packages, single proto file, acceptance criteria | E2E artifacts |
 | Unresolved correctness and production gaps | Gap analysis |
-| Runtime units, RPCs, local vs Azure topology, Python sidecar | This document |
+| Runtime units, RPCs, local vs Azure topology, P-04 PriceEngine | This document |
 | Increment 1 ingestion implementation and Alpaca/CSV evidence | [Ingestion Increment 1](QuanTRAM_INGESTION_INCREMENT_1_083026.md) |
+| P-03 adaptive host | [P-03 design](QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md) |
+| P-04 PriceEngine / EXPM | [P-04 design](QuanTRAM_P04_PRICE_ENGINE_090226.md) |
 
-This document **proposes** a resolution for the artifact specification’s open item “process decomposition and independent scaling thresholds.” It does not close P0/P1 gaps. Implementation of S1 decision-quality behavior still waits on Gate A (DI-01 through DI-07) for any path treated as a production decision contract. Provider adapters and the Python sidecar may be prototyped earlier if their outputs are labeled non-authoritative.
+This document **proposes** a resolution for the artifact specification’s open item “process decomposition and independent scaling thresholds.” It does not close P0/P1 gaps. Implementation of S1 decision-quality behavior still waits on Gate A (DI-01 through DI-07) for any path treated as a production decision contract. Do not prototype a Python inference sidecar; that path is withdrawn.
 
 ## 15. Decisions Made Here
 
@@ -734,11 +749,11 @@ This document **proposes** a resolution for the artifact specification’s open 
 | Process inventory | P-01 through P-10 plus C-01 |
 | Local execution venue | Alpaca paper API via P-06 |
 | Internal paper engine | Separate optional process P-09 |
-| Existing Python model | P-04 sidecar implementing `ModelInferenceService` |
+| Existing Python model | **Withdrawn as live P-04.** Adaptive is P-03 Go. PriceEngine is P-04 Go EXPM. SADE Python (including RK45) is an offline oracle only. |
 | Core control plane | Go gRPC |
 | Tick transport | Not public unary gRPC |
 | Proto layout | Still one `quantram.v1` file; services listed in §9 |
-| Phase 0 packing | One Go server + Python worker |
+| Phase 0 packing | One Go server (`quantram-server`); no Python worker |
 | Split rule | Contract-preserving adapters when a scale or isolation trigger fires |
 | Azure | Same processes; AKS + managed log + Postgres + Key Vault as the default sketch |
 | Full circuit breaker | **Not completed.** Deferred until after Alpaca live/IEX E2E and the model/paper slice. Increment 1 keeps thin reconnect only. |
@@ -763,6 +778,8 @@ Do not invent silent defaults for these in code that will drive money or promoti
 
 | Date | Version | Change |
 | :--- | :--- | :--- |
+| September 2, 2026 | 0.4 | P-04 redefined as collocated Go PriceEngine (EXPM). Python `ModelInferenceService` sidecar withdrawn. Linked P-04 design/implementation. S2/S3 marked partial after P-03 live DecisionEvents. |
+| September 2, 2026 | 0.5 | P-04 Phases A–I landed: `internal/pricing`, host join, `StreamPriceEvents`, dashboard Price Engine cards/boards. Default still `QUANTRAM_PRICING=off`. Live IEX `INPUT_GAP` documented as missing adjacent minute, not end-of-data. |
 | August 30, 2026 | 0.3 | Deferred full circuit breaker / Databento failover (S6); increment-1 reconnect is not treated as complete. |
 | August 30, 2026 | 0.2 | Marked S0/S1 partial after increment-1 ingestion implementation; linked the increment design; noted the adaptive model as a Go black box for S2. |
 | August 29, 2026 | 0.1 | Initial process model: ten server processes, Python inference sidecar, gRPC sketch, local Alpaca-paper topology, Azure scale-out mapping, and required versus optional planes. |

@@ -14,6 +14,13 @@ const (
 	ModelAdaptive ModelMode = "adaptive"
 )
 
+type PricingMode string
+
+const (
+	PricingOff  PricingMode = "off"
+	PricingExpm PricingMode = "expm"
+)
+
 const (
 	DefaultGRPCPort      = "50051"
 	DefaultSource        = "alpaca"
@@ -33,6 +40,7 @@ const (
 	SubscriberQueue      = 16
 	ConsumerQueue        = 2
 	DefaultModelMode     = ModelOff
+	DefaultPricingMode   = PricingOff
 	DefaultModelDeadline = 200 * time.Millisecond
 	MaxModelDeadline     = 2 * time.Second
 )
@@ -49,6 +57,7 @@ type Config struct {
 	CSVPath       string
 	Interval      string
 	Model         ModelMode
+	Pricing       PricingMode
 	ModelDeadline time.Duration
 }
 
@@ -70,6 +79,13 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	pricing, err := ParsePricingMode(environmentOrDefault("QUANTRAM_PRICING", string(DefaultPricingMode)))
+	if err != nil {
+		return Config{}, err
+	}
+	if err := ValidatePricingRequiresAdaptive(pricing, mode); err != nil {
+		return Config{}, err
+	}
 	deadline, err := ParseModelDeadline(environmentOrDefault("QUANTRAM_MODEL_DEADLINE", DefaultModelDeadline.String()))
 	if err != nil {
 		return Config{}, err
@@ -87,6 +103,7 @@ func Load() (Config, error) {
 		CSVPath:       environmentOrDefault("QUANTRAM_CSV_PATH", "AAPL_1min_firstratedata.csv"),
 		Interval:      environmentOrDefault("QUANTRAM_INTERVAL", DefaultInterval),
 		Model:         mode,
+		Pricing:       pricing,
 		ModelDeadline: deadline,
 	}
 	if source == "alpaca" && (cfg.APIKey == "" || cfg.APISecret == "") {
@@ -107,6 +124,24 @@ func ParseModelMode(value string) (ModelMode, error) {
 	default:
 		return "", fmt.Errorf("QUANTRAM_MODEL must be off or adaptive, got %q", value)
 	}
+}
+
+func ParsePricingMode(value string) (PricingMode, error) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "", string(PricingOff):
+		return PricingOff, nil
+	case string(PricingExpm):
+		return PricingExpm, nil
+	default:
+		return "", fmt.Errorf("QUANTRAM_PRICING must be off or expm, got %q", value)
+	}
+}
+
+func ValidatePricingRequiresAdaptive(pricing PricingMode, model ModelMode) error {
+	if pricing == PricingExpm && model != ModelAdaptive {
+		return fmt.Errorf("QUANTRAM_PRICING=expm requires QUANTRAM_MODEL=adaptive")
+	}
+	return nil
 }
 
 func ParseModelDeadline(value string) (time.Duration, error) {

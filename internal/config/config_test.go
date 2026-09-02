@@ -14,6 +14,7 @@ func TestSplitSymbolsAndCap(t *testing.T) {
 
 func TestLoadRequiresCredentialsForAlpaca(t *testing.T) {
 	t.Setenv("QUANTRAM_SOURCE", "alpaca")
+	t.Setenv("QUANTRAM_PRICING", "off")
 	t.Setenv("ALPACA_API_KEY", "")
 	t.Setenv("ALPACA_API_SECRET", "")
 	t.Setenv("ALPACA_SECRET_KEY", "")
@@ -25,6 +26,8 @@ func TestLoadRequiresCredentialsForAlpaca(t *testing.T) {
 func TestLoadCSVDoesNotRequireKeys(t *testing.T) {
 	t.Setenv("QUANTRAM_SOURCE", "csv")
 	t.Setenv("QUANTRAM_SYMBOLS", "AAPL")
+	t.Setenv("QUANTRAM_MODEL", "off")
+	t.Setenv("QUANTRAM_PRICING", "off")
 	t.Setenv("ALPACA_API_KEY", "")
 	t.Setenv("ALPACA_API_SECRET", "")
 	cfg, err := Load()
@@ -37,11 +40,15 @@ func TestLoadCSVDoesNotRequireKeys(t *testing.T) {
 	if cfg.Model != ModelOff {
 		t.Fatalf("default model %s", cfg.Model)
 	}
+	if cfg.Pricing != PricingOff {
+		t.Fatalf("default pricing %s", cfg.Pricing)
+	}
 }
 
 func TestLoadRejectsUnknownModel(t *testing.T) {
 	t.Setenv("QUANTRAM_SOURCE", "csv")
 	t.Setenv("QUANTRAM_SYMBOLS", "AAPL")
+	t.Setenv("QUANTRAM_PRICING", "off")
 	t.Setenv("QUANTRAM_MODEL", "sidecar")
 	if _, err := Load(); err == nil {
 		t.Fatal("unknown model must fail startup")
@@ -51,6 +58,7 @@ func TestLoadRejectsUnknownModel(t *testing.T) {
 func TestLoadRejectsBadDeadline(t *testing.T) {
 	t.Setenv("QUANTRAM_SOURCE", "csv")
 	t.Setenv("QUANTRAM_SYMBOLS", "AAPL")
+	t.Setenv("QUANTRAM_PRICING", "off")
 	t.Setenv("QUANTRAM_MODEL", "adaptive")
 	t.Setenv("QUANTRAM_MODEL_DEADLINE", "0s")
 	if _, err := Load(); err == nil {
@@ -66,6 +74,41 @@ func TestLoadRejectsBadDeadline(t *testing.T) {
 		t.Fatal(err)
 	}
 	if cfg.Model != ModelAdaptive || cfg.ModelDeadline != 200*time.Millisecond {
+		t.Fatalf("%+v", cfg)
+	}
+}
+
+func TestLoadRejectsUnknownPricing(t *testing.T) {
+	t.Setenv("QUANTRAM_SOURCE", "csv")
+	t.Setenv("QUANTRAM_SYMBOLS", "AAPL")
+	t.Setenv("QUANTRAM_MODEL", "adaptive")
+	t.Setenv("QUANTRAM_PRICING", "rk45")
+	if _, err := Load(); err == nil {
+		t.Fatal("unknown pricing must fail startup")
+	}
+}
+
+func TestLoadExpmRequiresAdaptive(t *testing.T) {
+	t.Setenv("QUANTRAM_SOURCE", "csv")
+	t.Setenv("QUANTRAM_SYMBOLS", "AAPL")
+	t.Setenv("QUANTRAM_MODEL", "off")
+	t.Setenv("QUANTRAM_PRICING", "expm")
+	if _, err := Load(); err == nil {
+		t.Fatal("expm without adaptive must fail startup")
+	}
+}
+
+func TestLoadExpmWithAdaptive(t *testing.T) {
+	t.Setenv("QUANTRAM_SOURCE", "csv")
+	t.Setenv("QUANTRAM_SYMBOLS", "AAPL")
+	t.Setenv("QUANTRAM_MODEL", "adaptive")
+	t.Setenv("QUANTRAM_PRICING", "expm")
+	t.Setenv("QUANTRAM_MODEL_DEADLINE", "200ms")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Pricing != PricingExpm || cfg.Model != ModelAdaptive {
 		t.Fatalf("%+v", cfg)
 	}
 }

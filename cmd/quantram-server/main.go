@@ -33,6 +33,7 @@ func main() {
 
 	host, hostErr := modelhost.New(pipeline, cfg.Symbols, modelhost.Options{
 		Mode:     cfg.Model,
+		Pricing:  cfg.Pricing,
 		Deadline: cfg.ModelDeadline,
 	})
 	modelUnavailable := false
@@ -83,7 +84,7 @@ func main() {
 
 	serveResult := make(chan error, 1)
 	go func() {
-		log.Printf("starting QuanTRAM ingestion gRPC server (port=%s source=%s feed=%s symbols=%v model=%s)", cfg.GRPCPort, cfg.Source, cfg.Feed, cfg.Symbols, cfg.Model)
+		log.Printf("starting QuanTRAM ingestion gRPC server (port=%s source=%s feed=%s symbols=%v model=%s pricing=%s)", cfg.GRPCPort, cfg.Source, cfg.Feed, cfg.Symbols, cfg.Model, cfg.Pricing)
 		serveResult <- grpcServer.Serve(listener)
 	}()
 

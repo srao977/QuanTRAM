@@ -1,0 +1,9 @@
+Origin: C:\Users\chino\SADE\output\unit_runs\pricing_001\observations.csv
+OHLCV join: C:\Users\chino\QuanTRAM\internal\adaptive\testdata\unit_run_001_observations.csv
+Entity: AAPL
+Vectors: 100
+SADE unit_run_id: SADE_PRICING_UNIT_RUN_001
+Expected counts: WARMUP_DERIVATIVE=15 WARMUP_F4=30 EMITTED=55 domain_exits=18
+SHA-256 (lowercase hex): 4b3b8783108988e71c4bf2cec9b6f8a4c6bf929fb93a4be27706a16ef4c1752a
+Note: Offline OHLCV + pricing-column equivalence only. Do not start SDX or python -m sade in CI.
+Note: Source timestamps may skip minutes; SADE orders by source_row_index, not wall-clock adjacency.

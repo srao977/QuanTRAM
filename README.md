@@ -33,6 +33,8 @@ go run ./cmd/quantram-ingest-client -operation decisions -symbols AAPL -max-bars
 
 `StreamDecisions` requires `QUANTRAM_MODEL=adaptive`. Default is `off` (`FailedPrecondition`).
 
+`StreamPriceEvents` requires `QUANTRAM_PRICING=expm` **and** `QUANTRAM_MODEL=adaptive`. Default pricing is `off` (`FailedPrecondition`). Unknown `QUANTRAM_PRICING` fails startup. Price Engine color needs 45 consecutive accepted eligible minutes after a cold start. A host-gate `INPUT_GAP` is a missing adjacent minute (not silence); restart the server to resume that symbol.
+
 ## Alpaca test feed (outside regular hours)
 
 ```powershell

@@ -4,6 +4,7 @@ go 1.25.3
 
 require (
 	github.com/gorilla/websocket v1.5.3
+	gonum.org/v1/gonum v0.17.0
 	google.golang.org/grpc v1.83.2
 	google.golang.org/protobuf v1.36.12
 )

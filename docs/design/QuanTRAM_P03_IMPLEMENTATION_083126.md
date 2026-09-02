@@ -1,8 +1,8 @@
 # QuanTRAM P-03 — Implementation Increment
 
 **Date:** August 31, 2026  
-**Last updated:** September 1, 2026  
-**Status:** Phases A–E complete in-process (Go adaptive box + host + `ModelService.StreamDecisions`). Default `QUANTRAM_MODEL=off`. Live IEX DecisionEvents observed 1 Sep (HOLD then BUY on IEX; Adaptive Pipeline viewer in `quantram-dashboard`). EXPM / paper orders remain out of scope.  
+**Last updated:** September 2, 2026  
+**Status:** Phases A–E complete in-process (Go adaptive box + host + `ModelService.StreamDecisions`). Default `QUANTRAM_MODEL=off`. Live IEX DecisionEvents observed 1 Sep. P-04 PriceEngine/EXPM Phases A–I landed 2 Sep (default `QUANTRAM_PRICING=off`). Paper orders remain out of scope.  
 **Design:** [P-03 Adaptive Model Host](QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md)  
 **Review:** [P03_feedback_083126.md](../../P03_feedback_083126.md)  
 **Python reference (do not import at runtime):** `C:\Users\chino\SADE`
@@ -18,7 +18,7 @@ Add a collocated Go adaptive engine that:
 
 Out of scope **for this coding increment:** risk, orders, Go EXPM / F4 / PriceEngine, joining adaptive output to PriceEngine, Python `Predict` worker. Adaptive Pipeline decision UI lives in `quantram-dashboard` (landed 1 Sep); this repo does not host frontend.
 
-Those pricing items are the **next scientific increment**, not a discarded design. **Go production destination:** PriceEngine decisions on EXPM trajectories (`time_term == false` only). Offline Gold Nugget oracle is SADE `sade/pricing_pipeline/projection.py::solve_cover_rk45_reference` (frozen copy of APTF `diagnostics/run_test_013b_qqq_validation.py::solve_cover`). Do not port RK45, do not wire it, and do not make QuanTRAM depend on the APTF repo. See the design doc §2.1.
+Those pricing items are **P-04**, not a discarded design. Design: [P-04 Price Engine](QuanTRAM_P04_PRICE_ENGINE_090226.md) · [Implementation](QuanTRAM_P04_IMPLEMENTATION_090226.md). **Go production destination:** PriceEngine decisions on EXPM trajectories (`time_term == false` only). Offline Gold Nugget oracle is SADE `sade/pricing_pipeline/projection.py::solve_cover_rk45_reference`. Do not port RK45, do not wire it, and do not make QuanTRAM depend on the APTF repo.
 
 ## 2. Package layout
 
@@ -67,7 +67,7 @@ cmd/quantram-server/main.go
   Construct host after pipeline; register ModelService; Run host when adaptive
 ```
 
-**Present (1 Sep):** `internal/domain/decision.go`, `internal/adaptive/`, `SubscribeModelBars`, `internal/modelhost/`, `QUANTRAM_MODEL`, `ModelService.StreamDecisions`. Adaptive Pipeline viewer in `quantram-dashboard` (own proto copy + `ModelService` client). **Not present:** `Evaluate` / `ModelInferenceService`, EXPM.
+**Present (1 Sep):** `internal/domain/decision.go`, `internal/adaptive/`, `SubscribeModelBars`, `internal/modelhost/`, `QUANTRAM_MODEL`, `ModelService.StreamDecisions`. Adaptive Pipeline viewer in `quantram-dashboard` (own proto copy + `ModelService` client). **P-04 present (2 Sep):** `internal/pricing`, `QUANTRAM_PRICING`, `ModelService.StreamPriceEvents` — see [P-04 implementation](QuanTRAM_P04_IMPLEMENTATION_090226.md). **Not present:** `Evaluate` / `ModelInferenceService`.
 
 Do **not** create `internal/sade` or a Go module that imports the Python tree. Copy constants and equations; cite SADE paths in comments sparingly.
 
@@ -142,7 +142,7 @@ Live acceptance (regular hours, observed 1 Sep on IEX AAPL/MSFT/NVDA after mailb
 
 `quantram.proto` `ModelService.StreamDecisions` streams `DecisionEvent` with `oneof outcome { Decision, Skip }`. HOLD is a decision. Includes H, Q_G, Q_S, Q_R, path_direction, `emitter_position_state`, skip reason, hashes, versions. Host fan-out via `SubscribeEvents`. Last-per-symbol catch-up on connect (no durable history). Off → `FailedPrecondition`; unavailable → `Unavailable`.
 
-`Evaluate` and `ModelInferenceService` wait for the pricing increment (Go EXPM + PriceEngine join).
+`Evaluate` and `ModelInferenceService` are not used. Pricing is collocated P-04 (`StreamPriceEvents`), not a Python `Predict` sidecar.
 
 ```powershell
 $env:QUANTRAM_MODEL = "adaptive"
@@ -171,7 +171,7 @@ Use this as the port checklist. Skip anything marked **do not port**.
 | `adaptive_pipeline/pipeline.py` | — | **No** | — |
 | `input/sdx_client.py` | — | **No** | — |
 | `input/generated/**` | — | **No** | — |
-| `pricing_pipeline/**` | — | **No** in P-03. Later: port EXPM `solve_cover` / `analytic_affine_trajectory` only; do **not** port `solve_cover_rk45_reference` into Go. That SADE function is the offline oracle (APTF `run_test_013b_qqq_validation.py::solve_cover` lineage). | Deferred |
+| `pricing_pipeline/**` | `internal/pricing` | **P-04** | See [P-04 implementation](QuanTRAM_P04_IMPLEMENTATION_090226.md). Port EXPM `solve_cover` / `analytic_affine_trajectory`; do **not** port `solve_cover_rk45_reference`. |
 | `unit_run/**`, `__main__.py` | testdata | Offline harness only | Fixture checked in |
 
 ## 5. Offline equivalence without SDX
@@ -227,7 +227,7 @@ The investigation is explicit. Do not reintroduce:
 | Config reject unknown mode / bad deadline | Phase D | Done (1 Sep) |
 | `ModelService.StreamDecisions` oneof + off/unavailable | Phase E | Done (1 Sep) |
 
-Phases A–E are green in-process. Adaptive Pipeline landed in `quantram-dashboard` (1 Sep; proto copy + `StreamDecisions` SSE). Paper orders remain forbidden. Do not start EXPM / RK45.
+Phases A–E are green in-process. Adaptive Pipeline landed in `quantram-dashboard` (1 Sep). P-04 PriceEngine/EXPM Phases A–I landed 2 Sep ([design](QuanTRAM_P04_PRICE_ENGINE_090226.md), [implementation](QuanTRAM_P04_IMPLEMENTATION_090226.md)). Paper orders remain forbidden. Do not port RK45.
 
 ## 9. Suggested first coding session — **done (31 Aug)**
 
@@ -236,7 +236,7 @@ Phases A–E are green in-process. Adaptive Pipeline landed in `quantram-dashboa
 3. Port D01 `Step` as copy-compute-commit.
 4. Do not call `SubscribeFinalized` or add proto until Phase C and D0 are green.
 
-**Next session:** paper/risk/orders still forbidden. Do not start EXPM / RK45. Still do not call `SubscribeFinalized` for P-03. Candlestick BUY/SELL markers and durable decision history are dashboard follow-ups, not this repo.
+**Next session:** P-04 A–I is done. Still do not call `SubscribeFinalized` for P-03. Do not start P-05 / paper orders / RK45 / BUY/SELL+color join.
 
 ## 10. Change log
 
@@ -251,4 +251,5 @@ Phases A–E are green in-process. Adaptive Pipeline landed in `quantram-dashboa
 | September 1, 2026 | Phase D: `internal/modelhost` keyed workers, `PrepareStep`/`Commit` deadline, infer pause-not-reset, panic isolation, `QUANTRAM_MODEL` validation, `GetHealth` model component. Default still `off`. Proto deferred to Phase E. |
 | September 1, 2026 | Phase E: `ModelService.StreamDecisions`, domain→proto oneof, host `SubscribeEvents` fan-out, ingest-client `-operation decisions`. Default still `off`. |
 | September 1, 2026 | Live fix: model path ignores backfill; mailbox 64. Restored gap-fill/reconnect no longer permanently pauses P-03 while P-02 observe stays healthy. |
-| September 1, 2026 | Live IEX DecisionEvents observed (HOLD then BUY). Adaptive Pipeline viewer landed in `quantram-dashboard` (copied proto + `ModelService` client). This repo still has no frontend. |
+| September 2, 2026 | P-04 design/implementation docs. Adaptive remains this increment’s stop line (`DecisionEvent`). |
+| September 2, 2026 | P-04 Phases A–I landed in-repo (sibling on the same accepted bar). Adaptive still does not consume GREEN/AMBER/RED. |

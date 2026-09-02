@@ -1,0 +1,19 @@
+{
+  "fixture_sha256": "4b3b8783108988e71c4bf2cec9b6f8a4c6bf929fb93a4be27706a16ef4c1752a",
+  "gonum_version": "v0.17.0",
+  "bars_considered": 100,
+  "warmup_derivative": 15,
+  "warmup_f4": 30,
+  "emitted": 55,
+  "projection_success": 55,
+  "projection_failure": 0,
+  "domain_exit": 18,
+  "status_matches": 100,
+  "color_matches": 100,
+  "phase_matches": 100,
+  "confidence_matches": 100,
+  "rk_success_matches": 100,
+  "domain_exit_matches": 100,
+  "cockpit_output_matches": 100,
+  "semantic_equivalence": "PASS"
+}

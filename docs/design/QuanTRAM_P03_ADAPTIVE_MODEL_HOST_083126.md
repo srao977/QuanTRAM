@@ -1,14 +1,14 @@
 # QuanTRAM P-03 Adaptive Model Host — Design
 
 **Date:** August 31, 2026  
-**Last updated:** September 1, 2026  
-**Status:** Scientific port (Phases A–C), model-consumer path (D0), live host (D), and `ModelService.StreamDecisions` (E) are complete in-process (1 Sep). Default `QUANTRAM_MODEL=off`. Live IEX DecisionEvents observed 1 Sep. Adaptive Pipeline viewer is in `quantram-dashboard` (copied proto). EXPM / orders remain outstanding.  
+**Last updated:** September 2, 2026  
+**Status:** Scientific port (Phases A–C), model-consumer path (D0), live host (D), and `ModelService.StreamDecisions` (E) are complete in-process (1 Sep). Default `QUANTRAM_MODEL=off`. Live IEX DecisionEvents observed 1 Sep. Adaptive Pipeline viewer is in `quantram-dashboard` (copied proto). P-04 PriceEngine/EXPM Phases A–I landed 2 Sep (default `QUANTRAM_PRICING=off`).  
 **Scope:** Collocated Go adaptive host that consumes P-02 finalized bars.  
 **Parents:** [Process Model](QuanTRAM_PROCESS_MODEL_082926.md), [P-02 Data Quality](QuanTRAM_INGESTION_P02_DATA_QUALITY_083126.md)  
 **Review:** [P03_feedback_083126.md](../../P03_feedback_083126.md) (incorporated 31 Aug)  
 **Scientific source:** `C:\Users\chino\SADE` (Python Adaptive Pipeline D01 → D02 → D04 → emitter)  
 **Language evidence:** [SADE Go refactorability investigation, 2026-08-27](file:///C:/Users/chino/SADE/docs/investigations/SADE_GO_REFACTORABILITY_AND_SCALED_RUNTIME_INVESTIGATION_2026-08-27.md)  
-**Implementation plan:** [P-03 Implementation](QuanTRAM_P03_IMPLEMENTATION_083126.md)
+**Implementation plan:** [P-03 Implementation](QuanTRAM_P03_IMPLEMENTATION_083126.md) · [P-04 Price Engine](QuanTRAM_P04_PRICE_ENGINE_090226.md)
 
 ## 1. Purpose
 
@@ -75,12 +75,12 @@ This P-03 increment still ports only the adaptive emitter. It must not treat “
 | SDX / SADE `sdx_client` | **Do not use** on the live path. SDX remains an offline CSV tool in another repo. |
 | Adaptive mathematics | **Go black box** in this process (`internal/adaptive`). Stdlib scalar math; no NumPy/SciPy on this path. |
 | Python adaptive wrapper / `ModelInferenceService.Predict` | **Not required** for adaptive. A stateful Python wrapper is strictly worse (affinity + serialize-every-bar). Amends process-model P-04 for this increment. |
-| Pricing / EXPM | **Deferred as code, not cancelled.** Target: PriceEngine decides on Go EXPM trajectories (`time_term == false` only), joined to the adaptive model. Offline oracle is SADE `solve_cover_rk45_reference` (frozen copy of APTF `run_test_013b_qqq_validation.py::solve_cover`). No APTF repo dependency; no RK45 in the Go runtime. |
+| Pricing / EXPM | **P-04 (design 2 Sep).** PriceEngine on Go EXPM (`time_term == false` only), sibling on the accepted bar. Oracle: SADE `solve_cover_rk45_reference`. See [P-04 Price Engine](QuanTRAM_P04_PRICE_ENGINE_090226.md). |
 | Persistence of bars | Still not required. P-03 holds **per-symbol scientific state** only (D01 runtime + 15-context). |
 | CSV in QuanTRAM | Allowed only as an **offline equivalence harness** that maps rows into `domain.Bar` and calls the same Go engine. |
 | Orders / risk | Out of scope. `DecisionEvent` is the stop line. Emitter LONG/SHORT is `emitter_position_state` (scientific context), not an account position. |
 
-Process-model amendment (this increment): P-03 **owns** the proved adaptive path in Go. P-04 is reserved for the PriceEngine join on **Go EXPM** (same `time_term == false` contract as SADE production `solve_cover`). Do not implement `ModelInferenceService` until that increment. Do not carry RK45 into Go and do not call Python RK45 from the live path.
+Process-model amendment: P-03 **owns** the proved adaptive path in Go. P-04 is PriceEngine on **Go EXPM** (same `time_term == false` contract as SADE production `solve_cover`). Do not implement `ModelInferenceService`. Do not carry RK45 into Go. Design: [P-04](QuanTRAM_P04_PRICE_ENGINE_090226.md).
 
 ## 4. Runtime topology (local Phase 0)
 
@@ -393,10 +393,10 @@ Do **not** require live IEX prices to match Unit Run 001.
 ## 10. Explicitly out of increment
 
 - P-05 risk, P-06 paper orders, ledger, benchmark
-- Joining adaptive output to PriceEngine; implementing Go EXPM / F4 / policy (next scientific increment). Oracle is SADE `solve_cover_rk45_reference`, not a live sidecar and not an APTF checkout.
+- Joining adaptive output to PriceEngine in **this** P-03 increment — moved to [P-04](QuanTRAM_P04_PRICE_ENGINE_090226.md) (Phases A–I landed 2 Sep; BUY/SELL+color join remains out of P-04)
 - Databento, SIP, tick aggregation
 - Azure / AKS sharding
-- Dashboard BUY/SELL candlestick markers and durable decision history (the Adaptive Pipeline **process viewer** landed 1 Sep in `quantram-dashboard`; it consumes `StreamDecisions` and is not this repo)
+- Dashboard BUY/SELL candlestick markers and durable decision history (the Adaptive Pipeline **process viewer** landed 1 Sep in `quantram-dashboard`; Price Engine cards and airport boards landed 2 Sep)
 
 ## 11. Change log
 
@@ -412,4 +412,5 @@ Do **not** require live IEX prices to match Unit Run 001.
 | September 1, 2026 | Phase D0: `Pipeline.SubscribeModelBars` is the P-03 input. Overflow/gap mark the symbol discontinuous; observe `SubscribeFinalized` remains lossy. |
 | September 1, 2026 | Phase D: keyed `internal/modelhost`, 200 ms `PrepareStep`/`Commit` deadline, infer pause-not-reset, panic isolation, config validation, `GetHealth` model component. Default `off`. Proto still Phase E. |
 | September 1, 2026 | Phase E: `ModelService.StreamDecisions` (`oneof` decision \| skip). |
-| September 1, 2026 | Live mailbox fix: eligible-only model fan-out, depth 64. Live IEX DecisionEvents observed. Adaptive Pipeline process viewer landed in `quantram-dashboard` (own proto copy). |
+| September 2, 2026 | P-04 design published: Go PriceEngine/EXPM sibling on accepted bars. This P-03 doc no longer treats pricing as an unnamed “next session.” |
+| September 2, 2026 | P-04 Phases A–I landed. Adaptive still does not consume GREEN/AMBER/RED. |

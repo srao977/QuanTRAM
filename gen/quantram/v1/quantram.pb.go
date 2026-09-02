@@ -522,6 +522,138 @@ func (SkipReason) EnumDescriptor() ([]byte, []int) {
 	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{8}
 }
 
+// P-04 PriceEngine. Color is not BUY/SELL/HOLD. Warm-up skips are not errors.
+type PricingStatus int32
+
+const (
+	PricingStatus_PRICING_STATUS_UNSPECIFIED        PricingStatus = 0
+	PricingStatus_PRICING_STATUS_WARMUP_DERIVATIVE  PricingStatus = 1
+	PricingStatus_PRICING_STATUS_WARMUP_F4          PricingStatus = 2
+	PricingStatus_PRICING_STATUS_F4_UNAVAILABLE     PricingStatus = 3
+	PricingStatus_PRICING_STATUS_EMITTED            PricingStatus = 4
+	PricingStatus_PRICING_STATUS_PROJECTION_FAILURE PricingStatus = 5
+)
+
+// Enum value maps for PricingStatus.
+var (
+	PricingStatus_name = map[int32]string{
+		0: "PRICING_STATUS_UNSPECIFIED",
+		1: "PRICING_STATUS_WARMUP_DERIVATIVE",
+		2: "PRICING_STATUS_WARMUP_F4",
+		3: "PRICING_STATUS_F4_UNAVAILABLE",
+		4: "PRICING_STATUS_EMITTED",
+		5: "PRICING_STATUS_PROJECTION_FAILURE",
+	}
+	PricingStatus_value = map[string]int32{
+		"PRICING_STATUS_UNSPECIFIED":        0,
+		"PRICING_STATUS_WARMUP_DERIVATIVE":  1,
+		"PRICING_STATUS_WARMUP_F4":          2,
+		"PRICING_STATUS_F4_UNAVAILABLE":     3,
+		"PRICING_STATUS_EMITTED":            4,
+		"PRICING_STATUS_PROJECTION_FAILURE": 5,
+	}
+)
+
+func (x PricingStatus) Enum() *PricingStatus {
+	p := new(PricingStatus)
+	*p = x
+	return p
+}
+
+func (x PricingStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PricingStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[9].Descriptor()
+}
+
+func (PricingStatus) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[9]
+}
+
+func (x PricingStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PricingStatus.Descriptor instead.
+func (PricingStatus) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{9}
+}
+
+type PricingSkipReason int32
+
+const (
+	PricingSkipReason_PRICING_SKIP_REASON_UNSPECIFIED          PricingSkipReason = 0
+	PricingSkipReason_PRICING_SKIP_REASON_WARMUP_DERIVATIVE    PricingSkipReason = 1
+	PricingSkipReason_PRICING_SKIP_REASON_WARMUP_F4            PricingSkipReason = 2
+	PricingSkipReason_PRICING_SKIP_REASON_F4_UNAVAILABLE       PricingSkipReason = 3
+	PricingSkipReason_PRICING_SKIP_REASON_PROJECTION_FAILURE   PricingSkipReason = 4
+	PricingSkipReason_PRICING_SKIP_REASON_NUMERICALLY_UNSTABLE PricingSkipReason = 5
+	PricingSkipReason_PRICING_SKIP_REASON_INVALID_INPUT        PricingSkipReason = 6
+	PricingSkipReason_PRICING_SKIP_REASON_TIMEOUT              PricingSkipReason = 7
+	PricingSkipReason_PRICING_SKIP_REASON_ENGINE_ERROR         PricingSkipReason = 8
+	PricingSkipReason_PRICING_SKIP_REASON_ENGINE_PANIC         PricingSkipReason = 9
+	PricingSkipReason_PRICING_SKIP_REASON_TIME_TERM            PricingSkipReason = 10
+)
+
+// Enum value maps for PricingSkipReason.
+var (
+	PricingSkipReason_name = map[int32]string{
+		0:  "PRICING_SKIP_REASON_UNSPECIFIED",
+		1:  "PRICING_SKIP_REASON_WARMUP_DERIVATIVE",
+		2:  "PRICING_SKIP_REASON_WARMUP_F4",
+		3:  "PRICING_SKIP_REASON_F4_UNAVAILABLE",
+		4:  "PRICING_SKIP_REASON_PROJECTION_FAILURE",
+		5:  "PRICING_SKIP_REASON_NUMERICALLY_UNSTABLE",
+		6:  "PRICING_SKIP_REASON_INVALID_INPUT",
+		7:  "PRICING_SKIP_REASON_TIMEOUT",
+		8:  "PRICING_SKIP_REASON_ENGINE_ERROR",
+		9:  "PRICING_SKIP_REASON_ENGINE_PANIC",
+		10: "PRICING_SKIP_REASON_TIME_TERM",
+	}
+	PricingSkipReason_value = map[string]int32{
+		"PRICING_SKIP_REASON_UNSPECIFIED":          0,
+		"PRICING_SKIP_REASON_WARMUP_DERIVATIVE":    1,
+		"PRICING_SKIP_REASON_WARMUP_F4":            2,
+		"PRICING_SKIP_REASON_F4_UNAVAILABLE":       3,
+		"PRICING_SKIP_REASON_PROJECTION_FAILURE":   4,
+		"PRICING_SKIP_REASON_NUMERICALLY_UNSTABLE": 5,
+		"PRICING_SKIP_REASON_INVALID_INPUT":        6,
+		"PRICING_SKIP_REASON_TIMEOUT":              7,
+		"PRICING_SKIP_REASON_ENGINE_ERROR":         8,
+		"PRICING_SKIP_REASON_ENGINE_PANIC":         9,
+		"PRICING_SKIP_REASON_TIME_TERM":            10,
+	}
+)
+
+func (x PricingSkipReason) Enum() *PricingSkipReason {
+	p := new(PricingSkipReason)
+	*p = x
+	return p
+}
+
+func (x PricingSkipReason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PricingSkipReason) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[10].Descriptor()
+}
+
+func (PricingSkipReason) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[10]
+}
+
+func (x PricingSkipReason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PricingSkipReason.Descriptor instead.
+func (PricingSkipReason) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{10}
+}
+
 type Bar struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	Symbol              string                 `protobuf:"bytes,1,opt,name=symbol,proto3" json:"symbol,omitempty"`
@@ -1985,6 +2117,483 @@ func (x *StreamDecisionsRequest) GetMaxEvents() uint32 {
 	return 0
 }
 
+type PriceEmission struct {
+	state                     protoimpl.MessageState `protogen:"open.v1"`
+	Color                     string                 `protobuf:"bytes,1,opt,name=color,proto3" json:"color,omitempty"`
+	TrajectoryPhase           string                 `protobuf:"bytes,2,opt,name=trajectory_phase,json=trajectoryPhase,proto3" json:"trajectory_phase,omitempty"`
+	TurningTendency           string                 `protobuf:"bytes,3,opt,name=turning_tendency,json=turningTendency,proto3" json:"turning_tendency,omitempty"`
+	ConfidenceState           string                 `protobuf:"bytes,4,opt,name=confidence_state,json=confidenceState,proto3" json:"confidence_state,omitempty"`
+	DomainState               string                 `protobuf:"bytes,5,opt,name=domain_state,json=domainState,proto3" json:"domain_state,omitempty"`
+	StabilityState            string                 `protobuf:"bytes,6,opt,name=stability_state,json=stabilityState,proto3" json:"stability_state,omitempty"`
+	CurrentDirection          string                 `protobuf:"bytes,7,opt,name=current_direction,json=currentDirection,proto3" json:"current_direction,omitempty"`
+	ProjectedDirection        string                 `protobuf:"bytes,8,opt,name=projected_direction,json=projectedDirection,proto3" json:"projected_direction,omitempty"`
+	ReasonCodes               []string               `protobuf:"bytes,9,rep,name=reason_codes,json=reasonCodes,proto3" json:"reason_codes,omitempty"`
+	RkSuccess                 bool                   `protobuf:"varint,10,opt,name=rk_success,json=rkSuccess,proto3" json:"rk_success,omitempty"`
+	ConditionNumber           float64                `protobuf:"fixed64,11,opt,name=condition_number,json=conditionNumber,proto3" json:"condition_number,omitempty"`
+	MaxRealEigenvalue         float64                `protobuf:"fixed64,12,opt,name=max_real_eigenvalue,json=maxRealEigenvalue,proto3" json:"max_real_eigenvalue,omitempty"`
+	PerturbationAmplification float64                `protobuf:"fixed64,13,opt,name=perturbation_amplification,json=perturbationAmplification,proto3" json:"perturbation_amplification,omitempty"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
+}
+
+func (x *PriceEmission) Reset() {
+	*x = PriceEmission{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PriceEmission) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PriceEmission) ProtoMessage() {}
+
+func (x *PriceEmission) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PriceEmission.ProtoReflect.Descriptor instead.
+func (*PriceEmission) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *PriceEmission) GetColor() string {
+	if x != nil {
+		return x.Color
+	}
+	return ""
+}
+
+func (x *PriceEmission) GetTrajectoryPhase() string {
+	if x != nil {
+		return x.TrajectoryPhase
+	}
+	return ""
+}
+
+func (x *PriceEmission) GetTurningTendency() string {
+	if x != nil {
+		return x.TurningTendency
+	}
+	return ""
+}
+
+func (x *PriceEmission) GetConfidenceState() string {
+	if x != nil {
+		return x.ConfidenceState
+	}
+	return ""
+}
+
+func (x *PriceEmission) GetDomainState() string {
+	if x != nil {
+		return x.DomainState
+	}
+	return ""
+}
+
+func (x *PriceEmission) GetStabilityState() string {
+	if x != nil {
+		return x.StabilityState
+	}
+	return ""
+}
+
+func (x *PriceEmission) GetCurrentDirection() string {
+	if x != nil {
+		return x.CurrentDirection
+	}
+	return ""
+}
+
+func (x *PriceEmission) GetProjectedDirection() string {
+	if x != nil {
+		return x.ProjectedDirection
+	}
+	return ""
+}
+
+func (x *PriceEmission) GetReasonCodes() []string {
+	if x != nil {
+		return x.ReasonCodes
+	}
+	return nil
+}
+
+func (x *PriceEmission) GetRkSuccess() bool {
+	if x != nil {
+		return x.RkSuccess
+	}
+	return false
+}
+
+func (x *PriceEmission) GetConditionNumber() float64 {
+	if x != nil {
+		return x.ConditionNumber
+	}
+	return 0
+}
+
+func (x *PriceEmission) GetMaxRealEigenvalue() float64 {
+	if x != nil {
+		return x.MaxRealEigenvalue
+	}
+	return 0
+}
+
+func (x *PriceEmission) GetPerturbationAmplification() float64 {
+	if x != nil {
+		return x.PerturbationAmplification
+	}
+	return 0
+}
+
+type PriceCockpit struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	CockpitColor         string                 `protobuf:"bytes,1,opt,name=cockpit_color,json=cockpitColor,proto3" json:"cockpit_color,omitempty"`
+	RefinedInternalState string                 `protobuf:"bytes,2,opt,name=refined_internal_state,json=refinedInternalState,proto3" json:"refined_internal_state,omitempty"`
+	PersistenceState     string                 `protobuf:"bytes,3,opt,name=persistence_state,json=persistenceState,proto3" json:"persistence_state,omitempty"`
+	TurnCandidate        string                 `protobuf:"bytes,4,opt,name=turn_candidate,json=turnCandidate,proto3" json:"turn_candidate,omitempty"`
+	DomainState          string                 `protobuf:"bytes,5,opt,name=domain_state,json=domainState,proto3" json:"domain_state,omitempty"`
+	ConfidenceState      string                 `protobuf:"bytes,6,opt,name=confidence_state,json=confidenceState,proto3" json:"confidence_state,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *PriceCockpit) Reset() {
+	*x = PriceCockpit{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PriceCockpit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PriceCockpit) ProtoMessage() {}
+
+func (x *PriceCockpit) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PriceCockpit.ProtoReflect.Descriptor instead.
+func (*PriceCockpit) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *PriceCockpit) GetCockpitColor() string {
+	if x != nil {
+		return x.CockpitColor
+	}
+	return ""
+}
+
+func (x *PriceCockpit) GetRefinedInternalState() string {
+	if x != nil {
+		return x.RefinedInternalState
+	}
+	return ""
+}
+
+func (x *PriceCockpit) GetPersistenceState() string {
+	if x != nil {
+		return x.PersistenceState
+	}
+	return ""
+}
+
+func (x *PriceCockpit) GetTurnCandidate() string {
+	if x != nil {
+		return x.TurnCandidate
+	}
+	return ""
+}
+
+func (x *PriceCockpit) GetDomainState() string {
+	if x != nil {
+		return x.DomainState
+	}
+	return ""
+}
+
+func (x *PriceCockpit) GetConfidenceState() string {
+	if x != nil {
+		return x.ConfidenceState
+	}
+	return ""
+}
+
+type PricingSkip struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Reason        PricingSkipReason      `protobuf:"varint,1,opt,name=reason,proto3,enum=quantram.v1.PricingSkipReason" json:"reason,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PricingSkip) Reset() {
+	*x = PricingSkip{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PricingSkip) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PricingSkip) ProtoMessage() {}
+
+func (x *PricingSkip) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PricingSkip.ProtoReflect.Descriptor instead.
+func (*PricingSkip) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *PricingSkip) GetReason() PricingSkipReason {
+	if x != nil {
+		return x.Reason
+	}
+	return PricingSkipReason_PRICING_SKIP_REASON_UNSPECIFIED
+}
+
+func (x *PricingSkip) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+type PriceEvent struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	EventId             string                 `protobuf:"bytes,1,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
+	Symbol              string                 `protobuf:"bytes,2,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	IntervalStartUnixMs int64                  `protobuf:"varint,3,opt,name=interval_start_unix_ms,json=intervalStartUnixMs,proto3" json:"interval_start_unix_ms,omitempty"`
+	MarketSnapshotId    string                 `protobuf:"bytes,4,opt,name=market_snapshot_id,json=marketSnapshotId,proto3" json:"market_snapshot_id,omitempty"`
+	SourceTimestamp     string                 `protobuf:"bytes,5,opt,name=source_timestamp,json=sourceTimestamp,proto3" json:"source_timestamp,omitempty"`
+	AcceptedSequence    uint64                 `protobuf:"varint,6,opt,name=accepted_sequence,json=acceptedSequence,proto3" json:"accepted_sequence,omitempty"`
+	LatencyMs           int64                  `protobuf:"varint,7,opt,name=latency_ms,json=latencyMs,proto3" json:"latency_ms,omitempty"`
+	Status              PricingStatus          `protobuf:"varint,8,opt,name=status,proto3,enum=quantram.v1.PricingStatus" json:"status,omitempty"`
+	Emitted             bool                   `protobuf:"varint,9,opt,name=emitted,proto3" json:"emitted,omitempty"`
+	DomainExit          bool                   `protobuf:"varint,10,opt,name=domain_exit,json=domainExit,proto3" json:"domain_exit,omitempty"`
+	RkSuccess           bool                   `protobuf:"varint,11,opt,name=rk_success,json=rkSuccess,proto3" json:"rk_success,omitempty"`
+	Emission            *PriceEmission         `protobuf:"bytes,12,opt,name=emission,proto3" json:"emission,omitempty"`
+	Skip                *PricingSkip           `protobuf:"bytes,13,opt,name=skip,proto3" json:"skip,omitempty"`
+	Cockpit             *PriceCockpit          `protobuf:"bytes,14,opt,name=cockpit,proto3" json:"cockpit,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *PriceEvent) Reset() {
+	*x = PriceEvent{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PriceEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PriceEvent) ProtoMessage() {}
+
+func (x *PriceEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PriceEvent.ProtoReflect.Descriptor instead.
+func (*PriceEvent) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *PriceEvent) GetEventId() string {
+	if x != nil {
+		return x.EventId
+	}
+	return ""
+}
+
+func (x *PriceEvent) GetSymbol() string {
+	if x != nil {
+		return x.Symbol
+	}
+	return ""
+}
+
+func (x *PriceEvent) GetIntervalStartUnixMs() int64 {
+	if x != nil {
+		return x.IntervalStartUnixMs
+	}
+	return 0
+}
+
+func (x *PriceEvent) GetMarketSnapshotId() string {
+	if x != nil {
+		return x.MarketSnapshotId
+	}
+	return ""
+}
+
+func (x *PriceEvent) GetSourceTimestamp() string {
+	if x != nil {
+		return x.SourceTimestamp
+	}
+	return ""
+}
+
+func (x *PriceEvent) GetAcceptedSequence() uint64 {
+	if x != nil {
+		return x.AcceptedSequence
+	}
+	return 0
+}
+
+func (x *PriceEvent) GetLatencyMs() int64 {
+	if x != nil {
+		return x.LatencyMs
+	}
+	return 0
+}
+
+func (x *PriceEvent) GetStatus() PricingStatus {
+	if x != nil {
+		return x.Status
+	}
+	return PricingStatus_PRICING_STATUS_UNSPECIFIED
+}
+
+func (x *PriceEvent) GetEmitted() bool {
+	if x != nil {
+		return x.Emitted
+	}
+	return false
+}
+
+func (x *PriceEvent) GetDomainExit() bool {
+	if x != nil {
+		return x.DomainExit
+	}
+	return false
+}
+
+func (x *PriceEvent) GetRkSuccess() bool {
+	if x != nil {
+		return x.RkSuccess
+	}
+	return false
+}
+
+func (x *PriceEvent) GetEmission() *PriceEmission {
+	if x != nil {
+		return x.Emission
+	}
+	return nil
+}
+
+func (x *PriceEvent) GetSkip() *PricingSkip {
+	if x != nil {
+		return x.Skip
+	}
+	return nil
+}
+
+func (x *PriceEvent) GetCockpit() *PriceCockpit {
+	if x != nil {
+		return x.Cockpit
+	}
+	return nil
+}
+
+type StreamPriceEventsRequest struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Symbols []string               `protobuf:"bytes,1,rep,name=symbols,proto3" json:"symbols,omitempty"`
+	// Zero means stream until the client cancels.
+	MaxEvents     uint32 `protobuf:"varint,2,opt,name=max_events,json=maxEvents,proto3" json:"max_events,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StreamPriceEventsRequest) Reset() {
+	*x = StreamPriceEventsRequest{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StreamPriceEventsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StreamPriceEventsRequest) ProtoMessage() {}
+
+func (x *StreamPriceEventsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StreamPriceEventsRequest.ProtoReflect.Descriptor instead.
+func (*StreamPriceEventsRequest) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *StreamPriceEventsRequest) GetSymbols() []string {
+	if x != nil {
+		return x.Symbols
+	}
+	return nil
+}
+
+func (x *StreamPriceEventsRequest) GetMaxEvents() uint32 {
+	if x != nil {
+		return x.MaxEvents
+	}
+	return 0
+}
+
 var File_quantram_v1_quantram_proto protoreflect.FileDescriptor
 
 const file_quantram_v1_quantram_proto_rawDesc = "" +
@@ -2117,6 +2726,56 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	"\x16StreamDecisionsRequest\x12\x18\n" +
 	"\asymbols\x18\x01 \x03(\tR\asymbols\x12\x1d\n" +
 	"\n" +
+	"max_events\x18\x02 \x01(\rR\tmaxEvents\"\xac\x04\n" +
+	"\rPriceEmission\x12\x14\n" +
+	"\x05color\x18\x01 \x01(\tR\x05color\x12)\n" +
+	"\x10trajectory_phase\x18\x02 \x01(\tR\x0ftrajectoryPhase\x12)\n" +
+	"\x10turning_tendency\x18\x03 \x01(\tR\x0fturningTendency\x12)\n" +
+	"\x10confidence_state\x18\x04 \x01(\tR\x0fconfidenceState\x12!\n" +
+	"\fdomain_state\x18\x05 \x01(\tR\vdomainState\x12'\n" +
+	"\x0fstability_state\x18\x06 \x01(\tR\x0estabilityState\x12+\n" +
+	"\x11current_direction\x18\a \x01(\tR\x10currentDirection\x12/\n" +
+	"\x13projected_direction\x18\b \x01(\tR\x12projectedDirection\x12!\n" +
+	"\freason_codes\x18\t \x03(\tR\vreasonCodes\x12\x1d\n" +
+	"\n" +
+	"rk_success\x18\n" +
+	" \x01(\bR\trkSuccess\x12)\n" +
+	"\x10condition_number\x18\v \x01(\x01R\x0fconditionNumber\x12.\n" +
+	"\x13max_real_eigenvalue\x18\f \x01(\x01R\x11maxRealEigenvalue\x12=\n" +
+	"\x1aperturbation_amplification\x18\r \x01(\x01R\x19perturbationAmplification\"\x8b\x02\n" +
+	"\fPriceCockpit\x12#\n" +
+	"\rcockpit_color\x18\x01 \x01(\tR\fcockpitColor\x124\n" +
+	"\x16refined_internal_state\x18\x02 \x01(\tR\x14refinedInternalState\x12+\n" +
+	"\x11persistence_state\x18\x03 \x01(\tR\x10persistenceState\x12%\n" +
+	"\x0eturn_candidate\x18\x04 \x01(\tR\rturnCandidate\x12!\n" +
+	"\fdomain_state\x18\x05 \x01(\tR\vdomainState\x12)\n" +
+	"\x10confidence_state\x18\x06 \x01(\tR\x0fconfidenceState\"]\n" +
+	"\vPricingSkip\x126\n" +
+	"\x06reason\x18\x01 \x01(\x0e2\x1e.quantram.v1.PricingSkipReasonR\x06reason\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\"\xc2\x04\n" +
+	"\n" +
+	"PriceEvent\x12\x19\n" +
+	"\bevent_id\x18\x01 \x01(\tR\aeventId\x12\x16\n" +
+	"\x06symbol\x18\x02 \x01(\tR\x06symbol\x123\n" +
+	"\x16interval_start_unix_ms\x18\x03 \x01(\x03R\x13intervalStartUnixMs\x12,\n" +
+	"\x12market_snapshot_id\x18\x04 \x01(\tR\x10marketSnapshotId\x12)\n" +
+	"\x10source_timestamp\x18\x05 \x01(\tR\x0fsourceTimestamp\x12+\n" +
+	"\x11accepted_sequence\x18\x06 \x01(\x04R\x10acceptedSequence\x12\x1d\n" +
+	"\n" +
+	"latency_ms\x18\a \x01(\x03R\tlatencyMs\x122\n" +
+	"\x06status\x18\b \x01(\x0e2\x1a.quantram.v1.PricingStatusR\x06status\x12\x18\n" +
+	"\aemitted\x18\t \x01(\bR\aemitted\x12\x1f\n" +
+	"\vdomain_exit\x18\n" +
+	" \x01(\bR\n" +
+	"domainExit\x12\x1d\n" +
+	"\n" +
+	"rk_success\x18\v \x01(\bR\trkSuccess\x126\n" +
+	"\bemission\x18\f \x01(\v2\x1a.quantram.v1.PriceEmissionR\bemission\x12,\n" +
+	"\x04skip\x18\r \x01(\v2\x18.quantram.v1.PricingSkipR\x04skip\x123\n" +
+	"\acockpit\x18\x0e \x01(\v2\x19.quantram.v1.PriceCockpitR\acockpit\"S\n" +
+	"\x18StreamPriceEventsRequest\x12\x18\n" +
+	"\asymbols\x18\x01 \x03(\tR\asymbols\x12\x1d\n" +
+	"\n" +
 	"max_events\x18\x02 \x01(\rR\tmaxEvents*\x80\x01\n" +
 	"\x0eInstrumentType\x12\x1f\n" +
 	"\x1bINSTRUMENT_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
@@ -2175,7 +2834,27 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	"\x18SKIP_REASON_ENGINE_ERROR\x10\t\x12\x1c\n" +
 	"\x18SKIP_REASON_ENGINE_PANIC\x10\n" +
 	"\x12#\n" +
-	"\x1fSKIP_REASON_STATE_DISCONTINUOUS\x10\v2\xb3\x01\n" +
+	"\x1fSKIP_REASON_STATE_DISCONTINUOUS\x10\v*\xd9\x01\n" +
+	"\rPricingStatus\x12\x1e\n" +
+	"\x1aPRICING_STATUS_UNSPECIFIED\x10\x00\x12$\n" +
+	" PRICING_STATUS_WARMUP_DERIVATIVE\x10\x01\x12\x1c\n" +
+	"\x18PRICING_STATUS_WARMUP_F4\x10\x02\x12!\n" +
+	"\x1dPRICING_STATUS_F4_UNAVAILABLE\x10\x03\x12\x1a\n" +
+	"\x16PRICING_STATUS_EMITTED\x10\x04\x12%\n" +
+	"!PRICING_STATUS_PROJECTION_FAILURE\x10\x05*\xbf\x03\n" +
+	"\x11PricingSkipReason\x12#\n" +
+	"\x1fPRICING_SKIP_REASON_UNSPECIFIED\x10\x00\x12)\n" +
+	"%PRICING_SKIP_REASON_WARMUP_DERIVATIVE\x10\x01\x12!\n" +
+	"\x1dPRICING_SKIP_REASON_WARMUP_F4\x10\x02\x12&\n" +
+	"\"PRICING_SKIP_REASON_F4_UNAVAILABLE\x10\x03\x12*\n" +
+	"&PRICING_SKIP_REASON_PROJECTION_FAILURE\x10\x04\x12,\n" +
+	"(PRICING_SKIP_REASON_NUMERICALLY_UNSTABLE\x10\x05\x12%\n" +
+	"!PRICING_SKIP_REASON_INVALID_INPUT\x10\x06\x12\x1f\n" +
+	"\x1bPRICING_SKIP_REASON_TIMEOUT\x10\a\x12$\n" +
+	" PRICING_SKIP_REASON_ENGINE_ERROR\x10\b\x12$\n" +
+	" PRICING_SKIP_REASON_ENGINE_PANIC\x10\t\x12!\n" +
+	"\x1dPRICING_SKIP_REASON_TIME_TERM\x10\n" +
+	"2\xb3\x01\n" +
 	"\x11MarketFeedService\x12K\n" +
 	"\rGetFeedHealth\x12!.quantram.v1.GetFeedHealthRequest\x1a\x17.quantram.v1.FeedHealth\x12Q\n" +
 	"\x0fGetActiveSource\x12#.quantram.v1.GetActiveSourceRequest\x1a\x19.quantram.v1.ActiveSource2\xf0\x01\n" +
@@ -2186,9 +2865,10 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	"\x0eTriggerGapFill\x12\".quantram.v1.TriggerGapFillRequest\x1a\x1a.quantram.v1.GapFillResult2\xaa\x01\n" +
 	"\x11OperationsService\x12E\n" +
 	"\tGetHealth\x12\x1d.quantram.v1.GetHealthRequest\x1a\x19.quantram.v1.HealthReport\x12N\n" +
-	"\fGetReadiness\x12 .quantram.v1.GetReadinessRequest\x1a\x1c.quantram.v1.ReadinessReport2d\n" +
+	"\fGetReadiness\x12 .quantram.v1.GetReadinessRequest\x1a\x1c.quantram.v1.ReadinessReport2\xbb\x01\n" +
 	"\fModelService\x12T\n" +
-	"\x0fStreamDecisions\x12#.quantram.v1.StreamDecisionsRequest\x1a\x1a.quantram.v1.DecisionEvent0\x01B%Z#quantram/gen/quantram/v1;quantramv1b\x06proto3"
+	"\x0fStreamDecisions\x12#.quantram.v1.StreamDecisionsRequest\x1a\x1a.quantram.v1.DecisionEvent0\x01\x12U\n" +
+	"\x11StreamPriceEvents\x12%.quantram.v1.StreamPriceEventsRequest\x1a\x17.quantram.v1.PriceEvent0\x01B%Z#quantram/gen/quantram/v1;quantramv1b\x06proto3"
 
 var (
 	file_quantram_v1_quantram_proto_rawDescOnce sync.Once
@@ -2202,76 +2882,90 @@ func file_quantram_v1_quantram_proto_rawDescGZIP() []byte {
 	return file_quantram_v1_quantram_proto_rawDescData
 }
 
-var file_quantram_v1_quantram_proto_enumTypes = make([]protoimpl.EnumInfo, 9)
-var file_quantram_v1_quantram_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_quantram_v1_quantram_proto_enumTypes = make([]protoimpl.EnumInfo, 11)
+var file_quantram_v1_quantram_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_quantram_v1_quantram_proto_goTypes = []any{
-	(InstrumentType)(0),            // 0: quantram.v1.InstrumentType
-	(QualityStatus)(0),             // 1: quantram.v1.QualityStatus
-	(FeedState)(0),                 // 2: quantram.v1.FeedState
-	(ComponentState)(0),            // 3: quantram.v1.ComponentState
-	(Side)(0),                      // 4: quantram.v1.Side
-	(PathDirection)(0),             // 5: quantram.v1.PathDirection
-	(EmitterPosition)(0),           // 6: quantram.v1.EmitterPosition
-	(ModelStatus)(0),               // 7: quantram.v1.ModelStatus
-	(SkipReason)(0),                // 8: quantram.v1.SkipReason
-	(*Bar)(nil),                    // 9: quantram.v1.Bar
-	(*GetFeedHealthRequest)(nil),   // 10: quantram.v1.GetFeedHealthRequest
-	(*FeedHealth)(nil),             // 11: quantram.v1.FeedHealth
-	(*GetActiveSourceRequest)(nil), // 12: quantram.v1.GetActiveSourceRequest
-	(*ActiveSource)(nil),           // 13: quantram.v1.ActiveSource
-	(*StreamBarsRequest)(nil),      // 14: quantram.v1.StreamBarsRequest
-	(*GetBarWindowRequest)(nil),    // 15: quantram.v1.GetBarWindowRequest
-	(*BarWindow)(nil),              // 16: quantram.v1.BarWindow
-	(*TriggerGapFillRequest)(nil),  // 17: quantram.v1.TriggerGapFillRequest
-	(*GapFillResult)(nil),          // 18: quantram.v1.GapFillResult
-	(*GetHealthRequest)(nil),       // 19: quantram.v1.GetHealthRequest
-	(*ComponentHealth)(nil),        // 20: quantram.v1.ComponentHealth
-	(*HealthReport)(nil),           // 21: quantram.v1.HealthReport
-	(*GetReadinessRequest)(nil),    // 22: quantram.v1.GetReadinessRequest
-	(*ReadinessReport)(nil),        // 23: quantram.v1.ReadinessReport
-	(*Decision)(nil),               // 24: quantram.v1.Decision
-	(*Skip)(nil),                   // 25: quantram.v1.Skip
-	(*DecisionEvent)(nil),          // 26: quantram.v1.DecisionEvent
-	(*StreamDecisionsRequest)(nil), // 27: quantram.v1.StreamDecisionsRequest
+	(InstrumentType)(0),              // 0: quantram.v1.InstrumentType
+	(QualityStatus)(0),               // 1: quantram.v1.QualityStatus
+	(FeedState)(0),                   // 2: quantram.v1.FeedState
+	(ComponentState)(0),              // 3: quantram.v1.ComponentState
+	(Side)(0),                        // 4: quantram.v1.Side
+	(PathDirection)(0),               // 5: quantram.v1.PathDirection
+	(EmitterPosition)(0),             // 6: quantram.v1.EmitterPosition
+	(ModelStatus)(0),                 // 7: quantram.v1.ModelStatus
+	(SkipReason)(0),                  // 8: quantram.v1.SkipReason
+	(PricingStatus)(0),               // 9: quantram.v1.PricingStatus
+	(PricingSkipReason)(0),           // 10: quantram.v1.PricingSkipReason
+	(*Bar)(nil),                      // 11: quantram.v1.Bar
+	(*GetFeedHealthRequest)(nil),     // 12: quantram.v1.GetFeedHealthRequest
+	(*FeedHealth)(nil),               // 13: quantram.v1.FeedHealth
+	(*GetActiveSourceRequest)(nil),   // 14: quantram.v1.GetActiveSourceRequest
+	(*ActiveSource)(nil),             // 15: quantram.v1.ActiveSource
+	(*StreamBarsRequest)(nil),        // 16: quantram.v1.StreamBarsRequest
+	(*GetBarWindowRequest)(nil),      // 17: quantram.v1.GetBarWindowRequest
+	(*BarWindow)(nil),                // 18: quantram.v1.BarWindow
+	(*TriggerGapFillRequest)(nil),    // 19: quantram.v1.TriggerGapFillRequest
+	(*GapFillResult)(nil),            // 20: quantram.v1.GapFillResult
+	(*GetHealthRequest)(nil),         // 21: quantram.v1.GetHealthRequest
+	(*ComponentHealth)(nil),          // 22: quantram.v1.ComponentHealth
+	(*HealthReport)(nil),             // 23: quantram.v1.HealthReport
+	(*GetReadinessRequest)(nil),      // 24: quantram.v1.GetReadinessRequest
+	(*ReadinessReport)(nil),          // 25: quantram.v1.ReadinessReport
+	(*Decision)(nil),                 // 26: quantram.v1.Decision
+	(*Skip)(nil),                     // 27: quantram.v1.Skip
+	(*DecisionEvent)(nil),            // 28: quantram.v1.DecisionEvent
+	(*StreamDecisionsRequest)(nil),   // 29: quantram.v1.StreamDecisionsRequest
+	(*PriceEmission)(nil),            // 30: quantram.v1.PriceEmission
+	(*PriceCockpit)(nil),             // 31: quantram.v1.PriceCockpit
+	(*PricingSkip)(nil),              // 32: quantram.v1.PricingSkip
+	(*PriceEvent)(nil),               // 33: quantram.v1.PriceEvent
+	(*StreamPriceEventsRequest)(nil), // 34: quantram.v1.StreamPriceEventsRequest
 }
 var file_quantram_v1_quantram_proto_depIdxs = []int32{
 	0,  // 0: quantram.v1.Bar.instrument_type:type_name -> quantram.v1.InstrumentType
 	1,  // 1: quantram.v1.Bar.quality_status:type_name -> quantram.v1.QualityStatus
 	2,  // 2: quantram.v1.FeedHealth.state:type_name -> quantram.v1.FeedState
 	2,  // 3: quantram.v1.ActiveSource.state:type_name -> quantram.v1.FeedState
-	9,  // 4: quantram.v1.BarWindow.bars:type_name -> quantram.v1.Bar
+	11, // 4: quantram.v1.BarWindow.bars:type_name -> quantram.v1.Bar
 	3,  // 5: quantram.v1.ComponentHealth.state:type_name -> quantram.v1.ComponentState
 	3,  // 6: quantram.v1.HealthReport.state:type_name -> quantram.v1.ComponentState
-	20, // 7: quantram.v1.HealthReport.components:type_name -> quantram.v1.ComponentHealth
+	22, // 7: quantram.v1.HealthReport.components:type_name -> quantram.v1.ComponentHealth
 	4,  // 8: quantram.v1.Decision.side:type_name -> quantram.v1.Side
 	5,  // 9: quantram.v1.Decision.path_direction:type_name -> quantram.v1.PathDirection
 	7,  // 10: quantram.v1.Decision.model_status:type_name -> quantram.v1.ModelStatus
 	6,  // 11: quantram.v1.Decision.emitter_position_state:type_name -> quantram.v1.EmitterPosition
 	8,  // 12: quantram.v1.Skip.reason:type_name -> quantram.v1.SkipReason
 	7,  // 13: quantram.v1.Skip.model_status:type_name -> quantram.v1.ModelStatus
-	24, // 14: quantram.v1.DecisionEvent.decision:type_name -> quantram.v1.Decision
-	25, // 15: quantram.v1.DecisionEvent.skip:type_name -> quantram.v1.Skip
-	10, // 16: quantram.v1.MarketFeedService.GetFeedHealth:input_type -> quantram.v1.GetFeedHealthRequest
-	12, // 17: quantram.v1.MarketFeedService.GetActiveSource:input_type -> quantram.v1.GetActiveSourceRequest
-	14, // 18: quantram.v1.IngestionService.StreamBars:input_type -> quantram.v1.StreamBarsRequest
-	15, // 19: quantram.v1.IngestionService.GetBarWindow:input_type -> quantram.v1.GetBarWindowRequest
-	17, // 20: quantram.v1.IngestionService.TriggerGapFill:input_type -> quantram.v1.TriggerGapFillRequest
-	19, // 21: quantram.v1.OperationsService.GetHealth:input_type -> quantram.v1.GetHealthRequest
-	22, // 22: quantram.v1.OperationsService.GetReadiness:input_type -> quantram.v1.GetReadinessRequest
-	27, // 23: quantram.v1.ModelService.StreamDecisions:input_type -> quantram.v1.StreamDecisionsRequest
-	11, // 24: quantram.v1.MarketFeedService.GetFeedHealth:output_type -> quantram.v1.FeedHealth
-	13, // 25: quantram.v1.MarketFeedService.GetActiveSource:output_type -> quantram.v1.ActiveSource
-	9,  // 26: quantram.v1.IngestionService.StreamBars:output_type -> quantram.v1.Bar
-	16, // 27: quantram.v1.IngestionService.GetBarWindow:output_type -> quantram.v1.BarWindow
-	18, // 28: quantram.v1.IngestionService.TriggerGapFill:output_type -> quantram.v1.GapFillResult
-	21, // 29: quantram.v1.OperationsService.GetHealth:output_type -> quantram.v1.HealthReport
-	23, // 30: quantram.v1.OperationsService.GetReadiness:output_type -> quantram.v1.ReadinessReport
-	26, // 31: quantram.v1.ModelService.StreamDecisions:output_type -> quantram.v1.DecisionEvent
-	24, // [24:32] is the sub-list for method output_type
-	16, // [16:24] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	26, // 14: quantram.v1.DecisionEvent.decision:type_name -> quantram.v1.Decision
+	27, // 15: quantram.v1.DecisionEvent.skip:type_name -> quantram.v1.Skip
+	10, // 16: quantram.v1.PricingSkip.reason:type_name -> quantram.v1.PricingSkipReason
+	9,  // 17: quantram.v1.PriceEvent.status:type_name -> quantram.v1.PricingStatus
+	30, // 18: quantram.v1.PriceEvent.emission:type_name -> quantram.v1.PriceEmission
+	32, // 19: quantram.v1.PriceEvent.skip:type_name -> quantram.v1.PricingSkip
+	31, // 20: quantram.v1.PriceEvent.cockpit:type_name -> quantram.v1.PriceCockpit
+	12, // 21: quantram.v1.MarketFeedService.GetFeedHealth:input_type -> quantram.v1.GetFeedHealthRequest
+	14, // 22: quantram.v1.MarketFeedService.GetActiveSource:input_type -> quantram.v1.GetActiveSourceRequest
+	16, // 23: quantram.v1.IngestionService.StreamBars:input_type -> quantram.v1.StreamBarsRequest
+	17, // 24: quantram.v1.IngestionService.GetBarWindow:input_type -> quantram.v1.GetBarWindowRequest
+	19, // 25: quantram.v1.IngestionService.TriggerGapFill:input_type -> quantram.v1.TriggerGapFillRequest
+	21, // 26: quantram.v1.OperationsService.GetHealth:input_type -> quantram.v1.GetHealthRequest
+	24, // 27: quantram.v1.OperationsService.GetReadiness:input_type -> quantram.v1.GetReadinessRequest
+	29, // 28: quantram.v1.ModelService.StreamDecisions:input_type -> quantram.v1.StreamDecisionsRequest
+	34, // 29: quantram.v1.ModelService.StreamPriceEvents:input_type -> quantram.v1.StreamPriceEventsRequest
+	13, // 30: quantram.v1.MarketFeedService.GetFeedHealth:output_type -> quantram.v1.FeedHealth
+	15, // 31: quantram.v1.MarketFeedService.GetActiveSource:output_type -> quantram.v1.ActiveSource
+	11, // 32: quantram.v1.IngestionService.StreamBars:output_type -> quantram.v1.Bar
+	18, // 33: quantram.v1.IngestionService.GetBarWindow:output_type -> quantram.v1.BarWindow
+	20, // 34: quantram.v1.IngestionService.TriggerGapFill:output_type -> quantram.v1.GapFillResult
+	23, // 35: quantram.v1.OperationsService.GetHealth:output_type -> quantram.v1.HealthReport
+	25, // 36: quantram.v1.OperationsService.GetReadiness:output_type -> quantram.v1.ReadinessReport
+	28, // 37: quantram.v1.ModelService.StreamDecisions:output_type -> quantram.v1.DecisionEvent
+	33, // 38: quantram.v1.ModelService.StreamPriceEvents:output_type -> quantram.v1.PriceEvent
+	30, // [30:39] is the sub-list for method output_type
+	21, // [21:30] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_quantram_v1_quantram_proto_init() }
@@ -2288,8 +2982,8 @@ func file_quantram_v1_quantram_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_quantram_v1_quantram_proto_rawDesc), len(file_quantram_v1_quantram_proto_rawDesc)),
-			NumEnums:      9,
-			NumMessages:   19,
+			NumEnums:      11,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   4,
 		},

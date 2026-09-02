@@ -21,10 +21,15 @@ type Server struct {
 	pipeline *ingestion.Pipeline
 	host     modelHealth
 	events   modelEvents
+	prices   priceEvents
 }
 
 type modelHealth interface {
 	Health() domain.ComponentHealth
+}
+
+type pricingHealth interface {
+	PricingHealth() domain.ComponentHealth
 }
 
 type modelEvents interface {
@@ -33,10 +38,20 @@ type modelEvents interface {
 	LastEvents() []domain.DecisionEvent
 }
 
+type priceEvents interface {
+	SubscribePriceEvents(buffer int) (uint64, <-chan domain.PriceEvent)
+	UnsubscribePriceEvents(id uint64)
+	LastPriceEvents() []domain.PriceEvent
+	PricingEnabled() bool
+}
+
 func New(pipeline *ingestion.Pipeline, host modelHealth) *Server {
 	s := &Server{pipeline: pipeline, host: host}
 	if ev, ok := host.(modelEvents); ok {
 		s.events = ev
+	}
+	if px, ok := host.(priceEvents); ok && px.PricingEnabled() {
+		s.prices = px
 	}
 	return s
 }
@@ -155,6 +170,12 @@ func (s *Server) GetHealth(context.Context, *quantramv1.GetHealthRequest) (*quan
 			Name: "model", State: domain.ComponentHealthy, Detail: "off",
 		})
 	}
+	pricing := domain.ComponentHealth{Name: "pricing", State: domain.ComponentHealthy, Detail: "off"}
+	if ph, ok := s.host.(pricingHealth); ok {
+		pricing = ph.PricingHealth()
+	}
+	report.Components = append(report.Components, pricing)
+	applyPricingToReport(&report, pricing)
 	out := &quantramv1.HealthReport{State: toProtoComponent(report.State)}
 	for _, component := range report.Components {
 		out.Components = append(out.Components, &quantramv1.ComponentHealth{
@@ -299,6 +320,22 @@ func toProtoFeedState(value domain.FeedState) quantramv1.FeedState {
 		return quantramv1.FeedState_FEED_STATE_RECOVERING
 	default:
 		return quantramv1.FeedState_FEED_STATE_UNSPECIFIED
+	}
+}
+
+func applyPricingToReport(report *domain.HealthReport, pricing domain.ComponentHealth) {
+	switch pricing.State {
+	case domain.ComponentUnavailable:
+		if report.State == domain.ComponentHealthy {
+			report.State = domain.ComponentDegraded
+		}
+	case domain.ComponentDegraded:
+		switch pricing.Detail {
+		case "discontinuous", "error":
+			if report.State == domain.ComponentHealthy {
+				report.State = domain.ComponentDegraded
+			}
+		}
 	}
 }
 
