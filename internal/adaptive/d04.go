@@ -18,13 +18,13 @@ func ProductionContext(evaluationTime float64) EnvelopeContext {
 }
 
 type CapturabilityResult struct {
-	HardEligibility        int
-	GeometryQuality        float64
-	StructuralQuality      float64
-	RiskQuality            float64
-	BaseCapturabilityScore float64
-	CapturabilityScore     float64
-	ReasonCodes            []string
+	HardEligibility        int      `bson:"hard_eligibility"`
+	GeometryQuality        float64  `bson:"geometry_quality"`
+	StructuralQuality      float64  `bson:"structural_quality"`
+	RiskQuality            float64  `bson:"risk_quality"`
+	BaseCapturabilityScore float64  `bson:"base_capturability_score"`
+	CapturabilityScore     float64  `bson:"capturability_score"`
+	ReasonCodes            []string `bson:"reason_codes"`
 }
 
 func ValidateReturnShape(shape ReturnShape) error {

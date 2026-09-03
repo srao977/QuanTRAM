@@ -2,6 +2,7 @@ package adaptive
 
 import (
 	"math"
+	"reflect"
 	"testing"
 	"time"
 
@@ -80,6 +81,39 @@ func TestEngineDuplicateTimeDoesNotCommit(t *testing.T) {
 	}
 	if eng.StateHash() != hash {
 		t.Fatal("duplicate committed state")
+	}
+}
+
+func TestEngineRetainsCanonicalPipelineOutputsOnCommit(t *testing.T) {
+	eng := NewEngine("AAPL")
+	bar := syntheticBar(0, 100, 10)
+	event, working, commit := eng.PrepareStep(bar)
+	if !commit {
+		t.Fatal("valid evaluation was not prepared for commit")
+	}
+	if !event.IsSkip() || event.Skip.Reason != domain.SkipInitializing {
+		t.Fatalf("want committed INITIALIZING event, got %+v", event)
+	}
+	want := working.LastPipelineOutputs()
+	eng.Commit(working)
+	got := eng.LastPipelineOutputs()
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("committed outputs differ from prepared canonical outputs\ngot:  %+v\nwant: %+v", got, want)
+	}
+
+	got.DMO.ParameterState["ref_alpha"] = -1
+	got.FMO.Samples[0].Level = -1
+	got.ReturnShape.ForwardSamples[0].Level = -1
+	if reflect.DeepEqual(got, eng.LastPipelineOutputs()) {
+		t.Fatal("retained outputs must be defensively copied")
+	}
+
+	before := eng.LastPipelineOutputs()
+	bad := syntheticBar(1, 101, 10)
+	bad.Close = math.NaN()
+	_ = eng.Step(bad)
+	if !reflect.DeepEqual(before, eng.LastPipelineOutputs()) {
+		t.Fatal("failed evaluation changed retained pipeline outputs")
 	}
 }
 

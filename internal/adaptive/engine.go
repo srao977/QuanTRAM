@@ -52,6 +52,16 @@ type Engine struct {
 	lastSourceTime   *float64
 	eventSeq         int
 	last             EvalSnapshot
+	lastPipeline     PipelineOutputs
+}
+
+// PipelineOutputs retains the canonical stage outputs already produced by one
+// successful adaptive evaluation. It does not add or recompute science.
+type PipelineOutputs struct {
+	DMO           DMOOutput           `bson:"dmo"`
+	FMO           FMOOutput           `bson:"fmo"`
+	ReturnShape   ReturnShape         `bson:"return_shape"`
+	Capturability CapturabilityResult `bson:"capturability"`
 }
 
 // EvalSnapshot is the last committed scientific evaluation (INITIALIZING included).
@@ -91,6 +101,27 @@ func (e *Engine) StateHash() string { return e.d01.StateHash() }
 
 func (e *Engine) LastEval() EvalSnapshot { return e.last }
 
+func (e *Engine) LastPipelineOutputs() PipelineOutputs {
+	out := e.lastPipeline
+	out.DMO.ParameterState = cloneFloatMap(out.DMO.ParameterState)
+	out.DMO.ParameterUpdateMagnitude = cloneFloatMap(out.DMO.ParameterUpdateMagnitude)
+	out.FMO.Samples = slices.Clone(out.FMO.Samples)
+	out.ReturnShape.ForwardSamples = slices.Clone(out.ReturnShape.ForwardSamples)
+	out.Capturability.ReasonCodes = slices.Clone(out.Capturability.ReasonCodes)
+	return out
+}
+
+func cloneFloatMap(source map[string]float64) map[string]float64 {
+	if source == nil {
+		return nil
+	}
+	out := make(map[string]float64, len(source))
+	for key, value := range source {
+		out[key] = value
+	}
+	return out
+}
+
 func (e *Engine) clone() *Engine {
 	out := *e
 	out.d01 = e.d01.Clone()
@@ -115,6 +146,7 @@ func (e *Engine) adopt(src *Engine) {
 	e.lastSourceTime = src.lastSourceTime
 	e.eventSeq = src.eventSeq
 	e.last = src.last
+	e.lastPipeline = src.lastPipeline
 }
 
 // Step runs D01→D02→D04→decide on a copy and commits only if the full path succeeds.
@@ -189,6 +221,12 @@ func (e *Engine) stepLocked(bar domain.Bar, started time.Time) (domain.DecisionE
 	if err := validateScores(capture, shape); err != nil {
 		base.Skip = &domain.Skip{Reason: domain.SkipInvalidInput, Detail: err.Error()}
 		return base, false
+	}
+	e.lastPipeline = PipelineOutputs{
+		DMO:           dmo,
+		FMO:           fmo,
+		ReturnShape:   shape,
+		Capturability: capture,
 	}
 
 	signalID := fmt.Sprintf("%s:sig:%d", e.entityID, e.completedCount+1)

@@ -56,50 +56,50 @@ const (
 
 // Decision is a terminal BUY/SELL/HOLD. HOLD is a decision, not a skip.
 type Decision struct {
-	Side                 Side
-	Confidence           float64
-	H                    int
-	QG                   float64
-	QS                   float64
-	QR                   float64
-	PathDirection        PathDirection
-	ModelStatus          ModelStatus
-	EmitterPosition      EmitterPosition
-	RulePath             string
-	Strength             float64
-	Coherence            float64
-	Persistence          float64
-	Uncertainty          float64
-	Reversal             float64
-	TerminalDisplacement float64
+	Side                 Side            `bson:"side"`
+	Confidence           float64         `bson:"confidence"`
+	H                    int             `bson:"h"`
+	QG                   float64         `bson:"qg"`
+	QS                   float64         `bson:"qs"`
+	QR                   float64         `bson:"qr"`
+	PathDirection        PathDirection   `bson:"path_direction"`
+	ModelStatus          ModelStatus     `bson:"model_status"`
+	EmitterPosition      EmitterPosition `bson:"emitter_position"`
+	RulePath             string          `bson:"rule_path"`
+	Strength             float64         `bson:"strength"`
+	Coherence            float64         `bson:"coherence"`
+	Persistence          float64         `bson:"persistence"`
+	Uncertainty          float64         `bson:"uncertainty"`
+	Reversal             float64         `bson:"reversal"`
+	TerminalDisplacement float64         `bson:"terminal_displacement"`
 }
 
 // Skip is a typed non-decision. It must not carry a Side.
 type Skip struct {
-	Reason      SkipReason
-	Detail      string
-	ModelStatus ModelStatus
+	Reason      SkipReason  `bson:"reason"`
+	Detail      string      `bson:"detail"`
+	ModelStatus ModelStatus `bson:"model_status"`
 }
 
 // DecisionEvent is one terminal outcome per considered bar: a decision or a skip.
 type DecisionEvent struct {
-	EventID          string
-	SignalID         string
-	DecisionID       string
-	Symbol           string
-	IntervalStart    time.Time
-	MarketSnapshotID string
-	SourceTimestamp  string
-	AcceptedSequence int
-	ReceivedAt       time.Time
-	CompletedAt      time.Time
-	Latency          time.Duration
-	ModelVersion     string
-	SchemaVersion    string
-	PreStateHash     string
-	PostStateHash    string
-	Decision         *Decision
-	Skip             *Skip
+	EventID          string        `bson:"event_id"`
+	SignalID         string        `bson:"signal_id"`
+	DecisionID       string        `bson:"decision_id"`
+	Symbol           string        `bson:"symbol"`
+	IntervalStart    time.Time     `bson:"interval_start_unix_ms"`
+	MarketSnapshotID string        `bson:"market_snapshot_id"`
+	SourceTimestamp  string        `bson:"source_timestamp"`
+	AcceptedSequence int           `bson:"accepted_sequence"`
+	ReceivedAt       time.Time     `bson:"received_at_unix_ms"`
+	CompletedAt      time.Time     `bson:"completed_at_unix_ms"`
+	Latency          time.Duration `bson:"latency_ns"`
+	ModelVersion     string        `bson:"model_version"`
+	SchemaVersion    string        `bson:"schema_version"`
+	PreStateHash     string        `bson:"pre_state_hash"`
+	PostStateHash    string        `bson:"post_state_hash"`
+	Decision         *Decision     `bson:"decision,omitempty"`
+	Skip             *Skip         `bson:"skip,omitempty"`
 }
 
 func (e DecisionEvent) IsDecision() bool {

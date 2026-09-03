@@ -655,6 +655,155 @@ func (PricingSkipReason) EnumDescriptor() ([]byte, []int) {
 	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{10}
 }
 
+// SnapshotService manages durable checkpoint policy and read-only checkpoint
+// history. Checkpoints reference the detailed ledger; they do not copy science.
+type SnapshotPolicyStatus int32
+
+const (
+	SnapshotPolicyStatus_SNAPSHOT_POLICY_STATUS_UNSPECIFIED SnapshotPolicyStatus = 0
+	SnapshotPolicyStatus_SNAPSHOT_POLICY_STATUS_ACTIVE      SnapshotPolicyStatus = 1
+	SnapshotPolicyStatus_SNAPSHOT_POLICY_STATUS_INACTIVE    SnapshotPolicyStatus = 2
+)
+
+// Enum value maps for SnapshotPolicyStatus.
+var (
+	SnapshotPolicyStatus_name = map[int32]string{
+		0: "SNAPSHOT_POLICY_STATUS_UNSPECIFIED",
+		1: "SNAPSHOT_POLICY_STATUS_ACTIVE",
+		2: "SNAPSHOT_POLICY_STATUS_INACTIVE",
+	}
+	SnapshotPolicyStatus_value = map[string]int32{
+		"SNAPSHOT_POLICY_STATUS_UNSPECIFIED": 0,
+		"SNAPSHOT_POLICY_STATUS_ACTIVE":      1,
+		"SNAPSHOT_POLICY_STATUS_INACTIVE":    2,
+	}
+)
+
+func (x SnapshotPolicyStatus) Enum() *SnapshotPolicyStatus {
+	p := new(SnapshotPolicyStatus)
+	*p = x
+	return p
+}
+
+func (x SnapshotPolicyStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SnapshotPolicyStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[11].Descriptor()
+}
+
+func (SnapshotPolicyStatus) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[11]
+}
+
+func (x SnapshotPolicyStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SnapshotPolicyStatus.Descriptor instead.
+func (SnapshotPolicyStatus) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{11}
+}
+
+type SnapshotTriggerType int32
+
+const (
+	SnapshotTriggerType_SNAPSHOT_TRIGGER_TYPE_UNSPECIFIED  SnapshotTriggerType = 0
+	SnapshotTriggerType_SNAPSHOT_TRIGGER_TYPE_EVERY_N_BARS SnapshotTriggerType = 1
+)
+
+// Enum value maps for SnapshotTriggerType.
+var (
+	SnapshotTriggerType_name = map[int32]string{
+		0: "SNAPSHOT_TRIGGER_TYPE_UNSPECIFIED",
+		1: "SNAPSHOT_TRIGGER_TYPE_EVERY_N_BARS",
+	}
+	SnapshotTriggerType_value = map[string]int32{
+		"SNAPSHOT_TRIGGER_TYPE_UNSPECIFIED":  0,
+		"SNAPSHOT_TRIGGER_TYPE_EVERY_N_BARS": 1,
+	}
+)
+
+func (x SnapshotTriggerType) Enum() *SnapshotTriggerType {
+	p := new(SnapshotTriggerType)
+	*p = x
+	return p
+}
+
+func (x SnapshotTriggerType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SnapshotTriggerType) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[12].Descriptor()
+}
+
+func (SnapshotTriggerType) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[12]
+}
+
+func (x SnapshotTriggerType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SnapshotTriggerType.Descriptor instead.
+func (SnapshotTriggerType) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{12}
+}
+
+type SnapshotRunStatus int32
+
+const (
+	SnapshotRunStatus_SNAPSHOT_RUN_STATUS_UNSPECIFIED SnapshotRunStatus = 0
+	SnapshotRunStatus_SNAPSHOT_RUN_STATUS_STARTED     SnapshotRunStatus = 1
+	SnapshotRunStatus_SNAPSHOT_RUN_STATUS_SUCCESS     SnapshotRunStatus = 2
+	SnapshotRunStatus_SNAPSHOT_RUN_STATUS_ERROR       SnapshotRunStatus = 3
+)
+
+// Enum value maps for SnapshotRunStatus.
+var (
+	SnapshotRunStatus_name = map[int32]string{
+		0: "SNAPSHOT_RUN_STATUS_UNSPECIFIED",
+		1: "SNAPSHOT_RUN_STATUS_STARTED",
+		2: "SNAPSHOT_RUN_STATUS_SUCCESS",
+		3: "SNAPSHOT_RUN_STATUS_ERROR",
+	}
+	SnapshotRunStatus_value = map[string]int32{
+		"SNAPSHOT_RUN_STATUS_UNSPECIFIED": 0,
+		"SNAPSHOT_RUN_STATUS_STARTED":     1,
+		"SNAPSHOT_RUN_STATUS_SUCCESS":     2,
+		"SNAPSHOT_RUN_STATUS_ERROR":       3,
+	}
+)
+
+func (x SnapshotRunStatus) Enum() *SnapshotRunStatus {
+	p := new(SnapshotRunStatus)
+	*p = x
+	return p
+}
+
+func (x SnapshotRunStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (SnapshotRunStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[13].Descriptor()
+}
+
+func (SnapshotRunStatus) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[13]
+}
+
+func (x SnapshotRunStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use SnapshotRunStatus.Descriptor instead.
+func (SnapshotRunStatus) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{13}
+}
+
 type Bar struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	Symbol              string                 `protobuf:"bytes,1,opt,name=symbol,proto3" json:"symbol,omitempty"`
@@ -3087,6 +3236,1170 @@ func (x *ListSemanticTermsResponse) GetTerms() []*SemanticTerm {
 	return nil
 }
 
+type SnapshotTrigger struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Type          SnapshotTriggerType    `protobuf:"varint,1,opt,name=type,proto3,enum=quantram.v1.SnapshotTriggerType" json:"type,omitempty"`
+	EveryNBars    uint32                 `protobuf:"varint,2,opt,name=every_n_bars,json=everyNBars,proto3" json:"every_n_bars,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SnapshotTrigger) Reset() {
+	*x = SnapshotTrigger{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnapshotTrigger) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnapshotTrigger) ProtoMessage() {}
+
+func (x *SnapshotTrigger) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnapshotTrigger.ProtoReflect.Descriptor instead.
+func (*SnapshotTrigger) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *SnapshotTrigger) GetType() SnapshotTriggerType {
+	if x != nil {
+		return x.Type
+	}
+	return SnapshotTriggerType_SNAPSHOT_TRIGGER_TYPE_UNSPECIFIED
+}
+
+func (x *SnapshotTrigger) GetEveryNBars() uint32 {
+	if x != nil {
+		return x.EveryNBars
+	}
+	return 0
+}
+
+type SnapshotPolicy struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Status          SnapshotPolicyStatus   `protobuf:"varint,3,opt,name=status,proto3,enum=quantram.v1.SnapshotPolicyStatus" json:"status,omitempty"`
+	Trigger         *SnapshotTrigger       `protobuf:"bytes,4,opt,name=trigger,proto3" json:"trigger,omitempty"`
+	CreatedAtUnixMs int64                  `protobuf:"varint,5,opt,name=created_at_unix_ms,json=createdAtUnixMs,proto3" json:"created_at_unix_ms,omitempty"`
+	UpdatedAtUnixMs int64                  `protobuf:"varint,6,opt,name=updated_at_unix_ms,json=updatedAtUnixMs,proto3" json:"updated_at_unix_ms,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *SnapshotPolicy) Reset() {
+	*x = SnapshotPolicy{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnapshotPolicy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnapshotPolicy) ProtoMessage() {}
+
+func (x *SnapshotPolicy) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnapshotPolicy.ProtoReflect.Descriptor instead.
+func (*SnapshotPolicy) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *SnapshotPolicy) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SnapshotPolicy) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SnapshotPolicy) GetStatus() SnapshotPolicyStatus {
+	if x != nil {
+		return x.Status
+	}
+	return SnapshotPolicyStatus_SNAPSHOT_POLICY_STATUS_UNSPECIFIED
+}
+
+func (x *SnapshotPolicy) GetTrigger() *SnapshotTrigger {
+	if x != nil {
+		return x.Trigger
+	}
+	return nil
+}
+
+func (x *SnapshotPolicy) GetCreatedAtUnixMs() int64 {
+	if x != nil {
+		return x.CreatedAtUnixMs
+	}
+	return 0
+}
+
+func (x *SnapshotPolicy) GetUpdatedAtUnixMs() int64 {
+	if x != nil {
+		return x.UpdatedAtUnixMs
+	}
+	return 0
+}
+
+type Snapshot struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ApertureId       string                 `protobuf:"bytes,2,opt,name=aperture_id,json=apertureId,proto3" json:"aperture_id,omitempty"`
+	PolicyId         string                 `protobuf:"bytes,3,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty"`
+	PayloadId        string                 `protobuf:"bytes,4,opt,name=payload_id,json=payloadId,proto3" json:"payload_id,omitempty"`
+	Symbol           string                 `protobuf:"bytes,5,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	SnapshotNum      uint64                 `protobuf:"varint,6,opt,name=snapshot_num,json=snapshotNum,proto3" json:"snapshot_num,omitempty"`
+	CapturedAtUnixMs int64                  `protobuf:"varint,7,opt,name=captured_at_unix_ms,json=capturedAtUnixMs,proto3" json:"captured_at_unix_ms,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *Snapshot) Reset() {
+	*x = Snapshot{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Snapshot) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Snapshot) ProtoMessage() {}
+
+func (x *Snapshot) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Snapshot.ProtoReflect.Descriptor instead.
+func (*Snapshot) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *Snapshot) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *Snapshot) GetApertureId() string {
+	if x != nil {
+		return x.ApertureId
+	}
+	return ""
+}
+
+func (x *Snapshot) GetPolicyId() string {
+	if x != nil {
+		return x.PolicyId
+	}
+	return ""
+}
+
+func (x *Snapshot) GetPayloadId() string {
+	if x != nil {
+		return x.PayloadId
+	}
+	return ""
+}
+
+func (x *Snapshot) GetSymbol() string {
+	if x != nil {
+		return x.Symbol
+	}
+	return ""
+}
+
+func (x *Snapshot) GetSnapshotNum() uint64 {
+	if x != nil {
+		return x.SnapshotNum
+	}
+	return 0
+}
+
+func (x *Snapshot) GetCapturedAtUnixMs() int64 {
+	if x != nil {
+		return x.CapturedAtUnixMs
+	}
+	return 0
+}
+
+type SnapshotRunError struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SnapshotRunError) Reset() {
+	*x = SnapshotRunError{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnapshotRunError) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnapshotRunError) ProtoMessage() {}
+
+func (x *SnapshotRunError) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnapshotRunError.ProtoReflect.Descriptor instead.
+func (*SnapshotRunError) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *SnapshotRunError) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *SnapshotRunError) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type SnapshotRun struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Id                string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ApertureId        string                 `protobuf:"bytes,2,opt,name=aperture_id,json=apertureId,proto3" json:"aperture_id,omitempty"`
+	PolicyId          string                 `protobuf:"bytes,3,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty"`
+	Symbol            string                 `protobuf:"bytes,4,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	TriggerPayloadId  string                 `protobuf:"bytes,5,opt,name=trigger_payload_id,json=triggerPayloadId,proto3" json:"trigger_payload_id,omitempty"`
+	TriggerCount      uint64                 `protobuf:"varint,6,opt,name=trigger_count,json=triggerCount,proto3" json:"trigger_count,omitempty"`
+	StartedAtUnixMs   int64                  `protobuf:"varint,7,opt,name=started_at_unix_ms,json=startedAtUnixMs,proto3" json:"started_at_unix_ms,omitempty"`
+	CompletedAtUnixMs int64                  `protobuf:"varint,8,opt,name=completed_at_unix_ms,json=completedAtUnixMs,proto3" json:"completed_at_unix_ms,omitempty"`
+	Status            SnapshotRunStatus      `protobuf:"varint,9,opt,name=status,proto3,enum=quantram.v1.SnapshotRunStatus" json:"status,omitempty"`
+	SnapshotId        string                 `protobuf:"bytes,10,opt,name=snapshot_id,json=snapshotId,proto3" json:"snapshot_id,omitempty"`
+	Error             *SnapshotRunError      `protobuf:"bytes,11,opt,name=error,proto3" json:"error,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *SnapshotRun) Reset() {
+	*x = SnapshotRun{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SnapshotRun) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SnapshotRun) ProtoMessage() {}
+
+func (x *SnapshotRun) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SnapshotRun.ProtoReflect.Descriptor instead.
+func (*SnapshotRun) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *SnapshotRun) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SnapshotRun) GetApertureId() string {
+	if x != nil {
+		return x.ApertureId
+	}
+	return ""
+}
+
+func (x *SnapshotRun) GetPolicyId() string {
+	if x != nil {
+		return x.PolicyId
+	}
+	return ""
+}
+
+func (x *SnapshotRun) GetSymbol() string {
+	if x != nil {
+		return x.Symbol
+	}
+	return ""
+}
+
+func (x *SnapshotRun) GetTriggerPayloadId() string {
+	if x != nil {
+		return x.TriggerPayloadId
+	}
+	return ""
+}
+
+func (x *SnapshotRun) GetTriggerCount() uint64 {
+	if x != nil {
+		return x.TriggerCount
+	}
+	return 0
+}
+
+func (x *SnapshotRun) GetStartedAtUnixMs() int64 {
+	if x != nil {
+		return x.StartedAtUnixMs
+	}
+	return 0
+}
+
+func (x *SnapshotRun) GetCompletedAtUnixMs() int64 {
+	if x != nil {
+		return x.CompletedAtUnixMs
+	}
+	return 0
+}
+
+func (x *SnapshotRun) GetStatus() SnapshotRunStatus {
+	if x != nil {
+		return x.Status
+	}
+	return SnapshotRunStatus_SNAPSHOT_RUN_STATUS_UNSPECIFIED
+}
+
+func (x *SnapshotRun) GetSnapshotId() string {
+	if x != nil {
+		return x.SnapshotId
+	}
+	return ""
+}
+
+func (x *SnapshotRun) GetError() *SnapshotRunError {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+type GetSnapshotPolicyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSnapshotPolicyRequest) Reset() {
+	*x = GetSnapshotPolicyRequest{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSnapshotPolicyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSnapshotPolicyRequest) ProtoMessage() {}
+
+func (x *GetSnapshotPolicyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSnapshotPolicyRequest.ProtoReflect.Descriptor instead.
+func (*GetSnapshotPolicyRequest) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *GetSnapshotPolicyRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type GetSnapshotPolicyResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Policy        *SnapshotPolicy        `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSnapshotPolicyResponse) Reset() {
+	*x = GetSnapshotPolicyResponse{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSnapshotPolicyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSnapshotPolicyResponse) ProtoMessage() {}
+
+func (x *GetSnapshotPolicyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSnapshotPolicyResponse.ProtoReflect.Descriptor instead.
+func (*GetSnapshotPolicyResponse) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *GetSnapshotPolicyResponse) GetPolicy() *SnapshotPolicy {
+	if x != nil {
+		return x.Policy
+	}
+	return nil
+}
+
+type ListSnapshotPoliciesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PageSize      uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSnapshotPoliciesRequest) Reset() {
+	*x = ListSnapshotPoliciesRequest{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSnapshotPoliciesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSnapshotPoliciesRequest) ProtoMessage() {}
+
+func (x *ListSnapshotPoliciesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSnapshotPoliciesRequest.ProtoReflect.Descriptor instead.
+func (*ListSnapshotPoliciesRequest) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *ListSnapshotPoliciesRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListSnapshotPoliciesRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListSnapshotPoliciesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Policies      []*SnapshotPolicy      `protobuf:"bytes,1,rep,name=policies,proto3" json:"policies,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSnapshotPoliciesResponse) Reset() {
+	*x = ListSnapshotPoliciesResponse{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSnapshotPoliciesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSnapshotPoliciesResponse) ProtoMessage() {}
+
+func (x *ListSnapshotPoliciesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSnapshotPoliciesResponse.ProtoReflect.Descriptor instead.
+func (*ListSnapshotPoliciesResponse) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *ListSnapshotPoliciesResponse) GetPolicies() []*SnapshotPolicy {
+	if x != nil {
+		return x.Policies
+	}
+	return nil
+}
+
+func (x *ListSnapshotPoliciesResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+type CreateSnapshotPolicyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Status        SnapshotPolicyStatus   `protobuf:"varint,2,opt,name=status,proto3,enum=quantram.v1.SnapshotPolicyStatus" json:"status,omitempty"`
+	Trigger       *SnapshotTrigger       `protobuf:"bytes,3,opt,name=trigger,proto3" json:"trigger,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateSnapshotPolicyRequest) Reset() {
+	*x = CreateSnapshotPolicyRequest{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateSnapshotPolicyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateSnapshotPolicyRequest) ProtoMessage() {}
+
+func (x *CreateSnapshotPolicyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateSnapshotPolicyRequest.ProtoReflect.Descriptor instead.
+func (*CreateSnapshotPolicyRequest) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *CreateSnapshotPolicyRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateSnapshotPolicyRequest) GetStatus() SnapshotPolicyStatus {
+	if x != nil {
+		return x.Status
+	}
+	return SnapshotPolicyStatus_SNAPSHOT_POLICY_STATUS_UNSPECIFIED
+}
+
+func (x *CreateSnapshotPolicyRequest) GetTrigger() *SnapshotTrigger {
+	if x != nil {
+		return x.Trigger
+	}
+	return nil
+}
+
+type CreateSnapshotPolicyResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Policy        *SnapshotPolicy        `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateSnapshotPolicyResponse) Reset() {
+	*x = CreateSnapshotPolicyResponse{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateSnapshotPolicyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateSnapshotPolicyResponse) ProtoMessage() {}
+
+func (x *CreateSnapshotPolicyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateSnapshotPolicyResponse.ProtoReflect.Descriptor instead.
+func (*CreateSnapshotPolicyResponse) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *CreateSnapshotPolicyResponse) GetPolicy() *SnapshotPolicy {
+	if x != nil {
+		return x.Policy
+	}
+	return nil
+}
+
+type UpdateSnapshotPolicyRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Status        SnapshotPolicyStatus   `protobuf:"varint,3,opt,name=status,proto3,enum=quantram.v1.SnapshotPolicyStatus" json:"status,omitempty"`
+	Trigger       *SnapshotTrigger       `protobuf:"bytes,4,opt,name=trigger,proto3" json:"trigger,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateSnapshotPolicyRequest) Reset() {
+	*x = UpdateSnapshotPolicyRequest{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateSnapshotPolicyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSnapshotPolicyRequest) ProtoMessage() {}
+
+func (x *UpdateSnapshotPolicyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSnapshotPolicyRequest.ProtoReflect.Descriptor instead.
+func (*UpdateSnapshotPolicyRequest) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *UpdateSnapshotPolicyRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpdateSnapshotPolicyRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpdateSnapshotPolicyRequest) GetStatus() SnapshotPolicyStatus {
+	if x != nil {
+		return x.Status
+	}
+	return SnapshotPolicyStatus_SNAPSHOT_POLICY_STATUS_UNSPECIFIED
+}
+
+func (x *UpdateSnapshotPolicyRequest) GetTrigger() *SnapshotTrigger {
+	if x != nil {
+		return x.Trigger
+	}
+	return nil
+}
+
+type UpdateSnapshotPolicyResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Policy        *SnapshotPolicy        `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateSnapshotPolicyResponse) Reset() {
+	*x = UpdateSnapshotPolicyResponse{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateSnapshotPolicyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSnapshotPolicyResponse) ProtoMessage() {}
+
+func (x *UpdateSnapshotPolicyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSnapshotPolicyResponse.ProtoReflect.Descriptor instead.
+func (*UpdateSnapshotPolicyResponse) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *UpdateSnapshotPolicyResponse) GetPolicy() *SnapshotPolicy {
+	if x != nil {
+		return x.Policy
+	}
+	return nil
+}
+
+type GetSnapshotRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSnapshotRequest) Reset() {
+	*x = GetSnapshotRequest{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSnapshotRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSnapshotRequest) ProtoMessage() {}
+
+func (x *GetSnapshotRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSnapshotRequest.ProtoReflect.Descriptor instead.
+func (*GetSnapshotRequest) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *GetSnapshotRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type GetSnapshotResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Snapshot      *Snapshot              `protobuf:"bytes,1,opt,name=snapshot,proto3" json:"snapshot,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSnapshotResponse) Reset() {
+	*x = GetSnapshotResponse{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSnapshotResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSnapshotResponse) ProtoMessage() {}
+
+func (x *GetSnapshotResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSnapshotResponse.ProtoReflect.Descriptor instead.
+func (*GetSnapshotResponse) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *GetSnapshotResponse) GetSnapshot() *Snapshot {
+	if x != nil {
+		return x.Snapshot
+	}
+	return nil
+}
+
+type ListSnapshotsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ApertureId    string                 `protobuf:"bytes,1,opt,name=aperture_id,json=apertureId,proto3" json:"aperture_id,omitempty"`
+	PolicyId      string                 `protobuf:"bytes,2,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty"`
+	Symbol        string                 `protobuf:"bytes,3,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	PageSize      uint32                 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,5,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSnapshotsRequest) Reset() {
+	*x = ListSnapshotsRequest{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSnapshotsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSnapshotsRequest) ProtoMessage() {}
+
+func (x *ListSnapshotsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSnapshotsRequest.ProtoReflect.Descriptor instead.
+func (*ListSnapshotsRequest) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *ListSnapshotsRequest) GetApertureId() string {
+	if x != nil {
+		return x.ApertureId
+	}
+	return ""
+}
+
+func (x *ListSnapshotsRequest) GetPolicyId() string {
+	if x != nil {
+		return x.PolicyId
+	}
+	return ""
+}
+
+func (x *ListSnapshotsRequest) GetSymbol() string {
+	if x != nil {
+		return x.Symbol
+	}
+	return ""
+}
+
+func (x *ListSnapshotsRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListSnapshotsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListSnapshotsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Snapshots     []*Snapshot            `protobuf:"bytes,1,rep,name=snapshots,proto3" json:"snapshots,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSnapshotsResponse) Reset() {
+	*x = ListSnapshotsResponse{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSnapshotsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSnapshotsResponse) ProtoMessage() {}
+
+func (x *ListSnapshotsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSnapshotsResponse.ProtoReflect.Descriptor instead.
+func (*ListSnapshotsResponse) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *ListSnapshotsResponse) GetSnapshots() []*Snapshot {
+	if x != nil {
+		return x.Snapshots
+	}
+	return nil
+}
+
+func (x *ListSnapshotsResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+type ListSnapshotRunsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ApertureId    string                 `protobuf:"bytes,1,opt,name=aperture_id,json=apertureId,proto3" json:"aperture_id,omitempty"`
+	PolicyId      string                 `protobuf:"bytes,2,opt,name=policy_id,json=policyId,proto3" json:"policy_id,omitempty"`
+	Symbol        string                 `protobuf:"bytes,3,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	Status        SnapshotRunStatus      `protobuf:"varint,4,opt,name=status,proto3,enum=quantram.v1.SnapshotRunStatus" json:"status,omitempty"`
+	PageSize      uint32                 `protobuf:"varint,5,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,6,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSnapshotRunsRequest) Reset() {
+	*x = ListSnapshotRunsRequest{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSnapshotRunsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSnapshotRunsRequest) ProtoMessage() {}
+
+func (x *ListSnapshotRunsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSnapshotRunsRequest.ProtoReflect.Descriptor instead.
+func (*ListSnapshotRunsRequest) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *ListSnapshotRunsRequest) GetApertureId() string {
+	if x != nil {
+		return x.ApertureId
+	}
+	return ""
+}
+
+func (x *ListSnapshotRunsRequest) GetPolicyId() string {
+	if x != nil {
+		return x.PolicyId
+	}
+	return ""
+}
+
+func (x *ListSnapshotRunsRequest) GetSymbol() string {
+	if x != nil {
+		return x.Symbol
+	}
+	return ""
+}
+
+func (x *ListSnapshotRunsRequest) GetStatus() SnapshotRunStatus {
+	if x != nil {
+		return x.Status
+	}
+	return SnapshotRunStatus_SNAPSHOT_RUN_STATUS_UNSPECIFIED
+}
+
+func (x *ListSnapshotRunsRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListSnapshotRunsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListSnapshotRunsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Runs          []*SnapshotRun         `protobuf:"bytes,1,rep,name=runs,proto3" json:"runs,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSnapshotRunsResponse) Reset() {
+	*x = ListSnapshotRunsResponse{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSnapshotRunsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSnapshotRunsResponse) ProtoMessage() {}
+
+func (x *ListSnapshotRunsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSnapshotRunsResponse.ProtoReflect.Descriptor instead.
+func (*ListSnapshotRunsResponse) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *ListSnapshotRunsResponse) GetRuns() []*SnapshotRun {
+	if x != nil {
+		return x.Runs
+	}
+	return nil
+}
+
+func (x *ListSnapshotRunsResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
 var File_quantram_v1_quantram_proto protoreflect.FileDescriptor
 
 const file_quantram_v1_quantram_proto_rawDesc = "" +
@@ -3311,7 +4624,97 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	"\x12persistence_policy\x18\x17 \x01(\tR\x11persistencePolicy\"\x8b\x01\n" +
 	"\x19ListSemanticTermsResponse\x12=\n" +
 	"\bcontract\x18\x01 \x01(\v2!.quantram.v1.SemanticContractInfoR\bcontract\x12/\n" +
-	"\x05terms\x18\x02 \x03(\v2\x19.quantram.v1.SemanticTermR\x05terms*\x80\x01\n" +
+	"\x05terms\x18\x02 \x03(\v2\x19.quantram.v1.SemanticTermR\x05terms\"i\n" +
+	"\x0fSnapshotTrigger\x124\n" +
+	"\x04type\x18\x01 \x01(\x0e2 .quantram.v1.SnapshotTriggerTypeR\x04type\x12 \n" +
+	"\fevery_n_bars\x18\x02 \x01(\rR\n" +
+	"everyNBars\"\x81\x02\n" +
+	"\x0eSnapshotPolicy\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
+	"\x06status\x18\x03 \x01(\x0e2!.quantram.v1.SnapshotPolicyStatusR\x06status\x126\n" +
+	"\atrigger\x18\x04 \x01(\v2\x1c.quantram.v1.SnapshotTriggerR\atrigger\x12+\n" +
+	"\x12created_at_unix_ms\x18\x05 \x01(\x03R\x0fcreatedAtUnixMs\x12+\n" +
+	"\x12updated_at_unix_ms\x18\x06 \x01(\x03R\x0fupdatedAtUnixMs\"\xe1\x01\n" +
+	"\bSnapshot\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
+	"\vaperture_id\x18\x02 \x01(\tR\n" +
+	"apertureId\x12\x1b\n" +
+	"\tpolicy_id\x18\x03 \x01(\tR\bpolicyId\x12\x1d\n" +
+	"\n" +
+	"payload_id\x18\x04 \x01(\tR\tpayloadId\x12\x16\n" +
+	"\x06symbol\x18\x05 \x01(\tR\x06symbol\x12!\n" +
+	"\fsnapshot_num\x18\x06 \x01(\x04R\vsnapshotNum\x12-\n" +
+	"\x13captured_at_unix_ms\x18\a \x01(\x03R\x10capturedAtUnixMs\"@\n" +
+	"\x10SnapshotRunError\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\xb2\x03\n" +
+	"\vSnapshotRun\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
+	"\vaperture_id\x18\x02 \x01(\tR\n" +
+	"apertureId\x12\x1b\n" +
+	"\tpolicy_id\x18\x03 \x01(\tR\bpolicyId\x12\x16\n" +
+	"\x06symbol\x18\x04 \x01(\tR\x06symbol\x12,\n" +
+	"\x12trigger_payload_id\x18\x05 \x01(\tR\x10triggerPayloadId\x12#\n" +
+	"\rtrigger_count\x18\x06 \x01(\x04R\ftriggerCount\x12+\n" +
+	"\x12started_at_unix_ms\x18\a \x01(\x03R\x0fstartedAtUnixMs\x12/\n" +
+	"\x14completed_at_unix_ms\x18\b \x01(\x03R\x11completedAtUnixMs\x126\n" +
+	"\x06status\x18\t \x01(\x0e2\x1e.quantram.v1.SnapshotRunStatusR\x06status\x12\x1f\n" +
+	"\vsnapshot_id\x18\n" +
+	" \x01(\tR\n" +
+	"snapshotId\x123\n" +
+	"\x05error\x18\v \x01(\v2\x1d.quantram.v1.SnapshotRunErrorR\x05error\"*\n" +
+	"\x18GetSnapshotPolicyRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"P\n" +
+	"\x19GetSnapshotPolicyResponse\x123\n" +
+	"\x06policy\x18\x01 \x01(\v2\x1b.quantram.v1.SnapshotPolicyR\x06policy\"Y\n" +
+	"\x1bListSnapshotPoliciesRequest\x12\x1b\n" +
+	"\tpage_size\x18\x01 \x01(\rR\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\"\x7f\n" +
+	"\x1cListSnapshotPoliciesResponse\x127\n" +
+	"\bpolicies\x18\x01 \x03(\v2\x1b.quantram.v1.SnapshotPolicyR\bpolicies\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xa4\x01\n" +
+	"\x1bCreateSnapshotPolicyRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x129\n" +
+	"\x06status\x18\x02 \x01(\x0e2!.quantram.v1.SnapshotPolicyStatusR\x06status\x126\n" +
+	"\atrigger\x18\x03 \x01(\v2\x1c.quantram.v1.SnapshotTriggerR\atrigger\"S\n" +
+	"\x1cCreateSnapshotPolicyResponse\x123\n" +
+	"\x06policy\x18\x01 \x01(\v2\x1b.quantram.v1.SnapshotPolicyR\x06policy\"\xb4\x01\n" +
+	"\x1bUpdateSnapshotPolicyRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
+	"\x06status\x18\x03 \x01(\x0e2!.quantram.v1.SnapshotPolicyStatusR\x06status\x126\n" +
+	"\atrigger\x18\x04 \x01(\v2\x1c.quantram.v1.SnapshotTriggerR\atrigger\"S\n" +
+	"\x1cUpdateSnapshotPolicyResponse\x123\n" +
+	"\x06policy\x18\x01 \x01(\v2\x1b.quantram.v1.SnapshotPolicyR\x06policy\"$\n" +
+	"\x12GetSnapshotRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"H\n" +
+	"\x13GetSnapshotResponse\x121\n" +
+	"\bsnapshot\x18\x01 \x01(\v2\x15.quantram.v1.SnapshotR\bsnapshot\"\xa8\x01\n" +
+	"\x14ListSnapshotsRequest\x12\x1f\n" +
+	"\vaperture_id\x18\x01 \x01(\tR\n" +
+	"apertureId\x12\x1b\n" +
+	"\tpolicy_id\x18\x02 \x01(\tR\bpolicyId\x12\x16\n" +
+	"\x06symbol\x18\x03 \x01(\tR\x06symbol\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\rR\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x05 \x01(\tR\tpageToken\"t\n" +
+	"\x15ListSnapshotsResponse\x123\n" +
+	"\tsnapshots\x18\x01 \x03(\v2\x15.quantram.v1.SnapshotR\tsnapshots\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xe3\x01\n" +
+	"\x17ListSnapshotRunsRequest\x12\x1f\n" +
+	"\vaperture_id\x18\x01 \x01(\tR\n" +
+	"apertureId\x12\x1b\n" +
+	"\tpolicy_id\x18\x02 \x01(\tR\bpolicyId\x12\x16\n" +
+	"\x06symbol\x18\x03 \x01(\tR\x06symbol\x126\n" +
+	"\x06status\x18\x04 \x01(\x0e2\x1e.quantram.v1.SnapshotRunStatusR\x06status\x12\x1b\n" +
+	"\tpage_size\x18\x05 \x01(\rR\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x06 \x01(\tR\tpageToken\"p\n" +
+	"\x18ListSnapshotRunsResponse\x12,\n" +
+	"\x04runs\x18\x01 \x03(\v2\x18.quantram.v1.SnapshotRunR\x04runs\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*\x80\x01\n" +
 	"\x0eInstrumentType\x12\x1f\n" +
 	"\x1bINSTRUMENT_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15INSTRUMENT_TYPE_STOCK\x10\x01\x12\x17\n" +
@@ -3389,7 +4792,19 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	" PRICING_SKIP_REASON_ENGINE_ERROR\x10\b\x12$\n" +
 	" PRICING_SKIP_REASON_ENGINE_PANIC\x10\t\x12!\n" +
 	"\x1dPRICING_SKIP_REASON_TIME_TERM\x10\n" +
-	"2\xb3\x01\n" +
+	"*\x86\x01\n" +
+	"\x14SnapshotPolicyStatus\x12&\n" +
+	"\"SNAPSHOT_POLICY_STATUS_UNSPECIFIED\x10\x00\x12!\n" +
+	"\x1dSNAPSHOT_POLICY_STATUS_ACTIVE\x10\x01\x12#\n" +
+	"\x1fSNAPSHOT_POLICY_STATUS_INACTIVE\x10\x02*d\n" +
+	"\x13SnapshotTriggerType\x12%\n" +
+	"!SNAPSHOT_TRIGGER_TYPE_UNSPECIFIED\x10\x00\x12&\n" +
+	"\"SNAPSHOT_TRIGGER_TYPE_EVERY_N_BARS\x10\x01*\x99\x01\n" +
+	"\x11SnapshotRunStatus\x12#\n" +
+	"\x1fSNAPSHOT_RUN_STATUS_UNSPECIFIED\x10\x00\x12\x1f\n" +
+	"\x1bSNAPSHOT_RUN_STATUS_STARTED\x10\x01\x12\x1f\n" +
+	"\x1bSNAPSHOT_RUN_STATUS_SUCCESS\x10\x02\x12\x1d\n" +
+	"\x19SNAPSHOT_RUN_STATUS_ERROR\x10\x032\xb3\x01\n" +
 	"\x11MarketFeedService\x12K\n" +
 	"\rGetFeedHealth\x12!.quantram.v1.GetFeedHealthRequest\x1a\x17.quantram.v1.FeedHealth\x12Q\n" +
 	"\x0fGetActiveSource\x12#.quantram.v1.GetActiveSourceRequest\x1a\x19.quantram.v1.ActiveSource2\xf0\x01\n" +
@@ -3407,7 +4822,15 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	"\x0fSemanticService\x12I\n" +
 	"\aGetTerm\x12#.quantram.v1.GetSemanticTermRequest\x1a\x19.quantram.v1.SemanticTerm\x12Z\n" +
 	"\tListTerms\x12%.quantram.v1.ListSemanticTermsRequest\x1a&.quantram.v1.ListSemanticTermsResponse\x12a\n" +
-	"\x13GetSemanticContract\x12'.quantram.v1.GetSemanticContractRequest\x1a!.quantram.v1.SemanticContractInfoB%Z#quantram/gen/quantram/v1;quantramv1b\x06proto3"
+	"\x13GetSemanticContract\x12'.quantram.v1.GetSemanticContractRequest\x1a!.quantram.v1.SemanticContractInfo2\xc7\x05\n" +
+	"\x0fSnapshotService\x12b\n" +
+	"\x11GetSnapshotPolicy\x12%.quantram.v1.GetSnapshotPolicyRequest\x1a&.quantram.v1.GetSnapshotPolicyResponse\x12k\n" +
+	"\x14ListSnapshotPolicies\x12(.quantram.v1.ListSnapshotPoliciesRequest\x1a).quantram.v1.ListSnapshotPoliciesResponse\x12k\n" +
+	"\x14CreateSnapshotPolicy\x12(.quantram.v1.CreateSnapshotPolicyRequest\x1a).quantram.v1.CreateSnapshotPolicyResponse\x12k\n" +
+	"\x14UpdateSnapshotPolicy\x12(.quantram.v1.UpdateSnapshotPolicyRequest\x1a).quantram.v1.UpdateSnapshotPolicyResponse\x12P\n" +
+	"\vGetSnapshot\x12\x1f.quantram.v1.GetSnapshotRequest\x1a .quantram.v1.GetSnapshotResponse\x12V\n" +
+	"\rListSnapshots\x12!.quantram.v1.ListSnapshotsRequest\x1a\".quantram.v1.ListSnapshotsResponse\x12_\n" +
+	"\x10ListSnapshotRuns\x12$.quantram.v1.ListSnapshotRunsRequest\x1a%.quantram.v1.ListSnapshotRunsResponseB%Z#quantram/gen/quantram/v1;quantramv1b\x06proto3"
 
 var (
 	file_quantram_v1_quantram_proto_rawDescOnce sync.Once
@@ -3421,104 +4844,157 @@ func file_quantram_v1_quantram_proto_rawDescGZIP() []byte {
 	return file_quantram_v1_quantram_proto_rawDescData
 }
 
-var file_quantram_v1_quantram_proto_enumTypes = make([]protoimpl.EnumInfo, 11)
-var file_quantram_v1_quantram_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_quantram_v1_quantram_proto_enumTypes = make([]protoimpl.EnumInfo, 14)
+var file_quantram_v1_quantram_proto_msgTypes = make([]protoimpl.MessageInfo, 49)
 var file_quantram_v1_quantram_proto_goTypes = []any{
-	(InstrumentType)(0),                // 0: quantram.v1.InstrumentType
-	(QualityStatus)(0),                 // 1: quantram.v1.QualityStatus
-	(FeedState)(0),                     // 2: quantram.v1.FeedState
-	(ComponentState)(0),                // 3: quantram.v1.ComponentState
-	(Side)(0),                          // 4: quantram.v1.Side
-	(PathDirection)(0),                 // 5: quantram.v1.PathDirection
-	(EmitterPosition)(0),               // 6: quantram.v1.EmitterPosition
-	(ModelStatus)(0),                   // 7: quantram.v1.ModelStatus
-	(SkipReason)(0),                    // 8: quantram.v1.SkipReason
-	(PricingStatus)(0),                 // 9: quantram.v1.PricingStatus
-	(PricingSkipReason)(0),             // 10: quantram.v1.PricingSkipReason
-	(*Bar)(nil),                        // 11: quantram.v1.Bar
-	(*GetFeedHealthRequest)(nil),       // 12: quantram.v1.GetFeedHealthRequest
-	(*FeedHealth)(nil),                 // 13: quantram.v1.FeedHealth
-	(*GetActiveSourceRequest)(nil),     // 14: quantram.v1.GetActiveSourceRequest
-	(*ActiveSource)(nil),               // 15: quantram.v1.ActiveSource
-	(*StreamBarsRequest)(nil),          // 16: quantram.v1.StreamBarsRequest
-	(*GetBarWindowRequest)(nil),        // 17: quantram.v1.GetBarWindowRequest
-	(*BarWindow)(nil),                  // 18: quantram.v1.BarWindow
-	(*TriggerGapFillRequest)(nil),      // 19: quantram.v1.TriggerGapFillRequest
-	(*GapFillResult)(nil),              // 20: quantram.v1.GapFillResult
-	(*GetHealthRequest)(nil),           // 21: quantram.v1.GetHealthRequest
-	(*ComponentHealth)(nil),            // 22: quantram.v1.ComponentHealth
-	(*HealthReport)(nil),               // 23: quantram.v1.HealthReport
-	(*GetReadinessRequest)(nil),        // 24: quantram.v1.GetReadinessRequest
-	(*ReadinessReport)(nil),            // 25: quantram.v1.ReadinessReport
-	(*Decision)(nil),                   // 26: quantram.v1.Decision
-	(*Skip)(nil),                       // 27: quantram.v1.Skip
-	(*DecisionEvent)(nil),              // 28: quantram.v1.DecisionEvent
-	(*StreamDecisionsRequest)(nil),     // 29: quantram.v1.StreamDecisionsRequest
-	(*PriceEmission)(nil),              // 30: quantram.v1.PriceEmission
-	(*PriceCockpit)(nil),               // 31: quantram.v1.PriceCockpit
-	(*PricingSkip)(nil),                // 32: quantram.v1.PricingSkip
-	(*PriceEvent)(nil),                 // 33: quantram.v1.PriceEvent
-	(*StreamPriceEventsRequest)(nil),   // 34: quantram.v1.StreamPriceEventsRequest
-	(*GetSemanticTermRequest)(nil),     // 35: quantram.v1.GetSemanticTermRequest
-	(*ListSemanticTermsRequest)(nil),   // 36: quantram.v1.ListSemanticTermsRequest
-	(*GetSemanticContractRequest)(nil), // 37: quantram.v1.GetSemanticContractRequest
-	(*SemanticContractInfo)(nil),       // 38: quantram.v1.SemanticContractInfo
-	(*SemanticTerm)(nil),               // 39: quantram.v1.SemanticTerm
-	(*ListSemanticTermsResponse)(nil),  // 40: quantram.v1.ListSemanticTermsResponse
+	(InstrumentType)(0),                  // 0: quantram.v1.InstrumentType
+	(QualityStatus)(0),                   // 1: quantram.v1.QualityStatus
+	(FeedState)(0),                       // 2: quantram.v1.FeedState
+	(ComponentState)(0),                  // 3: quantram.v1.ComponentState
+	(Side)(0),                            // 4: quantram.v1.Side
+	(PathDirection)(0),                   // 5: quantram.v1.PathDirection
+	(EmitterPosition)(0),                 // 6: quantram.v1.EmitterPosition
+	(ModelStatus)(0),                     // 7: quantram.v1.ModelStatus
+	(SkipReason)(0),                      // 8: quantram.v1.SkipReason
+	(PricingStatus)(0),                   // 9: quantram.v1.PricingStatus
+	(PricingSkipReason)(0),               // 10: quantram.v1.PricingSkipReason
+	(SnapshotPolicyStatus)(0),            // 11: quantram.v1.SnapshotPolicyStatus
+	(SnapshotTriggerType)(0),             // 12: quantram.v1.SnapshotTriggerType
+	(SnapshotRunStatus)(0),               // 13: quantram.v1.SnapshotRunStatus
+	(*Bar)(nil),                          // 14: quantram.v1.Bar
+	(*GetFeedHealthRequest)(nil),         // 15: quantram.v1.GetFeedHealthRequest
+	(*FeedHealth)(nil),                   // 16: quantram.v1.FeedHealth
+	(*GetActiveSourceRequest)(nil),       // 17: quantram.v1.GetActiveSourceRequest
+	(*ActiveSource)(nil),                 // 18: quantram.v1.ActiveSource
+	(*StreamBarsRequest)(nil),            // 19: quantram.v1.StreamBarsRequest
+	(*GetBarWindowRequest)(nil),          // 20: quantram.v1.GetBarWindowRequest
+	(*BarWindow)(nil),                    // 21: quantram.v1.BarWindow
+	(*TriggerGapFillRequest)(nil),        // 22: quantram.v1.TriggerGapFillRequest
+	(*GapFillResult)(nil),                // 23: quantram.v1.GapFillResult
+	(*GetHealthRequest)(nil),             // 24: quantram.v1.GetHealthRequest
+	(*ComponentHealth)(nil),              // 25: quantram.v1.ComponentHealth
+	(*HealthReport)(nil),                 // 26: quantram.v1.HealthReport
+	(*GetReadinessRequest)(nil),          // 27: quantram.v1.GetReadinessRequest
+	(*ReadinessReport)(nil),              // 28: quantram.v1.ReadinessReport
+	(*Decision)(nil),                     // 29: quantram.v1.Decision
+	(*Skip)(nil),                         // 30: quantram.v1.Skip
+	(*DecisionEvent)(nil),                // 31: quantram.v1.DecisionEvent
+	(*StreamDecisionsRequest)(nil),       // 32: quantram.v1.StreamDecisionsRequest
+	(*PriceEmission)(nil),                // 33: quantram.v1.PriceEmission
+	(*PriceCockpit)(nil),                 // 34: quantram.v1.PriceCockpit
+	(*PricingSkip)(nil),                  // 35: quantram.v1.PricingSkip
+	(*PriceEvent)(nil),                   // 36: quantram.v1.PriceEvent
+	(*StreamPriceEventsRequest)(nil),     // 37: quantram.v1.StreamPriceEventsRequest
+	(*GetSemanticTermRequest)(nil),       // 38: quantram.v1.GetSemanticTermRequest
+	(*ListSemanticTermsRequest)(nil),     // 39: quantram.v1.ListSemanticTermsRequest
+	(*GetSemanticContractRequest)(nil),   // 40: quantram.v1.GetSemanticContractRequest
+	(*SemanticContractInfo)(nil),         // 41: quantram.v1.SemanticContractInfo
+	(*SemanticTerm)(nil),                 // 42: quantram.v1.SemanticTerm
+	(*ListSemanticTermsResponse)(nil),    // 43: quantram.v1.ListSemanticTermsResponse
+	(*SnapshotTrigger)(nil),              // 44: quantram.v1.SnapshotTrigger
+	(*SnapshotPolicy)(nil),               // 45: quantram.v1.SnapshotPolicy
+	(*Snapshot)(nil),                     // 46: quantram.v1.Snapshot
+	(*SnapshotRunError)(nil),             // 47: quantram.v1.SnapshotRunError
+	(*SnapshotRun)(nil),                  // 48: quantram.v1.SnapshotRun
+	(*GetSnapshotPolicyRequest)(nil),     // 49: quantram.v1.GetSnapshotPolicyRequest
+	(*GetSnapshotPolicyResponse)(nil),    // 50: quantram.v1.GetSnapshotPolicyResponse
+	(*ListSnapshotPoliciesRequest)(nil),  // 51: quantram.v1.ListSnapshotPoliciesRequest
+	(*ListSnapshotPoliciesResponse)(nil), // 52: quantram.v1.ListSnapshotPoliciesResponse
+	(*CreateSnapshotPolicyRequest)(nil),  // 53: quantram.v1.CreateSnapshotPolicyRequest
+	(*CreateSnapshotPolicyResponse)(nil), // 54: quantram.v1.CreateSnapshotPolicyResponse
+	(*UpdateSnapshotPolicyRequest)(nil),  // 55: quantram.v1.UpdateSnapshotPolicyRequest
+	(*UpdateSnapshotPolicyResponse)(nil), // 56: quantram.v1.UpdateSnapshotPolicyResponse
+	(*GetSnapshotRequest)(nil),           // 57: quantram.v1.GetSnapshotRequest
+	(*GetSnapshotResponse)(nil),          // 58: quantram.v1.GetSnapshotResponse
+	(*ListSnapshotsRequest)(nil),         // 59: quantram.v1.ListSnapshotsRequest
+	(*ListSnapshotsResponse)(nil),        // 60: quantram.v1.ListSnapshotsResponse
+	(*ListSnapshotRunsRequest)(nil),      // 61: quantram.v1.ListSnapshotRunsRequest
+	(*ListSnapshotRunsResponse)(nil),     // 62: quantram.v1.ListSnapshotRunsResponse
 }
 var file_quantram_v1_quantram_proto_depIdxs = []int32{
 	0,  // 0: quantram.v1.Bar.instrument_type:type_name -> quantram.v1.InstrumentType
 	1,  // 1: quantram.v1.Bar.quality_status:type_name -> quantram.v1.QualityStatus
 	2,  // 2: quantram.v1.FeedHealth.state:type_name -> quantram.v1.FeedState
 	2,  // 3: quantram.v1.ActiveSource.state:type_name -> quantram.v1.FeedState
-	11, // 4: quantram.v1.BarWindow.bars:type_name -> quantram.v1.Bar
+	14, // 4: quantram.v1.BarWindow.bars:type_name -> quantram.v1.Bar
 	3,  // 5: quantram.v1.ComponentHealth.state:type_name -> quantram.v1.ComponentState
 	3,  // 6: quantram.v1.HealthReport.state:type_name -> quantram.v1.ComponentState
-	22, // 7: quantram.v1.HealthReport.components:type_name -> quantram.v1.ComponentHealth
+	25, // 7: quantram.v1.HealthReport.components:type_name -> quantram.v1.ComponentHealth
 	4,  // 8: quantram.v1.Decision.side:type_name -> quantram.v1.Side
 	5,  // 9: quantram.v1.Decision.path_direction:type_name -> quantram.v1.PathDirection
 	7,  // 10: quantram.v1.Decision.model_status:type_name -> quantram.v1.ModelStatus
 	6,  // 11: quantram.v1.Decision.emitter_position_state:type_name -> quantram.v1.EmitterPosition
 	8,  // 12: quantram.v1.Skip.reason:type_name -> quantram.v1.SkipReason
 	7,  // 13: quantram.v1.Skip.model_status:type_name -> quantram.v1.ModelStatus
-	26, // 14: quantram.v1.DecisionEvent.decision:type_name -> quantram.v1.Decision
-	27, // 15: quantram.v1.DecisionEvent.skip:type_name -> quantram.v1.Skip
+	29, // 14: quantram.v1.DecisionEvent.decision:type_name -> quantram.v1.Decision
+	30, // 15: quantram.v1.DecisionEvent.skip:type_name -> quantram.v1.Skip
 	10, // 16: quantram.v1.PricingSkip.reason:type_name -> quantram.v1.PricingSkipReason
 	9,  // 17: quantram.v1.PriceEvent.status:type_name -> quantram.v1.PricingStatus
-	30, // 18: quantram.v1.PriceEvent.emission:type_name -> quantram.v1.PriceEmission
-	32, // 19: quantram.v1.PriceEvent.skip:type_name -> quantram.v1.PricingSkip
-	31, // 20: quantram.v1.PriceEvent.cockpit:type_name -> quantram.v1.PriceCockpit
-	38, // 21: quantram.v1.ListSemanticTermsResponse.contract:type_name -> quantram.v1.SemanticContractInfo
-	39, // 22: quantram.v1.ListSemanticTermsResponse.terms:type_name -> quantram.v1.SemanticTerm
-	12, // 23: quantram.v1.MarketFeedService.GetFeedHealth:input_type -> quantram.v1.GetFeedHealthRequest
-	14, // 24: quantram.v1.MarketFeedService.GetActiveSource:input_type -> quantram.v1.GetActiveSourceRequest
-	16, // 25: quantram.v1.IngestionService.StreamBars:input_type -> quantram.v1.StreamBarsRequest
-	17, // 26: quantram.v1.IngestionService.GetBarWindow:input_type -> quantram.v1.GetBarWindowRequest
-	19, // 27: quantram.v1.IngestionService.TriggerGapFill:input_type -> quantram.v1.TriggerGapFillRequest
-	21, // 28: quantram.v1.OperationsService.GetHealth:input_type -> quantram.v1.GetHealthRequest
-	24, // 29: quantram.v1.OperationsService.GetReadiness:input_type -> quantram.v1.GetReadinessRequest
-	29, // 30: quantram.v1.ModelService.StreamDecisions:input_type -> quantram.v1.StreamDecisionsRequest
-	34, // 31: quantram.v1.ModelService.StreamPriceEvents:input_type -> quantram.v1.StreamPriceEventsRequest
-	35, // 32: quantram.v1.SemanticService.GetTerm:input_type -> quantram.v1.GetSemanticTermRequest
-	36, // 33: quantram.v1.SemanticService.ListTerms:input_type -> quantram.v1.ListSemanticTermsRequest
-	37, // 34: quantram.v1.SemanticService.GetSemanticContract:input_type -> quantram.v1.GetSemanticContractRequest
-	13, // 35: quantram.v1.MarketFeedService.GetFeedHealth:output_type -> quantram.v1.FeedHealth
-	15, // 36: quantram.v1.MarketFeedService.GetActiveSource:output_type -> quantram.v1.ActiveSource
-	11, // 37: quantram.v1.IngestionService.StreamBars:output_type -> quantram.v1.Bar
-	18, // 38: quantram.v1.IngestionService.GetBarWindow:output_type -> quantram.v1.BarWindow
-	20, // 39: quantram.v1.IngestionService.TriggerGapFill:output_type -> quantram.v1.GapFillResult
-	23, // 40: quantram.v1.OperationsService.GetHealth:output_type -> quantram.v1.HealthReport
-	25, // 41: quantram.v1.OperationsService.GetReadiness:output_type -> quantram.v1.ReadinessReport
-	28, // 42: quantram.v1.ModelService.StreamDecisions:output_type -> quantram.v1.DecisionEvent
-	33, // 43: quantram.v1.ModelService.StreamPriceEvents:output_type -> quantram.v1.PriceEvent
-	39, // 44: quantram.v1.SemanticService.GetTerm:output_type -> quantram.v1.SemanticTerm
-	40, // 45: quantram.v1.SemanticService.ListTerms:output_type -> quantram.v1.ListSemanticTermsResponse
-	38, // 46: quantram.v1.SemanticService.GetSemanticContract:output_type -> quantram.v1.SemanticContractInfo
-	35, // [35:47] is the sub-list for method output_type
-	23, // [23:35] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	33, // 18: quantram.v1.PriceEvent.emission:type_name -> quantram.v1.PriceEmission
+	35, // 19: quantram.v1.PriceEvent.skip:type_name -> quantram.v1.PricingSkip
+	34, // 20: quantram.v1.PriceEvent.cockpit:type_name -> quantram.v1.PriceCockpit
+	41, // 21: quantram.v1.ListSemanticTermsResponse.contract:type_name -> quantram.v1.SemanticContractInfo
+	42, // 22: quantram.v1.ListSemanticTermsResponse.terms:type_name -> quantram.v1.SemanticTerm
+	12, // 23: quantram.v1.SnapshotTrigger.type:type_name -> quantram.v1.SnapshotTriggerType
+	11, // 24: quantram.v1.SnapshotPolicy.status:type_name -> quantram.v1.SnapshotPolicyStatus
+	44, // 25: quantram.v1.SnapshotPolicy.trigger:type_name -> quantram.v1.SnapshotTrigger
+	13, // 26: quantram.v1.SnapshotRun.status:type_name -> quantram.v1.SnapshotRunStatus
+	47, // 27: quantram.v1.SnapshotRun.error:type_name -> quantram.v1.SnapshotRunError
+	45, // 28: quantram.v1.GetSnapshotPolicyResponse.policy:type_name -> quantram.v1.SnapshotPolicy
+	45, // 29: quantram.v1.ListSnapshotPoliciesResponse.policies:type_name -> quantram.v1.SnapshotPolicy
+	11, // 30: quantram.v1.CreateSnapshotPolicyRequest.status:type_name -> quantram.v1.SnapshotPolicyStatus
+	44, // 31: quantram.v1.CreateSnapshotPolicyRequest.trigger:type_name -> quantram.v1.SnapshotTrigger
+	45, // 32: quantram.v1.CreateSnapshotPolicyResponse.policy:type_name -> quantram.v1.SnapshotPolicy
+	11, // 33: quantram.v1.UpdateSnapshotPolicyRequest.status:type_name -> quantram.v1.SnapshotPolicyStatus
+	44, // 34: quantram.v1.UpdateSnapshotPolicyRequest.trigger:type_name -> quantram.v1.SnapshotTrigger
+	45, // 35: quantram.v1.UpdateSnapshotPolicyResponse.policy:type_name -> quantram.v1.SnapshotPolicy
+	46, // 36: quantram.v1.GetSnapshotResponse.snapshot:type_name -> quantram.v1.Snapshot
+	46, // 37: quantram.v1.ListSnapshotsResponse.snapshots:type_name -> quantram.v1.Snapshot
+	13, // 38: quantram.v1.ListSnapshotRunsRequest.status:type_name -> quantram.v1.SnapshotRunStatus
+	48, // 39: quantram.v1.ListSnapshotRunsResponse.runs:type_name -> quantram.v1.SnapshotRun
+	15, // 40: quantram.v1.MarketFeedService.GetFeedHealth:input_type -> quantram.v1.GetFeedHealthRequest
+	17, // 41: quantram.v1.MarketFeedService.GetActiveSource:input_type -> quantram.v1.GetActiveSourceRequest
+	19, // 42: quantram.v1.IngestionService.StreamBars:input_type -> quantram.v1.StreamBarsRequest
+	20, // 43: quantram.v1.IngestionService.GetBarWindow:input_type -> quantram.v1.GetBarWindowRequest
+	22, // 44: quantram.v1.IngestionService.TriggerGapFill:input_type -> quantram.v1.TriggerGapFillRequest
+	24, // 45: quantram.v1.OperationsService.GetHealth:input_type -> quantram.v1.GetHealthRequest
+	27, // 46: quantram.v1.OperationsService.GetReadiness:input_type -> quantram.v1.GetReadinessRequest
+	32, // 47: quantram.v1.ModelService.StreamDecisions:input_type -> quantram.v1.StreamDecisionsRequest
+	37, // 48: quantram.v1.ModelService.StreamPriceEvents:input_type -> quantram.v1.StreamPriceEventsRequest
+	38, // 49: quantram.v1.SemanticService.GetTerm:input_type -> quantram.v1.GetSemanticTermRequest
+	39, // 50: quantram.v1.SemanticService.ListTerms:input_type -> quantram.v1.ListSemanticTermsRequest
+	40, // 51: quantram.v1.SemanticService.GetSemanticContract:input_type -> quantram.v1.GetSemanticContractRequest
+	49, // 52: quantram.v1.SnapshotService.GetSnapshotPolicy:input_type -> quantram.v1.GetSnapshotPolicyRequest
+	51, // 53: quantram.v1.SnapshotService.ListSnapshotPolicies:input_type -> quantram.v1.ListSnapshotPoliciesRequest
+	53, // 54: quantram.v1.SnapshotService.CreateSnapshotPolicy:input_type -> quantram.v1.CreateSnapshotPolicyRequest
+	55, // 55: quantram.v1.SnapshotService.UpdateSnapshotPolicy:input_type -> quantram.v1.UpdateSnapshotPolicyRequest
+	57, // 56: quantram.v1.SnapshotService.GetSnapshot:input_type -> quantram.v1.GetSnapshotRequest
+	59, // 57: quantram.v1.SnapshotService.ListSnapshots:input_type -> quantram.v1.ListSnapshotsRequest
+	61, // 58: quantram.v1.SnapshotService.ListSnapshotRuns:input_type -> quantram.v1.ListSnapshotRunsRequest
+	16, // 59: quantram.v1.MarketFeedService.GetFeedHealth:output_type -> quantram.v1.FeedHealth
+	18, // 60: quantram.v1.MarketFeedService.GetActiveSource:output_type -> quantram.v1.ActiveSource
+	14, // 61: quantram.v1.IngestionService.StreamBars:output_type -> quantram.v1.Bar
+	21, // 62: quantram.v1.IngestionService.GetBarWindow:output_type -> quantram.v1.BarWindow
+	23, // 63: quantram.v1.IngestionService.TriggerGapFill:output_type -> quantram.v1.GapFillResult
+	26, // 64: quantram.v1.OperationsService.GetHealth:output_type -> quantram.v1.HealthReport
+	28, // 65: quantram.v1.OperationsService.GetReadiness:output_type -> quantram.v1.ReadinessReport
+	31, // 66: quantram.v1.ModelService.StreamDecisions:output_type -> quantram.v1.DecisionEvent
+	36, // 67: quantram.v1.ModelService.StreamPriceEvents:output_type -> quantram.v1.PriceEvent
+	42, // 68: quantram.v1.SemanticService.GetTerm:output_type -> quantram.v1.SemanticTerm
+	43, // 69: quantram.v1.SemanticService.ListTerms:output_type -> quantram.v1.ListSemanticTermsResponse
+	41, // 70: quantram.v1.SemanticService.GetSemanticContract:output_type -> quantram.v1.SemanticContractInfo
+	50, // 71: quantram.v1.SnapshotService.GetSnapshotPolicy:output_type -> quantram.v1.GetSnapshotPolicyResponse
+	52, // 72: quantram.v1.SnapshotService.ListSnapshotPolicies:output_type -> quantram.v1.ListSnapshotPoliciesResponse
+	54, // 73: quantram.v1.SnapshotService.CreateSnapshotPolicy:output_type -> quantram.v1.CreateSnapshotPolicyResponse
+	56, // 74: quantram.v1.SnapshotService.UpdateSnapshotPolicy:output_type -> quantram.v1.UpdateSnapshotPolicyResponse
+	58, // 75: quantram.v1.SnapshotService.GetSnapshot:output_type -> quantram.v1.GetSnapshotResponse
+	60, // 76: quantram.v1.SnapshotService.ListSnapshots:output_type -> quantram.v1.ListSnapshotsResponse
+	62, // 77: quantram.v1.SnapshotService.ListSnapshotRuns:output_type -> quantram.v1.ListSnapshotRunsResponse
+	59, // [59:78] is the sub-list for method output_type
+	40, // [40:59] is the sub-list for method input_type
+	40, // [40:40] is the sub-list for extension type_name
+	40, // [40:40] is the sub-list for extension extendee
+	0,  // [0:40] is the sub-list for field type_name
 }
 
 func init() { file_quantram_v1_quantram_proto_init() }
@@ -3535,10 +5011,10 @@ func file_quantram_v1_quantram_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_quantram_v1_quantram_proto_rawDesc), len(file_quantram_v1_quantram_proto_rawDesc)),
-			NumEnums:      11,
-			NumMessages:   30,
+			NumEnums:      14,
+			NumMessages:   49,
 			NumExtensions: 0,
-			NumServices:   5,
+			NumServices:   6,
 		},
 		GoTypes:           file_quantram_v1_quantram_proto_goTypes,
 		DependencyIndexes: file_quantram_v1_quantram_proto_depIdxs,

@@ -35,73 +35,77 @@ const (
 
 // PriceEmission is the SADE PriceEngine policy output. It is not BUY/SELL/HOLD.
 type PriceEmission struct {
-	Symbol                               string
-	Timestamp                            string
-	Engine                               string
-	P, P1, P2                            float64
-	ProjectedP, ProjectedP1, ProjectedP2 float64
-	DeltaProjectedP                      float64
-	DeltaProjectedP1                     float64
-	DeltaProjectedP2                     float64
-	CurrentDirection                     string
-	CurrentAcceleration                  string
-	ProjectedDirection                   string
-	ProjectedAcceleration                string
-	TrajectoryPhase                      string
-	TurningTendency                      string
-	DomainState                          string
-	StabilityState                       string
-	ConfidenceState                      string
-	RawColor                             string
-	Color                                string
-	ReasonCodes                          []string
-	RKSuccess                            bool
-	ConditionNumber                      float64
-	MaxRealEigenvalue                    float64
-	PerturbationAmplification            float64
+	Symbol                    string   `bson:"symbol"`
+	Timestamp                 string   `bson:"timestamp"`
+	Engine                    string   `bson:"engine"`
+	P                         float64  `bson:"p"`
+	P1                        float64  `bson:"p1"`
+	P2                        float64  `bson:"p2"`
+	ProjectedP                float64  `bson:"projected_p"`
+	ProjectedP1               float64  `bson:"projected_p1"`
+	ProjectedP2               float64  `bson:"projected_p2"`
+	DeltaProjectedP           float64  `bson:"delta_projected_p"`
+	DeltaProjectedP1          float64  `bson:"delta_projected_p1"`
+	DeltaProjectedP2          float64  `bson:"delta_projected_p2"`
+	CurrentDirection          string   `bson:"current_direction"`
+	CurrentAcceleration       string   `bson:"current_acceleration"`
+	ProjectedDirection        string   `bson:"projected_direction"`
+	ProjectedAcceleration     string   `bson:"projected_acceleration"`
+	TrajectoryPhase           string   `bson:"trajectory_phase"`
+	TurningTendency           string   `bson:"turning_tendency"`
+	DomainState               string   `bson:"domain_state"`
+	StabilityState            string   `bson:"stability_state"`
+	ConfidenceState           string   `bson:"confidence_state"`
+	RawColor                  string   `bson:"raw_color"`
+	Color                     string   `bson:"color"`
+	ReasonCodes               []string `bson:"reason_codes"`
+	RKSuccess                 bool     `bson:"rk_success"`
+	ConditionNumber           float64  `bson:"condition_number"`
+	MaxRealEigenvalue         float64  `bson:"max_real_eigenvalue"`
+	PerturbationAmplification float64  `bson:"perturbation_amplification"`
 }
 
 // PriceCockpit is the optional SADE cockpit interpreter output.
 type PriceCockpit struct {
-	Symbol               string
-	Timestamp            string
-	Engine               string
-	RawPhase             string
-	RefinedInternalState string
-	P1ZeroProximity      float64
-	DecelerationStrength float64
-	PersistenceState     string
-	PersistenceCount     int
-	TurnCandidate        string
-	CandidateAge         int
-	DomainState          string
-	ConfidenceState      string
-	RawDirection         string
-	CockpitColor         string
-	ReasonCodes          []string
+	Symbol               string   `bson:"symbol"`
+	Timestamp            string   `bson:"timestamp"`
+	Engine               string   `bson:"engine"`
+	RawPhase             string   `bson:"raw_phase"`
+	RefinedInternalState string   `bson:"refined_internal_state"`
+	P1ZeroProximity      float64  `bson:"p1_zero_proximity"`
+	DecelerationStrength float64  `bson:"deceleration_strength"`
+	PersistenceState     string   `bson:"persistence_state"`
+	PersistenceCount     int      `bson:"persistence_count"`
+	TurnCandidate        string   `bson:"turn_candidate"`
+	CandidateAge         int      `bson:"candidate_age"`
+	DomainState          string   `bson:"domain_state"`
+	ConfidenceState      string   `bson:"confidence_state"`
+	RawDirection         string   `bson:"raw_direction"`
+	CockpitColor         string   `bson:"cockpit_color"`
+	ReasonCodes          []string `bson:"reason_codes"`
 }
 
 type PricingSkip struct {
-	Reason PricingSkipReason
-	Detail string
+	Reason PricingSkipReason `bson:"reason"`
+	Detail string            `bson:"detail"`
 }
 
 // PriceEvent is one terminal pricing outcome per considered bar.
 type PriceEvent struct {
-	EventID          string
-	Symbol           string
-	IntervalStart    time.Time
-	MarketSnapshotID string
-	SourceTimestamp  string
-	AcceptedSequence int
-	Status           PricingStatus
-	Emitted          bool
-	DomainExit       bool
-	RKSuccess        bool
-	Latency          time.Duration
-	Emission         *PriceEmission
-	Cockpit          *PriceCockpit
-	Skip             *PricingSkip
+	EventID          string         `bson:"event_id"`
+	Symbol           string         `bson:"symbol"`
+	IntervalStart    time.Time      `bson:"interval_start_unix_ms"`
+	MarketSnapshotID string         `bson:"market_snapshot_id"`
+	SourceTimestamp  string         `bson:"source_timestamp"`
+	AcceptedSequence int            `bson:"accepted_sequence"`
+	Status           PricingStatus  `bson:"status"`
+	Emitted          bool           `bson:"emitted"`
+	DomainExit       bool           `bson:"domain_exit"`
+	RKSuccess        bool           `bson:"rk_success"`
+	Latency          time.Duration  `bson:"latency_ns"`
+	Emission         *PriceEmission `bson:"emission,omitempty"`
+	Cockpit          *PriceCockpit  `bson:"cockpit,omitempty"`
+	Skip             *PricingSkip   `bson:"skip,omitempty"`
 }
 
 func (e PriceEvent) IsEmission() bool {

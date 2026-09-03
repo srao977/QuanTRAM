@@ -78,6 +78,12 @@ type Options struct {
 	Delay     time.Duration
 	PanicOn   string
 	InboxSize int
+	Capture   EventCapture
+}
+
+type EventCapture interface {
+	CaptureDecision(domain.DecisionEvent, *adaptive.PipelineOutputs) bool
+	CapturePrice(domain.PriceEvent) bool
 }
 
 type Host struct {
@@ -170,10 +176,10 @@ func New(src BarSource, symbols []string, opts Options) (*Host, error) {
 		inbox = workerInboxSize
 	}
 	h := &Host{
-		src:       src,
-		symbols:   append([]string(nil), symbols...),
-		opts:      opts,
-		workers:   make(map[string]*worker, len(symbols)),
+		src:          src,
+		symbols:      append([]string(nil), symbols...),
+		opts:         opts,
+		workers:      make(map[string]*worker, len(symbols)),
 		subs:         make(map[uint64]chan domain.DecisionEvent),
 		priceSubs:    make(map[uint64]chan domain.PriceEvent),
 		lastBySym:    make(map[string]domain.DecisionEvent, len(symbols)),
@@ -561,8 +567,13 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 		h.emit(event)
 		return
 	}
+	var committedOutputs *adaptive.PipelineOutputs
 	if commitA && commitP {
 		w.engine.Commit(working)
+		if h.opts.Capture != nil {
+			outputs := w.engine.LastPipelineOutputs()
+			committedOutputs = &outputs
+		}
 		if w.pricing != nil {
 			w.pricing.Commit(priceWork)
 			if priceEv.EventID == "" {
@@ -593,7 +604,7 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 	if w.pricing != nil && commitA && commitP && priceEv.Emission != nil {
 		log.Printf("pricing emit symbol=%s color=%s interval=%s", bar.Symbol, priceEv.Emission.Color, bar.IntervalStart.UTC().Format(time.RFC3339))
 	}
-	h.emit(event)
+	h.emitWithOutputs(event, committedOutputs)
 }
 
 func (h *Host) gateSkip(bar domain.Bar, reason domain.SkipReason, hash string) domain.DecisionEvent {
@@ -627,6 +638,13 @@ func (h *Host) discontinuousSkip(w *worker, bar domain.Bar, hash string) domain.
 }
 
 func (h *Host) emit(ev domain.DecisionEvent) {
+	h.emitWithOutputs(ev, nil)
+}
+
+func (h *Host) emitWithOutputs(ev domain.DecisionEvent, outputs *adaptive.PipelineOutputs) {
+	if h.opts.Capture != nil {
+		h.opts.Capture.CaptureDecision(ev, outputs)
+	}
 	h.mu.Lock()
 	if !h.closed {
 		h.lastBySym[ev.Symbol] = ev
@@ -647,6 +665,9 @@ func (h *Host) emit(ev domain.DecisionEvent) {
 }
 
 func (h *Host) emitPrice(ev domain.PriceEvent) {
+	if h.opts.Capture != nil {
+		h.opts.Capture.CapturePrice(ev)
+	}
 	h.mu.Lock()
 	if !h.closed {
 		h.lastPriceSym[ev.Symbol] = ev

@@ -807,3 +807,333 @@ var SemanticService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "quantram/v1/quantram.proto",
 }
+
+const (
+	SnapshotService_GetSnapshotPolicy_FullMethodName    = "/quantram.v1.SnapshotService/GetSnapshotPolicy"
+	SnapshotService_ListSnapshotPolicies_FullMethodName = "/quantram.v1.SnapshotService/ListSnapshotPolicies"
+	SnapshotService_CreateSnapshotPolicy_FullMethodName = "/quantram.v1.SnapshotService/CreateSnapshotPolicy"
+	SnapshotService_UpdateSnapshotPolicy_FullMethodName = "/quantram.v1.SnapshotService/UpdateSnapshotPolicy"
+	SnapshotService_GetSnapshot_FullMethodName          = "/quantram.v1.SnapshotService/GetSnapshot"
+	SnapshotService_ListSnapshots_FullMethodName        = "/quantram.v1.SnapshotService/ListSnapshots"
+	SnapshotService_ListSnapshotRuns_FullMethodName     = "/quantram.v1.SnapshotService/ListSnapshotRuns"
+)
+
+// SnapshotServiceClient is the client API for SnapshotService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type SnapshotServiceClient interface {
+	GetSnapshotPolicy(ctx context.Context, in *GetSnapshotPolicyRequest, opts ...grpc.CallOption) (*GetSnapshotPolicyResponse, error)
+	ListSnapshotPolicies(ctx context.Context, in *ListSnapshotPoliciesRequest, opts ...grpc.CallOption) (*ListSnapshotPoliciesResponse, error)
+	CreateSnapshotPolicy(ctx context.Context, in *CreateSnapshotPolicyRequest, opts ...grpc.CallOption) (*CreateSnapshotPolicyResponse, error)
+	UpdateSnapshotPolicy(ctx context.Context, in *UpdateSnapshotPolicyRequest, opts ...grpc.CallOption) (*UpdateSnapshotPolicyResponse, error)
+	GetSnapshot(ctx context.Context, in *GetSnapshotRequest, opts ...grpc.CallOption) (*GetSnapshotResponse, error)
+	ListSnapshots(ctx context.Context, in *ListSnapshotsRequest, opts ...grpc.CallOption) (*ListSnapshotsResponse, error)
+	ListSnapshotRuns(ctx context.Context, in *ListSnapshotRunsRequest, opts ...grpc.CallOption) (*ListSnapshotRunsResponse, error)
+}
+
+type snapshotServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewSnapshotServiceClient(cc grpc.ClientConnInterface) SnapshotServiceClient {
+	return &snapshotServiceClient{cc}
+}
+
+func (c *snapshotServiceClient) GetSnapshotPolicy(ctx context.Context, in *GetSnapshotPolicyRequest, opts ...grpc.CallOption) (*GetSnapshotPolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSnapshotPolicyResponse)
+	err := c.cc.Invoke(ctx, SnapshotService_GetSnapshotPolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *snapshotServiceClient) ListSnapshotPolicies(ctx context.Context, in *ListSnapshotPoliciesRequest, opts ...grpc.CallOption) (*ListSnapshotPoliciesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSnapshotPoliciesResponse)
+	err := c.cc.Invoke(ctx, SnapshotService_ListSnapshotPolicies_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *snapshotServiceClient) CreateSnapshotPolicy(ctx context.Context, in *CreateSnapshotPolicyRequest, opts ...grpc.CallOption) (*CreateSnapshotPolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateSnapshotPolicyResponse)
+	err := c.cc.Invoke(ctx, SnapshotService_CreateSnapshotPolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *snapshotServiceClient) UpdateSnapshotPolicy(ctx context.Context, in *UpdateSnapshotPolicyRequest, opts ...grpc.CallOption) (*UpdateSnapshotPolicyResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateSnapshotPolicyResponse)
+	err := c.cc.Invoke(ctx, SnapshotService_UpdateSnapshotPolicy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *snapshotServiceClient) GetSnapshot(ctx context.Context, in *GetSnapshotRequest, opts ...grpc.CallOption) (*GetSnapshotResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSnapshotResponse)
+	err := c.cc.Invoke(ctx, SnapshotService_GetSnapshot_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *snapshotServiceClient) ListSnapshots(ctx context.Context, in *ListSnapshotsRequest, opts ...grpc.CallOption) (*ListSnapshotsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSnapshotsResponse)
+	err := c.cc.Invoke(ctx, SnapshotService_ListSnapshots_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *snapshotServiceClient) ListSnapshotRuns(ctx context.Context, in *ListSnapshotRunsRequest, opts ...grpc.CallOption) (*ListSnapshotRunsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSnapshotRunsResponse)
+	err := c.cc.Invoke(ctx, SnapshotService_ListSnapshotRuns_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// SnapshotServiceServer is the server API for SnapshotService service.
+// All implementations must embed UnimplementedSnapshotServiceServer
+// for forward compatibility.
+type SnapshotServiceServer interface {
+	GetSnapshotPolicy(context.Context, *GetSnapshotPolicyRequest) (*GetSnapshotPolicyResponse, error)
+	ListSnapshotPolicies(context.Context, *ListSnapshotPoliciesRequest) (*ListSnapshotPoliciesResponse, error)
+	CreateSnapshotPolicy(context.Context, *CreateSnapshotPolicyRequest) (*CreateSnapshotPolicyResponse, error)
+	UpdateSnapshotPolicy(context.Context, *UpdateSnapshotPolicyRequest) (*UpdateSnapshotPolicyResponse, error)
+	GetSnapshot(context.Context, *GetSnapshotRequest) (*GetSnapshotResponse, error)
+	ListSnapshots(context.Context, *ListSnapshotsRequest) (*ListSnapshotsResponse, error)
+	ListSnapshotRuns(context.Context, *ListSnapshotRunsRequest) (*ListSnapshotRunsResponse, error)
+	mustEmbedUnimplementedSnapshotServiceServer()
+}
+
+// UnimplementedSnapshotServiceServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedSnapshotServiceServer struct{}
+
+func (UnimplementedSnapshotServiceServer) GetSnapshotPolicy(context.Context, *GetSnapshotPolicyRequest) (*GetSnapshotPolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSnapshotPolicy not implemented")
+}
+func (UnimplementedSnapshotServiceServer) ListSnapshotPolicies(context.Context, *ListSnapshotPoliciesRequest) (*ListSnapshotPoliciesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSnapshotPolicies not implemented")
+}
+func (UnimplementedSnapshotServiceServer) CreateSnapshotPolicy(context.Context, *CreateSnapshotPolicyRequest) (*CreateSnapshotPolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateSnapshotPolicy not implemented")
+}
+func (UnimplementedSnapshotServiceServer) UpdateSnapshotPolicy(context.Context, *UpdateSnapshotPolicyRequest) (*UpdateSnapshotPolicyResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateSnapshotPolicy not implemented")
+}
+func (UnimplementedSnapshotServiceServer) GetSnapshot(context.Context, *GetSnapshotRequest) (*GetSnapshotResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetSnapshot not implemented")
+}
+func (UnimplementedSnapshotServiceServer) ListSnapshots(context.Context, *ListSnapshotsRequest) (*ListSnapshotsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSnapshots not implemented")
+}
+func (UnimplementedSnapshotServiceServer) ListSnapshotRuns(context.Context, *ListSnapshotRunsRequest) (*ListSnapshotRunsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSnapshotRuns not implemented")
+}
+func (UnimplementedSnapshotServiceServer) mustEmbedUnimplementedSnapshotServiceServer() {}
+func (UnimplementedSnapshotServiceServer) testEmbeddedByValue()                         {}
+
+// UnsafeSnapshotServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to SnapshotServiceServer will
+// result in compilation errors.
+type UnsafeSnapshotServiceServer interface {
+	mustEmbedUnimplementedSnapshotServiceServer()
+}
+
+func RegisterSnapshotServiceServer(s grpc.ServiceRegistrar, srv SnapshotServiceServer) {
+	// If the following call panics, it indicates UnimplementedSnapshotServiceServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&SnapshotService_ServiceDesc, srv)
+}
+
+func _SnapshotService_GetSnapshotPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSnapshotPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SnapshotServiceServer).GetSnapshotPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SnapshotService_GetSnapshotPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SnapshotServiceServer).GetSnapshotPolicy(ctx, req.(*GetSnapshotPolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SnapshotService_ListSnapshotPolicies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSnapshotPoliciesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SnapshotServiceServer).ListSnapshotPolicies(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SnapshotService_ListSnapshotPolicies_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SnapshotServiceServer).ListSnapshotPolicies(ctx, req.(*ListSnapshotPoliciesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SnapshotService_CreateSnapshotPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateSnapshotPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SnapshotServiceServer).CreateSnapshotPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SnapshotService_CreateSnapshotPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SnapshotServiceServer).CreateSnapshotPolicy(ctx, req.(*CreateSnapshotPolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SnapshotService_UpdateSnapshotPolicy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSnapshotPolicyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SnapshotServiceServer).UpdateSnapshotPolicy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SnapshotService_UpdateSnapshotPolicy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SnapshotServiceServer).UpdateSnapshotPolicy(ctx, req.(*UpdateSnapshotPolicyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SnapshotService_GetSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSnapshotRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SnapshotServiceServer).GetSnapshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SnapshotService_GetSnapshot_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SnapshotServiceServer).GetSnapshot(ctx, req.(*GetSnapshotRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SnapshotService_ListSnapshots_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSnapshotsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SnapshotServiceServer).ListSnapshots(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SnapshotService_ListSnapshots_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SnapshotServiceServer).ListSnapshots(ctx, req.(*ListSnapshotsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SnapshotService_ListSnapshotRuns_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSnapshotRunsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SnapshotServiceServer).ListSnapshotRuns(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SnapshotService_ListSnapshotRuns_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SnapshotServiceServer).ListSnapshotRuns(ctx, req.(*ListSnapshotRunsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// SnapshotService_ServiceDesc is the grpc.ServiceDesc for SnapshotService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var SnapshotService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "quantram.v1.SnapshotService",
+	HandlerType: (*SnapshotServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetSnapshotPolicy",
+			Handler:    _SnapshotService_GetSnapshotPolicy_Handler,
+		},
+		{
+			MethodName: "ListSnapshotPolicies",
+			Handler:    _SnapshotService_ListSnapshotPolicies_Handler,
+		},
+		{
+			MethodName: "CreateSnapshotPolicy",
+			Handler:    _SnapshotService_CreateSnapshotPolicy_Handler,
+		},
+		{
+			MethodName: "UpdateSnapshotPolicy",
+			Handler:    _SnapshotService_UpdateSnapshotPolicy_Handler,
+		},
+		{
+			MethodName: "GetSnapshot",
+			Handler:    _SnapshotService_GetSnapshot_Handler,
+		},
+		{
+			MethodName: "ListSnapshots",
+			Handler:    _SnapshotService_ListSnapshots_Handler,
+		},
+		{
+			MethodName: "ListSnapshotRuns",
+			Handler:    _SnapshotService_ListSnapshotRuns_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "quantram/v1/quantram.proto",
+}

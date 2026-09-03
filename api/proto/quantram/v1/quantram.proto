@@ -396,3 +396,150 @@ message ListSemanticTermsResponse {
   SemanticContractInfo contract = 1;
   repeated SemanticTerm terms = 2;
 }
+
+// SnapshotService manages durable checkpoint policy and read-only checkpoint
+// history. Checkpoints reference the detailed ledger; they do not copy science.
+enum SnapshotPolicyStatus {
+  SNAPSHOT_POLICY_STATUS_UNSPECIFIED = 0;
+  SNAPSHOT_POLICY_STATUS_ACTIVE = 1;
+  SNAPSHOT_POLICY_STATUS_INACTIVE = 2;
+}
+
+enum SnapshotTriggerType {
+  SNAPSHOT_TRIGGER_TYPE_UNSPECIFIED = 0;
+  SNAPSHOT_TRIGGER_TYPE_EVERY_N_BARS = 1;
+}
+
+enum SnapshotRunStatus {
+  SNAPSHOT_RUN_STATUS_UNSPECIFIED = 0;
+  SNAPSHOT_RUN_STATUS_STARTED = 1;
+  SNAPSHOT_RUN_STATUS_SUCCESS = 2;
+  SNAPSHOT_RUN_STATUS_ERROR = 3;
+}
+
+message SnapshotTrigger {
+  SnapshotTriggerType type = 1;
+  uint32 every_n_bars = 2;
+}
+
+message SnapshotPolicy {
+  string id = 1;
+  string name = 2;
+  SnapshotPolicyStatus status = 3;
+  SnapshotTrigger trigger = 4;
+  int64 created_at_unix_ms = 5;
+  int64 updated_at_unix_ms = 6;
+}
+
+message Snapshot {
+  string id = 1;
+  string aperture_id = 2;
+  string policy_id = 3;
+  string payload_id = 4;
+  string symbol = 5;
+  uint64 snapshot_num = 6;
+  int64 captured_at_unix_ms = 7;
+}
+
+message SnapshotRunError {
+  string code = 1;
+  string message = 2;
+}
+
+message SnapshotRun {
+  string id = 1;
+  string aperture_id = 2;
+  string policy_id = 3;
+  string symbol = 4;
+  string trigger_payload_id = 5;
+  uint64 trigger_count = 6;
+  int64 started_at_unix_ms = 7;
+  int64 completed_at_unix_ms = 8;
+  SnapshotRunStatus status = 9;
+  string snapshot_id = 10;
+  SnapshotRunError error = 11;
+}
+
+message GetSnapshotPolicyRequest {
+  string id = 1;
+}
+
+message GetSnapshotPolicyResponse {
+  SnapshotPolicy policy = 1;
+}
+
+message ListSnapshotPoliciesRequest {
+  uint32 page_size = 1;
+  string page_token = 2;
+}
+
+message ListSnapshotPoliciesResponse {
+  repeated SnapshotPolicy policies = 1;
+  string next_page_token = 2;
+}
+
+message CreateSnapshotPolicyRequest {
+  string name = 1;
+  SnapshotPolicyStatus status = 2;
+  SnapshotTrigger trigger = 3;
+}
+
+message CreateSnapshotPolicyResponse {
+  SnapshotPolicy policy = 1;
+}
+
+message UpdateSnapshotPolicyRequest {
+  string id = 1;
+  string name = 2;
+  SnapshotPolicyStatus status = 3;
+  SnapshotTrigger trigger = 4;
+}
+
+message UpdateSnapshotPolicyResponse {
+  SnapshotPolicy policy = 1;
+}
+
+message GetSnapshotRequest {
+  string id = 1;
+}
+
+message GetSnapshotResponse {
+  Snapshot snapshot = 1;
+}
+
+message ListSnapshotsRequest {
+  string aperture_id = 1;
+  string policy_id = 2;
+  string symbol = 3;
+  uint32 page_size = 4;
+  string page_token = 5;
+}
+
+message ListSnapshotsResponse {
+  repeated Snapshot snapshots = 1;
+  string next_page_token = 2;
+}
+
+message ListSnapshotRunsRequest {
+  string aperture_id = 1;
+  string policy_id = 2;
+  string symbol = 3;
+  SnapshotRunStatus status = 4;
+  uint32 page_size = 5;
+  string page_token = 6;
+}
+
+message ListSnapshotRunsResponse {
+  repeated SnapshotRun runs = 1;
+  string next_page_token = 2;
+}
+
+service SnapshotService {
+  rpc GetSnapshotPolicy(GetSnapshotPolicyRequest) returns (GetSnapshotPolicyResponse);
+  rpc ListSnapshotPolicies(ListSnapshotPoliciesRequest) returns (ListSnapshotPoliciesResponse);
+  rpc CreateSnapshotPolicy(CreateSnapshotPolicyRequest) returns (CreateSnapshotPolicyResponse);
+  rpc UpdateSnapshotPolicy(UpdateSnapshotPolicyRequest) returns (UpdateSnapshotPolicyResponse);
+  rpc GetSnapshot(GetSnapshotRequest) returns (GetSnapshotResponse);
+  rpc ListSnapshots(ListSnapshotsRequest) returns (ListSnapshotsResponse);
+  rpc ListSnapshotRuns(ListSnapshotRunsRequest) returns (ListSnapshotRunsResponse);
+}

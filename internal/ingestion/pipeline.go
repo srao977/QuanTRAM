@@ -18,6 +18,10 @@ type subscriber struct {
 	finalizedOnly bool
 }
 
+type BarCapture interface {
+	CaptureBar(domain.Bar) bool
+}
+
 type Pipeline struct {
 	live       marketfeed.LiveBarSource
 	historical marketfeed.HistoricalBarSource
@@ -31,13 +35,14 @@ type Pipeline struct {
 	modelSubs   map[uint64]chan domain.Bar
 	modelLast   map[string]time.Time
 	modelDisc   map[string]domain.SkipReason
+	capture     BarCapture
 	nextSub     uint64
 	inferReady  atomic.Bool
 	filling     atomic.Bool
 }
 
-func NewPipeline(live marketfeed.LiveBarSource, historical marketfeed.HistoricalBarSource, sourceID string, symbols []string) *Pipeline {
-	return &Pipeline{
+func NewPipeline(live marketfeed.LiveBarSource, historical marketfeed.HistoricalBarSource, sourceID string, symbols []string, captures ...BarCapture) *Pipeline {
+	pipeline := &Pipeline{
 		live:        live,
 		historical:  historical,
 		breaker:     NewCircuitBreaker(),
@@ -49,6 +54,10 @@ func NewPipeline(live marketfeed.LiveBarSource, historical marketfeed.Historical
 		modelLast:   make(map[string]time.Time),
 		modelDisc:   make(map[string]domain.SkipReason),
 	}
+	if len(captures) > 0 {
+		pipeline.capture = captures[0]
+	}
+	return pipeline
 }
 
 func (p *Pipeline) Run(ctx context.Context) error {
@@ -108,6 +117,9 @@ func (p *Pipeline) drain(incoming <-chan domain.Bar) {
 func (p *Pipeline) accept(bar domain.Bar) {
 	if !p.window.Add(bar) {
 		return
+	}
+	if p.capture != nil {
+		p.capture.CaptureBar(bar)
 	}
 	if p.breaker.State() == domain.FeedRecovering && !bar.IsBackfilled {
 		p.breaker.MarkHealthy()

@@ -45,6 +45,22 @@ func TestLoadCSVDoesNotRequireKeys(t *testing.T) {
 	}
 }
 
+func TestLoadMongoRequiresOnlyInfrastructureConfiguration(t *testing.T) {
+	t.Setenv("QUANTRAM_SOURCE", "csv")
+	t.Setenv("QUANTRAM_SYMBOLS", "AAPL")
+	t.Setenv("QUANTRAM_MODEL", "off")
+	t.Setenv("QUANTRAM_PRICING", "off")
+	t.Setenv("QUANTRAM_MONGODB_URI", "mongodb://localhost:27017")
+	t.Setenv("QUANTRAM_MONGODB_QUEUE", "7")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.MongoDatabase != DefaultMongoDatabase || cfg.MongoQueue != 7 {
+		t.Fatalf("MongoDB config=%+v", cfg)
+	}
+}
+
 func TestLoadRejectsUnknownModel(t *testing.T) {
 	t.Setenv("QUANTRAM_SOURCE", "csv")
 	t.Setenv("QUANTRAM_SYMBOLS", "AAPL")

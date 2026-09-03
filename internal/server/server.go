@@ -9,6 +9,7 @@ import (
 	"quantram/internal/domain"
 	"quantram/internal/ingestion"
 	"quantram/internal/semantics"
+	"quantram/internal/snapshot"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -20,11 +21,13 @@ type Server struct {
 	quantramv1.UnimplementedOperationsServiceServer
 	quantramv1.UnimplementedModelServiceServer
 	quantramv1.UnimplementedSemanticServiceServer
+	quantramv1.UnimplementedSnapshotServiceServer
 	pipeline  *ingestion.Pipeline
 	host      modelHealth
 	events    modelEvents
 	prices    priceEvents
 	semantics *semantics.Dictionary
+	snapshots *snapshot.Service
 }
 
 type modelHealth interface {

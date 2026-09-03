@@ -18,6 +18,26 @@ func (s stubHistorical) Bars(context.Context, marketfeed.BarRangeRequest) ([]dom
 	return s.bars, nil
 }
 
+type barRecorder struct {
+	bars []domain.Bar
+}
+
+func (r *barRecorder) CaptureBar(bar domain.Bar) bool {
+	r.bars = append(r.bars, bar)
+	return true
+}
+
+func TestAcceptedBarCapturedOnceBeforeFanout(t *testing.T) {
+	recorder := &barRecorder{}
+	pipeline := NewPipeline(nil, nil, "TEST", []string{"AAPL"}, recorder)
+	bar := domain.Bar{Symbol: "AAPL", IntervalStart: time.Now().UTC(), MarketSnapshotID: "snapshot-1"}
+	pipeline.InjectBar(bar)
+	pipeline.InjectBar(bar)
+	if len(recorder.bars) != 1 || recorder.bars[0].MarketSnapshotID != "snapshot-1" {
+		t.Fatalf("accepted captures=%+v", recorder.bars)
+	}
+}
+
 func TestWindowDedupAndPipelineCSV(t *testing.T) {
 	path := filepath.Join("..", "..", "testdata", "aapl_sample.csv")
 	live := marketfeed.NewCSVSource(path, "AAPL")

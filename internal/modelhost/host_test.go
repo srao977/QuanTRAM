@@ -18,6 +18,27 @@ type missingEligible struct {
 	start  time.Time
 }
 
+type eventRecorder struct {
+	mu      sync.Mutex
+	order   []string
+	outputs *adaptive.PipelineOutputs
+}
+
+func (r *eventRecorder) CaptureDecision(_ domain.DecisionEvent, outputs *adaptive.PipelineOutputs) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.order = append(r.order, "adaptive")
+	r.outputs = outputs
+	return true
+}
+
+func (r *eventRecorder) CapturePrice(domain.PriceEvent) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.order = append(r.order, "price")
+	return true
+}
+
 type fakeSource struct {
 	mu      sync.Mutex
 	bars    chan domain.Bar
@@ -32,6 +53,23 @@ func newFake(buffer int) *fakeSource {
 		bars:   make(chan domain.Bar, buffer),
 		infer:  true,
 		status: map[string]ingestion.ModelPathStatus{},
+	}
+}
+
+func TestCommittedCapturePreservesPriceThenAdaptiveOrder(t *testing.T) {
+	src := newFake(2)
+	recorder := &eventRecorder{}
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{Pricing: config.PricingExpm, Capture: recorder})
+	src.push(finalBar("AAPL", time.Date(2026, 9, 1, 13, 31, 0, 0, time.UTC), 100))
+	_ = collect(t, host.Events(), 1, time.Second)
+
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	if len(recorder.order) != 2 || recorder.order[0] != "price" || recorder.order[1] != "adaptive" {
+		t.Fatalf("capture order=%v", recorder.order)
+	}
+	if recorder.outputs == nil || recorder.outputs.DMO.EntityID != "AAPL" || len(recorder.outputs.FMO.Samples) == 0 {
+		t.Fatalf("committed adaptive outputs=%+v", recorder.outputs)
 	}
 }
 

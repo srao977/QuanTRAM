@@ -8,33 +8,33 @@ import (
 )
 
 type ForwardSample struct {
-	Tau                float64
-	Level              float64
-	Velocity           float64
-	Uncertainty        float64
-	Strength           float64
-	Persistence        float64
-	ReversalPropensity float64
+	Tau                float64 `bson:"tau"`
+	Level              float64 `bson:"level"`
+	Velocity           float64 `bson:"velocity"`
+	Uncertainty        float64 `bson:"uncertainty"`
+	Strength           float64 `bson:"strength"`
+	Persistence        float64 `bson:"persistence"`
+	ReversalPropensity float64 `bson:"reversal_propensity"`
 }
 
 type ReturnShape struct {
-	ModelTime                   float64
-	EntityID                    string
-	SourceModelVersion          string
-	CurrentLevel                float64
-	ProjectionInterval          float64
-	ForwardHalfLife             float64
-	ForwardSamples              []ForwardSample
-	TerminalDisplacement        float64
-	MaximumAbsoluteDisplacement float64
-	PathDirection               domain.PathDirection
-	TerminalDecayFactor         float64
-	Strength                    float64
-	Coherence                   float64
-	Persistence                 float64
-	Uncertainty                 float64
-	ReversalPropensity          float64
-	StateSupportRatio           float64
+	ModelTime                   float64              `bson:"model_time"`
+	EntityID                    string               `bson:"entity_id"`
+	SourceModelVersion          string               `bson:"source_model_version"`
+	CurrentLevel                float64              `bson:"current_level"`
+	ProjectionInterval          float64              `bson:"projection_interval"`
+	ForwardHalfLife             float64              `bson:"forward_half_life"`
+	ForwardSamples              []ForwardSample      `bson:"forward_samples"`
+	TerminalDisplacement        float64              `bson:"terminal_displacement"`
+	MaximumAbsoluteDisplacement float64              `bson:"maximum_absolute_displacement"`
+	PathDirection               domain.PathDirection `bson:"path_direction"`
+	TerminalDecayFactor         float64              `bson:"terminal_decay_factor"`
+	Strength                    float64              `bson:"strength"`
+	Coherence                   float64              `bson:"coherence"`
+	Persistence                 float64              `bson:"persistence"`
+	Uncertainty                 float64              `bson:"uncertainty"`
+	ReversalPropensity          float64              `bson:"reversal_propensity"`
+	StateSupportRatio           float64              `bson:"state_support_ratio"`
 }
 
 func requireFinite(name string, value float64) error {

@@ -30,27 +30,27 @@ const (
 )
 
 type Bar struct {
-	Symbol           string
-	InstrumentID     string
-	InstrumentType   InstrumentType
-	Tradable         bool
-	Interval         string
-	IntervalStart    time.Time
-	IntervalEnd      time.Time
-	Open             float64
-	High             float64
-	Low              float64
-	Close            float64
-	Volume           uint64
-	EventCount       uint32
-	SourceTimestamp  string
-	ReceiptTime      time.Time
-	Source           string
-	QualityStatus    QualityStatus
-	IsFinal          bool
-	IsBackfilled     bool
-	SourceTransition bool
-	MarketSnapshotID string
+	Symbol           string         `bson:"symbol"`
+	InstrumentID     string         `bson:"instrument_id"`
+	InstrumentType   InstrumentType `bson:"instrument_type"`
+	Tradable         bool           `bson:"tradable"`
+	Interval         string         `bson:"interval"`
+	IntervalStart    time.Time      `bson:"interval_start_unix_ms"`
+	IntervalEnd      time.Time      `bson:"interval_end_unix_ms"`
+	Open             float64        `bson:"open"`
+	High             float64        `bson:"high"`
+	Low              float64        `bson:"low"`
+	Close            float64        `bson:"close"`
+	Volume           uint64         `bson:"volume"`
+	EventCount       uint32         `bson:"event_count"`
+	SourceTimestamp  string         `bson:"source_timestamp"`
+	ReceiptTime      time.Time      `bson:"receipt_unix_ms"`
+	Source           string         `bson:"source"`
+	QualityStatus    QualityStatus  `bson:"quality_status"`
+	IsFinal          bool           `bson:"is_final"`
+	IsBackfilled     bool           `bson:"is_backfilled"`
+	SourceTransition bool           `bson:"source_transition"`
+	MarketSnapshotID string         `bson:"market_snapshot_id"`
 }
 
 func (b Bar) DataAge(now time.Time) time.Duration {

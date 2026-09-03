@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -43,6 +44,8 @@ const (
 	DefaultPricingMode   = PricingOff
 	DefaultModelDeadline = 200 * time.Millisecond
 	MaxModelDeadline     = 2 * time.Second
+	DefaultMongoDatabase = "quantram_db"
+	DefaultMongoQueue    = 1024
 )
 
 type Config struct {
@@ -59,6 +62,9 @@ type Config struct {
 	Model         ModelMode
 	Pricing       PricingMode
 	ModelDeadline time.Duration
+	MongoURI      string
+	MongoDatabase string
+	MongoQueue    int
 }
 
 func Load() (Config, error) {
@@ -90,6 +96,11 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	mongoQueue, err := strconv.Atoi(environmentOrDefault("QUANTRAM_MONGODB_QUEUE", strconv.Itoa(DefaultMongoQueue)))
+	if err != nil || mongoQueue <= 0 {
+		return Config{}, fmt.Errorf("QUANTRAM_MONGODB_QUEUE must be a positive integer")
+	}
+	mongoURI := strings.TrimSpace(os.Getenv("QUANTRAM_MONGODB_URI"))
 
 	cfg := Config{
 		GRPCPort:      environmentOrDefault("GRPC_PORT", DefaultGRPCPort),
@@ -105,6 +116,9 @@ func Load() (Config, error) {
 		Model:         mode,
 		Pricing:       pricing,
 		ModelDeadline: deadline,
+		MongoURI:      mongoURI,
+		MongoDatabase: environmentOrDefault("QUANTRAM_MONGODB_DATABASE", DefaultMongoDatabase),
+		MongoQueue:    mongoQueue,
 	}
 	if source == "alpaca" && (cfg.APIKey == "" || cfg.APISecret == "") {
 		return Config{}, fmt.Errorf("ALPACA_API_KEY and ALPACA_API_SECRET (or ALPACA_SECRET_KEY) are required for source=alpaca")

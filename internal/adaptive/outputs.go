@@ -1,47 +1,47 @@
 package adaptive
 
 type FMOSample struct {
-	Tau                float64
-	Level              float64
-	Velocity           float64
-	Uncertainty        float64
-	Strength           float64
-	Persistence        float64
-	ReversalPropensity float64
+	Tau                float64 `bson:"tau"`
+	Level              float64 `bson:"level"`
+	Velocity           float64 `bson:"velocity"`
+	Uncertainty        float64 `bson:"uncertainty"`
+	Strength           float64 `bson:"strength"`
+	Persistence        float64 `bson:"persistence"`
+	ReversalPropensity float64 `bson:"reversal_propensity"`
 }
 
 type DMOOutput struct {
-	ModelTime                float64
-	EntityID                 string
-	ModelVersion             string
-	StateLevel               float64
-	StateVelocity            float64
-	StateAcceleration        float64
-	StateCurvature           float64
-	Strength                 float64
-	Coherence                float64
-	Persistence              float64
-	PerturbationMagnitude    float64
-	PerturbationClass        string
-	Uncertainty              float64
-	ReversalPropensity       float64
-	StateSupportRatio        float64
-	ObservationHalfLife      float64
-	ForwardHalfLife          float64
-	ParameterState           map[string]float64
-	ParameterUpdateMagnitude map[string]float64
-	DataQuality              float64
-	ModelHealth              string
-	DMOSchemaVersion         string
-	FMOSchemaVersion         string
-	ConfigHash               string
-	StateHash                string
-	TraceID                  string
+	ModelTime                float64            `bson:"model_time"`
+	EntityID                 string             `bson:"entity_id"`
+	ModelVersion             string             `bson:"model_version"`
+	StateLevel               float64            `bson:"state_level"`
+	StateVelocity            float64            `bson:"state_velocity"`
+	StateAcceleration        float64            `bson:"state_acceleration"`
+	StateCurvature           float64            `bson:"state_curvature"`
+	Strength                 float64            `bson:"strength"`
+	Coherence                float64            `bson:"coherence"`
+	Persistence              float64            `bson:"persistence"`
+	PerturbationMagnitude    float64            `bson:"perturbation_magnitude"`
+	PerturbationClass        string             `bson:"perturbation_class"`
+	Uncertainty              float64            `bson:"uncertainty"`
+	ReversalPropensity       float64            `bson:"reversal_propensity"`
+	StateSupportRatio        float64            `bson:"state_support_ratio"`
+	ObservationHalfLife      float64            `bson:"observation_half_life"`
+	ForwardHalfLife          float64            `bson:"forward_half_life"`
+	ParameterState           map[string]float64 `bson:"parameter_state"`
+	ParameterUpdateMagnitude map[string]float64 `bson:"parameter_update_magnitude"`
+	DataQuality              float64            `bson:"data_quality"`
+	ModelHealth              string             `bson:"model_health"`
+	DMOSchemaVersion         string             `bson:"dmo_schema_version"`
+	FMOSchemaVersion         string             `bson:"fmo_schema_version"`
+	ConfigHash               string             `bson:"config_hash"`
+	StateHash                string             `bson:"state_hash"`
+	TraceID                  string             `bson:"trace_id"`
 }
 
 type FMOOutput struct {
-	ModelTime      float64
-	EntityID       string
-	IntervalLength float64
-	Samples        []FMOSample
+	ModelTime      float64     `bson:"model_time"`
+	EntityID       string      `bson:"entity_id"`
+	IntervalLength float64     `bson:"interval_length"`
+	Samples        []FMOSample `bson:"samples"`
 }
