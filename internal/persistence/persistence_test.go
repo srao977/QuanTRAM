@@ -1,3 +1,5 @@
+// Tests in this file verify BSON contracts, Aperture ownership, and bounded
+// asynchronous persistence lifecycle behavior without a live MongoDB server.
 package persistence
 
 import (
@@ -171,12 +173,18 @@ func TestMongoWriterCloseShutsCurrentApertureThenDisconnects(t *testing.T) {
 	if err := writer.Close(context.Background()); err != nil {
 		t.Fatal(err)
 	}
+	if err := writer.Close(context.Background()); err != nil {
+		t.Fatalf("second Close()=%v", err)
+	}
 	closed := repository.apertures[0]
 	if !disconnected || closed.ID != aperture.ID || closed.SequenceNum != aperture.SequenceNum || !closed.Open.Equal(openedAt) {
 		t.Fatalf("immutable lifecycle fields changed: before=%+v after=%+v", aperture, closed)
 	}
 	if closed.Status != "SHUT" || closed.Shut == nil || closed.Shut.Before(openedAt) {
 		t.Fatalf("Aperture not orderly SHUT: %+v", closed)
+	}
+	if len(repository.shutIDs) != 1 {
+		t.Fatalf("SHUT transitions=%d want 1", len(repository.shutIDs))
 	}
 }
 
@@ -212,6 +220,35 @@ func (w *recordingWriter) WritePrice(_ context.Context, event domain.PriceEvent)
 }
 func (w *recordingWriter) Close(context.Context) error { return nil }
 
+type cancelableWriter struct {
+	started     chan struct{}
+	startOnce   sync.Once
+	closeCalls  int
+	disconnects int
+}
+
+func (w *cancelableWriter) WriteBar(ctx context.Context, _ domain.Bar) error {
+	w.startOnce.Do(func() { close(w.started) })
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+func (w *cancelableWriter) WriteDecision(context.Context, domain.DecisionEvent, *adaptive.PipelineOutputs) error {
+	return nil
+}
+
+func (w *cancelableWriter) WritePrice(context.Context, domain.PriceEvent) error { return nil }
+
+func (w *cancelableWriter) Close(context.Context) error {
+	w.closeCalls++
+	return nil
+}
+
+func (w *cancelableWriter) Disconnect(context.Context) error {
+	w.disconnects++
+	return nil
+}
+
 func TestAsyncStoreIsBoundedNonblockingAndFlushesInOrder(t *testing.T) {
 	writer := &recordingWriter{release: make(chan struct{}), started: make(chan struct{})}
 	store := NewAsyncStore(writer, 1)
@@ -246,5 +283,32 @@ func TestAsyncStoreIsBoundedNonblockingAndFlushesInOrder(t *testing.T) {
 	defer writer.mu.Unlock()
 	if len(writer.order) != 2 || writer.order[0] != "bar:one" || writer.order[1] != "decision:one" {
 		t.Fatalf("write order=%v", writer.order)
+	}
+}
+
+func TestAsyncStoreDrainTimeoutAccountsWorkAndDisconnectsWithoutShut(t *testing.T) {
+	writer := &cancelableWriter{started: make(chan struct{})}
+	store := NewAsyncStore(writer, 2)
+	if !store.CaptureBar(domain.Bar{MarketSnapshotID: "one"}) || !store.CaptureBar(domain.Bar{MarketSnapshotID: "two"}) {
+		t.Fatal("captures rejected")
+	}
+	select {
+	case <-writer.started:
+	case <-time.After(time.Second):
+		t.Fatal("worker did not start")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel()
+	if err := store.Close(ctx); err == nil {
+		t.Fatal("Close() succeeded despite drain timeout")
+	}
+	if writer.closeCalls != 0 || writer.disconnects != 1 {
+		t.Fatalf("closeCalls=%d disconnects=%d", writer.closeCalls, writer.disconnects)
+	}
+	if store.Health().Failures != 2 {
+		t.Fatalf("failures=%d want current plus abandoned capture", store.Health().Failures)
+	}
+	if err := store.Close(context.Background()); err == nil || writer.disconnects != 1 {
+		t.Fatalf("idempotent Close()=(%v), disconnects=%d", err, writer.disconnects)
 	}
 }

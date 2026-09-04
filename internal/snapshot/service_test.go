@@ -1,3 +1,5 @@
+// Tests in this file verify provider-neutral Snapshot policy and lifecycle
+// behavior against a deterministic in-memory backend.
 package snapshot
 
 import (
@@ -353,5 +355,41 @@ func TestFailureAtThirtyDoesNotBlockFortyOrInvokeScience(t *testing.T) {
 	}
 	if len(backend.snapshots) != 4 {
 		t.Fatal("failed checkpoint was not resumable on a later scan")
+	}
+}
+
+func TestFinalEvaluatePreservesOnlyEligibleCompleteCheckpoint(t *testing.T) {
+	tests := []struct {
+		name          string
+		finalPayloads int
+		completeFinal bool
+		wantSnapshots int
+	}{
+		{name: "eligible bar 40", finalPayloads: 10, completeFinal: true, wantSnapshots: 4},
+		{name: "non-eligible bar 37", finalPayloads: 7, completeFinal: true, wantSnapshots: 3},
+		{name: "incomplete bar 40", finalPayloads: 10, completeFinal: false, wantSnapshots: 3},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := context.Background()
+			backend := newFakeBackend()
+			backend.policies["policy-10"] = everyTenPolicy(PolicyActive)
+			addPayloads(backend, "aperture-a", "AAPL", 30, false)
+			service := NewService(backend, backend, "aperture-a", time.Second)
+			if err := service.Evaluate(ctx); err != nil {
+				t.Fatal(err)
+			}
+			finalPayloads := addPayloads(backend, "aperture-a", "AAPL", test.finalPayloads, false)
+			if !test.completeFinal {
+				last := finalPayloads[len(finalPayloads)-1]
+				backend.complete["aperture-a/"+last.ID] = false
+			}
+			if err := service.FinalEvaluate(ctx); err != nil {
+				t.Fatal(err)
+			}
+			if len(backend.snapshots) != test.wantSnapshots {
+				t.Fatalf("Snapshots=%d want %d", len(backend.snapshots), test.wantSnapshots)
+			}
+		})
 	}
 }

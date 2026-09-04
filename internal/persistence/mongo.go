@@ -1,9 +1,13 @@
+// Package persistence maps QuanTRAM runtime facts to the MongoDB historical
+// ledger. This file owns connection readiness, one-process Aperture creation,
+// lineage-bound writes, and the durable SHUT-before-disconnect transition.
 package persistence
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -30,6 +34,10 @@ type MongoWriter struct {
 	apertureID bson.ObjectID
 	payloads   *mongo.Collection
 	decisions  *mongo.Collection
+	closeOnce  sync.Once
+	closeErr   error
+	discOnce   sync.Once
+	discErr    error
 }
 
 const apertureCreateAttempts = 5
@@ -161,10 +169,25 @@ func (w *MongoWriter) upsertDecision(ctx context.Context, payloadID bson.ObjectI
 	return err
 }
 
+// Close idempotently commits the current Aperture's SHUT timestamp and then
+// disconnects MongoDB. Callers must complete producer shutdown and queue drain
+// before invoking it.
 func (w *MongoWriter) Close(ctx context.Context) error {
-	shutErr := w.apertures.Shut(ctx, w.apertureID, time.Now().UTC())
-	disconnectErr := w.disconnect(ctx)
-	return errors.Join(shutErr, disconnectErr)
+	w.closeOnce.Do(func() {
+		shutErr := w.apertures.Shut(ctx, w.apertureID, time.Now().UTC())
+		w.closeErr = errors.Join(shutErr, w.Disconnect(ctx))
+	})
+	return w.closeErr
+}
+
+// Disconnect closes the MongoDB client without changing Aperture state. The
+// asynchronous store uses it only when queue drain fails, because marking SHUT
+// would falsely claim all queued facts reached durable storage.
+func (w *MongoWriter) Disconnect(ctx context.Context) error {
+	w.discOnce.Do(func() {
+		w.discErr = w.disconnect(ctx)
+	})
+	return w.discErr
 }
 
 func createProcessAperture(ctx context.Context, repository apertureRepository, cfg MongoConfig, at time.Time) (Aperture, error) {

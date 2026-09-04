@@ -1,3 +1,6 @@
+// Package snapshot implements database-neutral checkpoint policy evaluation.
+// This file owns periodic and final scans for one Aperture; persistence,
+// scientific computation, and process lifecycle remain external concerns.
 package snapshot
 
 import (
@@ -119,6 +122,13 @@ func (s *Service) Evaluate(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+// FinalEvaluate performs the same policy-exact, idempotent scan as a periodic
+// evaluation. The server calls it after producers stop and queued facts become
+// durable, so orderly shutdown cannot miss an eligible final checkpoint.
+func (s *Service) FinalEvaluate(ctx context.Context) error {
+	return s.Evaluate(ctx)
 }
 
 func (s *Service) runCandidate(ctx context.Context, candidate Snapshot, triggerCount uint64) {

@@ -1,7 +1,11 @@
+// Package persistence provides asynchronous capture and MongoDB ledger
+// adapters. This file owns the bounded queue worker and its close boundary; it
+// does not define scientific ordering or MongoDB document semantics.
 package persistence
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -17,6 +21,10 @@ type writer interface {
 	WriteDecision(context.Context, domain.DecisionEvent, *adaptive.PipelineOutputs) error
 	WritePrice(context.Context, domain.PriceEvent) error
 	Close(context.Context) error
+}
+
+type disconnecter interface {
+	Disconnect(context.Context) error
 }
 
 type captureKind uint8
@@ -39,6 +47,13 @@ type AsyncStore struct {
 	writer   writer
 	queue    chan capture
 	done     chan struct{}
+	cancel   context.CancelFunc
+	drainMu  sync.Mutex
+	drainErr error
+	drained  bool
+	closeMu  sync.Mutex
+	closeErr error
+	closedOK bool
 	mu       sync.Mutex
 	closed   bool
 	dropped  atomic.Uint64
@@ -47,12 +62,15 @@ type AsyncStore struct {
 	lastErr  atomic.Value
 }
 
+// NewAsyncStore starts one context-cancelable FIFO persistence worker with a
+// bounded queue. Producers never wait for queue capacity.
 func NewAsyncStore(w writer, capacity int) *AsyncStore {
 	if capacity <= 0 {
 		capacity = 1024
 	}
-	store := &AsyncStore{writer: w, queue: make(chan capture, capacity), done: make(chan struct{})}
-	go store.run()
+	workerCtx, cancel := context.WithCancel(context.Background())
+	store := &AsyncStore{writer: w, queue: make(chan capture, capacity), done: make(chan struct{}), cancel: cancel}
+	go store.run(workerCtx)
 	return store
 }
 
@@ -96,19 +114,29 @@ func (s *AsyncStore) enqueue(item capture) bool {
 	}
 }
 
-func (s *AsyncStore) run() {
+// run owns all writes accepted by the queue. It preserves dequeue order,
+// applies bounded attempts, and accounts items canceled during forced close.
+func (s *AsyncStore) run(workerCtx context.Context) {
 	defer close(s.done)
 	for item := range s.queue {
 		var err error
 		for attempt := 0; attempt < 3; attempt++ {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			ctx, cancel := context.WithTimeout(workerCtx, 5*time.Second)
 			err = s.write(ctx, item)
 			cancel()
 			if err == nil {
 				break
 			}
+			if workerCtx.Err() != nil {
+				break
+			}
 			if attempt < 2 {
-				time.Sleep(time.Duration(attempt+1) * 25 * time.Millisecond)
+				delay := time.NewTimer(time.Duration(attempt+1) * 25 * time.Millisecond)
+				select {
+				case <-workerCtx.Done():
+					delay.Stop()
+				case <-delay.C:
+				}
 			}
 		}
 		if err != nil {
@@ -118,7 +146,22 @@ func (s *AsyncStore) run() {
 		} else {
 			s.written.Add(1)
 		}
+		if workerCtx.Err() != nil {
+			s.accountAbandoned()
+			return
+		}
 	}
+}
+
+// accountAbandoned marks captures that cannot be attempted after forced worker
+// cancellation. The queue is closed before cancellation, so this drain has a
+// stable finite end and does not race new submissions.
+func (s *AsyncStore) accountAbandoned() {
+	const reason = "persistence capture abandoned during shutdown timeout"
+	for range s.queue {
+		s.failures.Add(1)
+	}
+	s.lastErr.Store(reason)
 }
 
 func (s *AsyncStore) write(ctx context.Context, item capture) error {
@@ -142,7 +185,16 @@ func (s *AsyncStore) Health() Health {
 	return health
 }
 
-func (s *AsyncStore) Close(ctx context.Context) error {
+// Drain seals capture submission and waits for every accepted item to finish.
+// It does not SHUT the Aperture or disconnect, allowing the Snapshot service to
+// evaluate the resulting durable ledger before final persistence closure.
+func (s *AsyncStore) Drain(ctx context.Context) error {
+	s.drainMu.Lock()
+	defer s.drainMu.Unlock()
+	if s.drained {
+		return s.drainErr
+	}
+	defer func() { s.drained = true }()
 	s.mu.Lock()
 	if !s.closed {
 		s.closed = true
@@ -151,8 +203,36 @@ func (s *AsyncStore) Close(ctx context.Context) error {
 	s.mu.Unlock()
 	select {
 	case <-s.done:
-		return s.writer.Close(ctx)
+		return nil
 	case <-ctx.Done():
-		return fmt.Errorf("flush persistence queue: %w", ctx.Err())
+		s.cancel()
+		<-s.done
+		s.drainErr = fmt.Errorf("flush persistence queue: %w", ctx.Err())
+		return s.drainErr
 	}
+}
+
+// Close is idempotent. A successful drain commits Aperture SHUT before MongoDB
+// disconnect; a failed drain preserves OPEN and performs disconnect only.
+func (s *AsyncStore) Close(ctx context.Context) error {
+	s.closeMu.Lock()
+	defer s.closeMu.Unlock()
+	if s.closedOK {
+		return s.closeErr
+	}
+	defer func() { s.closedOK = true }()
+
+	if err := s.Drain(ctx); err != nil {
+		disconnector, ok := s.writer.(disconnecter)
+		if !ok {
+			s.closeErr = err
+			return s.closeErr
+		}
+		disconnectCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		s.closeErr = errors.Join(err, disconnector.Disconnect(disconnectCtx))
+		return s.closeErr
+	}
+	s.closeErr = s.writer.Close(ctx)
+	return s.closeErr
 }
