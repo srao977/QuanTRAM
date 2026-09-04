@@ -8,6 +8,7 @@ import (
 
 	"quantram/internal/domain"
 	"quantram/internal/marketfeed"
+	"quantram/internal/stagetransition"
 )
 
 type stubHistorical struct {
@@ -137,6 +138,47 @@ func TestInferGatedOnQuality(t *testing.T) {
 	}
 	if filled.Readiness().Infer {
 		t.Fatal("reconstructed head must not enable infer")
+	}
+}
+
+func TestPipelinePublishesCapabilityOnce(t *testing.T) {
+	path := filepath.Join("..", "..", "testdata", "aapl_sample.csv")
+	live := marketfeed.NewCSVSource(path, "AAPL")
+	pipeline := NewPipeline(live, nil, "CSV", []string{"AAPL"})
+	hub := stagetransition.NewHub()
+	_, ch := hub.Subscribe(8)
+	pipeline.SetTransitions(hub)
+	pipeline.MarkFeedHealthy()
+
+	now := time.Now().UTC().Truncate(time.Minute)
+	pipeline.accept(liveBar(now.Add(-2*time.Minute), 313.10, domain.QualityComplete, true, false))
+	pipeline.accept(liveBar(now.Add(-time.Minute), 313.20, domain.QualityComplete, true, false))
+
+	var codes []string
+	deadline := time.After(time.Second)
+	for len(codes) < 2 {
+		select {
+		case ev := <-ch:
+			if ev.StageID == stagetransition.StageP02Ingestion {
+				codes = append(codes, ev.Current.Code)
+			}
+		case <-deadline:
+			t.Fatalf("got P-02 codes %v", codes)
+		}
+	}
+	if codes[0] != "NOT_READY" && codes[0] != "OBSERVE_ONLY" {
+		t.Fatalf("first capability %s", codes[0])
+	}
+	if codes[len(codes)-1] != "OBSERVE_INFER" {
+		t.Fatalf("want OBSERVE_INFER last, got %v", codes)
+	}
+	pipeline.accept(liveBar(now, 313.30, domain.QualityComplete, true, false))
+	select {
+	case ev := <-ch:
+		if ev.StageID == stagetransition.StageP02Ingestion {
+			t.Fatalf("same infer capability republished %s", ev.Current.Code)
+		}
+	case <-time.After(50 * time.Millisecond):
 	}
 }
 

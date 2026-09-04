@@ -37,6 +37,8 @@ go run ./cmd/quantram-ingest-client -operation decisions -symbols AAPL -max-bars
 
 `SemanticService` (`GetTerm`, `ListTerms`, `GetSemanticContract`) is read-only. Contract: `internal/semantics/data/quantram_semantics_v1.json` version `1.0`. Authoring source: `internal/semantics/catalog/v1.go`. Tooling: `go run ./cmd/quantram-semantics validate|audit|build`. See [Semantic Contract V1](docs/design/QuanTRAM_SEMANTIC_CONTRACT_V1_090226.md).
 
+StageTransition V1.1 is sideways publication when meaningful P-01–P-04 state changes. Bar-driven P-03/P-04 events carry a value copy of the accepted `domain.Bar`. Diagnostic subscriber writes `./stage_transitions.txt` (git-ignored). Optional `QUANTRAM_STAGE_TRANSITION_LOG`. See [Stage Transition Publication](docs/design/QuanTRAM_STAGE_TRANSITION_PUBLICATION_V1_2026-09-04.md).
+
 ## Alpaca test feed (outside regular hours)
 
 ```powershell

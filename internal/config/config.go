@@ -22,43 +22,46 @@ const (
 )
 
 const (
-	DefaultGRPCPort      = "50051"
-	DefaultSource        = "alpaca"
-	DefaultFeed          = "iex"
-	DefaultInterval      = "1Min"
-	MaxSymbolsBasicPlan  = 30
-	IEXStreamURL         = "wss://stream.data.alpaca.markets/v2/iex"
-	TestStreamURL        = "wss://stream.data.alpaca.markets/v2/test"
-	DataRESTURL          = "https://data.alpaca.markets"
-	HeartbeatInterval    = time.Second
-	HeartbeatMaxRTT      = 1500 * time.Millisecond
-	HeartbeatMaxMisses   = 3
-	ReconnectBase        = 100 * time.Millisecond
-	ReconnectCap         = 30 * time.Second
-	StreamReadIdle       = 90 * time.Second
-	WindowLimit          = 64
-	SubscriberQueue      = 16
-	ConsumerQueue        = 2
-	DefaultModelMode     = ModelOff
-	DefaultPricingMode   = PricingOff
-	DefaultModelDeadline = 200 * time.Millisecond
-	MaxModelDeadline     = 2 * time.Second
+	DefaultGRPCPort           = "50051"
+	DefaultSource             = "alpaca"
+	DefaultFeed               = "iex"
+	DefaultInterval           = "1Min"
+	MaxSymbolsBasicPlan       = 30
+	IEXStreamURL              = "wss://stream.data.alpaca.markets/v2/iex"
+	TestStreamURL             = "wss://stream.data.alpaca.markets/v2/test"
+	DataRESTURL               = "https://data.alpaca.markets"
+	HeartbeatInterval         = time.Second
+	HeartbeatMaxRTT           = 1500 * time.Millisecond
+	HeartbeatMaxMisses        = 3
+	ReconnectBase             = 100 * time.Millisecond
+	ReconnectCap              = 30 * time.Second
+	StreamReadIdle            = 90 * time.Second
+	WindowLimit               = 64
+	SubscriberQueue           = 16
+	ConsumerQueue             = 2
+	DefaultModelMode          = ModelOff
+	DefaultPricingMode        = PricingOff
+	DefaultModelDeadline      = 200 * time.Millisecond
+	MaxModelDeadline          = 2 * time.Second
+	DefaultStageTransitionLog = "./stage_transitions.txt"
+	EnvStageTransitionLog     = "QUANTRAM_STAGE_TRANSITION_LOG"
 )
 
 type Config struct {
-	GRPCPort      string
-	Source        string
-	Feed          string
-	StreamURL     string
-	DataREST      string
-	APIKey        string
-	APISecret     string
-	Symbols       []string
-	CSVPath       string
-	Interval      string
-	Model         ModelMode
-	Pricing       PricingMode
-	ModelDeadline time.Duration
+	GRPCPort           string
+	Source             string
+	Feed               string
+	StreamURL          string
+	DataREST           string
+	APIKey             string
+	APISecret          string
+	Symbols            []string
+	CSVPath            string
+	Interval           string
+	Model              ModelMode
+	Pricing            PricingMode
+	ModelDeadline      time.Duration
+	StageTransitionLog string
 }
 
 func Load() (Config, error) {
@@ -92,19 +95,20 @@ func Load() (Config, error) {
 	}
 
 	cfg := Config{
-		GRPCPort:      environmentOrDefault("GRPC_PORT", DefaultGRPCPort),
-		Source:        source,
-		Feed:          feed,
-		StreamURL:     streamURL(feed),
-		DataREST:      environmentOrDefault("ALPACA_DATA_REST", DataRESTURL),
-		APIKey:        trimCredential(firstEnv("ALPACA_API_KEY")),
-		APISecret:     trimCredential(firstEnv("ALPACA_API_SECRET", "ALPACA_SECRET_KEY")),
-		Symbols:       symbols,
-		CSVPath:       environmentOrDefault("QUANTRAM_CSV_PATH", "AAPL_1min_firstratedata.csv"),
-		Interval:      environmentOrDefault("QUANTRAM_INTERVAL", DefaultInterval),
-		Model:         mode,
-		Pricing:       pricing,
-		ModelDeadline: deadline,
+		GRPCPort:           environmentOrDefault("GRPC_PORT", DefaultGRPCPort),
+		Source:             source,
+		Feed:               feed,
+		StreamURL:          streamURL(feed),
+		DataREST:           environmentOrDefault("ALPACA_DATA_REST", DataRESTURL),
+		APIKey:             trimCredential(firstEnv("ALPACA_API_KEY")),
+		APISecret:          trimCredential(firstEnv("ALPACA_API_SECRET", "ALPACA_SECRET_KEY")),
+		Symbols:            symbols,
+		CSVPath:            environmentOrDefault("QUANTRAM_CSV_PATH", "AAPL_1min_firstratedata.csv"),
+		Interval:           environmentOrDefault("QUANTRAM_INTERVAL", DefaultInterval),
+		Model:              mode,
+		Pricing:            pricing,
+		ModelDeadline:      deadline,
+		StageTransitionLog: environmentOrDefault(EnvStageTransitionLog, DefaultStageTransitionLog),
 	}
 	if source == "alpaca" && (cfg.APIKey == "" || cfg.APISecret == "") {
 		return Config{}, fmt.Errorf("ALPACA_API_KEY and ALPACA_API_SECRET (or ALPACA_SECRET_KEY) are required for source=alpaca")

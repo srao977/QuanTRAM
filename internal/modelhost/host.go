@@ -1,3 +1,9 @@
+// Package modelhost owns the collocated P-03/P-04 symbol workers.
+//
+// StageTransition publication is sideways output after an authoritative
+// DecisionEvent or committed PriceEvent is emitted. Bar-driven transitions
+// attach a value copy of the same accepted domain.Bar. It is not a second
+// SubscribeModelBars subscriber and does not alter prepare/commit science.
 package modelhost
 
 import (
@@ -14,6 +20,7 @@ import (
 	"quantram/internal/domain"
 	"quantram/internal/ingestion"
 	"quantram/internal/pricing"
+	"quantram/internal/stagetransition"
 )
 
 const (
@@ -72,12 +79,13 @@ func continuityDetail(class domain.ContinuityClass, last, current time.Time, ela
 }
 
 type Options struct {
-	Mode      config.ModelMode
-	Pricing   config.PricingMode
-	Deadline  time.Duration
-	Delay     time.Duration
-	PanicOn   string
-	InboxSize int
+	Mode        config.ModelMode
+	Pricing     config.PricingMode
+	Deadline    time.Duration
+	Delay       time.Duration
+	PanicOn     string
+	InboxSize   int
+	Transitions *stagetransition.Hub
 }
 
 type Host struct {
@@ -170,10 +178,10 @@ func New(src BarSource, symbols []string, opts Options) (*Host, error) {
 		inbox = workerInboxSize
 	}
 	h := &Host{
-		src:       src,
-		symbols:   append([]string(nil), symbols...),
-		opts:      opts,
-		workers:   make(map[string]*worker, len(symbols)),
+		src:          src,
+		symbols:      append([]string(nil), symbols...),
+		opts:         opts,
+		workers:      make(map[string]*worker, len(symbols)),
 		subs:         make(map[uint64]chan domain.DecisionEvent),
 		priceSubs:    make(map[uint64]chan domain.PriceEvent),
 		lastBySym:    make(map[string]domain.DecisionEvent, len(symbols)),
@@ -235,6 +243,9 @@ func (h *Host) ResetSymbol(symbol string) error {
 	w.lastPrice.Store(domain.PriceEvent{})
 	if r, ok := h.src.(modelPathResetter); ok {
 		r.ResetModelPath(symbol)
+	}
+	if h.opts.Transitions != nil {
+		h.opts.Transitions.ResetEntity(symbol)
 	}
 	log.Printf("model reset symbol=%s (explicit per-symbol reinitialization)", symbol)
 	return nil
@@ -444,14 +455,14 @@ func (h *Host) dispatch(bar domain.Bar) {
 		return
 	}
 	if w.disc.Load() {
-		h.emit(h.discontinuousSkip(w, bar, w.engine.StateHash()))
+		h.emit(h.discontinuousSkip(w, bar, w.engine.StateHash()), bar)
 		return
 	}
 	select {
 	case w.inbox <- bar:
 	default:
 		w.markDisc(domain.SkipQueueOverflow)
-		h.emit(h.gateSkip(bar, domain.SkipQueueOverflow, w.engine.StateHash()))
+		h.emit(h.gateSkip(bar, domain.SkipQueueOverflow, w.engine.StateHash()), bar)
 	}
 }
 
@@ -460,7 +471,7 @@ func (h *Host) refreshPathStatus() {
 		st := h.src.ModelPathStatus(symbol)
 		if st.Discontinuous && w.markDisc(st.Reason) {
 			bar := domain.Bar{Symbol: symbol, IntervalStart: st.LastInterval, IsFinal: true}
-			h.emit(h.gateSkip(bar, st.Reason, w.engine.StateHash()))
+			h.emit(h.gateSkip(bar, st.Reason, w.engine.StateHash()), domain.Bar{})
 		}
 	}
 }
@@ -470,7 +481,7 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 		if rec := recover(); rec != nil {
 			w.errors.Add(1)
 			w.markDisc(domain.SkipEnginePanic)
-			h.emit(h.gateSkip(bar, domain.SkipEnginePanic, w.engine.StateHash()))
+			h.emit(h.gateSkip(bar, domain.SkipEnginePanic, w.engine.StateHash()), bar)
 			log.Printf("model panic isolated symbol=%s err=%v", w.symbol, rec)
 		}
 	}()
@@ -482,19 +493,19 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 	w.lastEventAt.Store(time.Now())
 
 	if w.disc.Load() {
-		h.emit(h.discontinuousSkip(w, bar, pre))
+		h.emit(h.discontinuousSkip(w, bar, pre), bar)
 		return
 	}
 	if !h.src.Readiness().Infer {
 		ev := h.gateSkip(bar, domain.SkipInferOff, pre)
 		w.lastSkip.Store(domain.SkipInferOff)
-		h.emit(ev)
+		h.emit(ev, bar)
 		return
 	}
 	if !bar.IsFinal || !bar.ModelEligible() {
 		ev := h.gateSkip(bar, domain.SkipNotModelEligible, pre)
 		w.lastSkip.Store(domain.SkipNotModelEligible)
-		h.emit(ev)
+		h.emit(ev, bar)
 		return
 	}
 	if class, elapsed := domain.ClassifyBarContinuity(w.lastAccepted, w.hasAccepted, bar.IntervalStart); class != domain.ContinuityFirst && class != domain.ContinuityNormal && class != domain.ContinuityIrregular {
@@ -505,7 +516,7 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 		ev := h.gateSkip(bar, reason, pre)
 		ev.Skip.Detail = continuityDetail(class, w.lastAccepted, bar.IntervalStart, elapsed)
 		w.lastSkip.Store(reason)
-		h.emit(ev)
+		h.emit(ev, bar)
 		return
 	} else if class == domain.ContinuityIrregular {
 		if inspector, ok := h.src.(provenMissingInspector); ok && inspector.ProvenMissingEligible(w.symbol, w.lastAccepted, bar.IntervalStart) {
@@ -513,7 +524,7 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 			ev := h.gateSkip(bar, domain.SkipInputGap, pre)
 			ev.Skip.Detail = continuityDetail(class, w.lastAccepted, bar.IntervalStart, elapsed) + " proven_missing_eligible"
 			w.lastSkip.Store(domain.SkipInputGap)
-			h.emit(ev)
+			h.emit(ev, bar)
 			return
 		}
 		log.Printf("model accept irregular symbol=%s last=%s current=%s elapsed=%s", w.symbol, w.lastAccepted.UTC().Format(time.RFC3339), bar.IntervalStart.UTC().Format(time.RFC3339), elapsed)
@@ -528,7 +539,7 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 		ev := h.gateSkip(bar, domain.SkipTimeout, pre)
 		ev.Skip.Detail = "step exceeded deadline"
 		w.lastSkip.Store(domain.SkipTimeout)
-		h.emit(ev)
+		h.emit(ev, bar)
 		return
 	}
 	event, working, commitA := w.engine.PrepareStep(bar)
@@ -558,7 +569,7 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 		event.SignalID = ""
 		event.DecisionID = ""
 		w.lastSkip.Store(domain.SkipTimeout)
-		h.emit(event)
+		h.emit(event, bar)
 		return
 	}
 	if commitA && commitP {
@@ -569,7 +580,7 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 				priceEv.EventID = fmt.Sprintf("%s:price:%d", w.symbol, h.seq.Add(1))
 			}
 			w.lastPrice.Store(priceEv)
-			h.emitPrice(priceEv)
+			h.emitPrice(priceEv, bar)
 		}
 		w.lastAccepted = bar.IntervalStart
 		w.hasAccepted = true
@@ -593,7 +604,7 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 	if w.pricing != nil && commitA && commitP && priceEv.Emission != nil {
 		log.Printf("pricing emit symbol=%s color=%s interval=%s", bar.Symbol, priceEv.Emission.Color, bar.IntervalStart.UTC().Format(time.RFC3339))
 	}
-	h.emit(event)
+	h.emit(event, bar)
 }
 
 func (h *Host) gateSkip(bar domain.Bar, reason domain.SkipReason, hash string) domain.DecisionEvent {
@@ -626,7 +637,7 @@ func (h *Host) discontinuousSkip(w *worker, bar domain.Bar, hash string) domain.
 	return ev
 }
 
-func (h *Host) emit(ev domain.DecisionEvent) {
+func (h *Host) emit(ev domain.DecisionEvent, bar domain.Bar) {
 	h.mu.Lock()
 	if !h.closed {
 		h.lastBySym[ev.Symbol] = ev
@@ -644,9 +655,12 @@ func (h *Host) emit(ev domain.DecisionEvent) {
 	} else if ev.Skip != nil {
 		log.Printf("model skip symbol=%s reason=%s interval=%s", ev.Symbol, ev.Skip.Reason, ev.IntervalStart.UTC().Format(time.RFC3339))
 	}
+	if h.opts.Transitions != nil {
+		h.opts.Transitions.OnDecision(ev, bar)
+	}
 }
 
-func (h *Host) emitPrice(ev domain.PriceEvent) {
+func (h *Host) emitPrice(ev domain.PriceEvent, bar domain.Bar) {
 	h.mu.Lock()
 	if !h.closed {
 		h.lastPriceSym[ev.Symbol] = ev
@@ -659,6 +673,9 @@ func (h *Host) emitPrice(ev domain.PriceEvent) {
 		}
 	}
 	h.mu.Unlock()
+	if h.opts.Transitions != nil {
+		h.opts.Transitions.OnPrice(ev, bar)
+	}
 }
 
 func (w *worker) markDisc(reason domain.SkipReason) bool {

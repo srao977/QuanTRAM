@@ -1,7 +1,7 @@
 # QuanTRAM P-04 Price Engine — Design
 
 **Date:** September 2, 2026  
-**Last updated:** September 2, 2026  
+**Last updated:** September 4, 2026
 **Status:** Governing summary accepted. Phases A–I landed (2 Sep), including viewer Price Engine card and airport boards.  
 **Scope:** Collocated Go PriceEngine that consumes the same accepted eligible 1-minute bars as P-03 and emits `PriceEvent` (PriceEmission / typed pricing skip). Never sends orders.  
 **Parents:** [Process Model](QuanTRAM_PROCESS_MODEL_082926.md), [P-03 Adaptive Model Host](QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md), [P-03 Implementation](QuanTRAM_P03_IMPLEMENTATION_083126.md), [P-02 Data Quality](QuanTRAM_INGESTION_P02_DATA_QUALITY_083126.md)  
@@ -102,6 +102,8 @@ When Phase H is reached: one keyed owner per symbol; no second model mailbox; on
 ### Scope stop line
 
 P-04 ends at `PriceEvent`. Viewer Price Engine cards and airport boards landed 2 Sep in `quantram-dashboard`. Do not implement a Decision Engine, alignment logic, P-05/P-06, paper trading, order generation, BUY/SELL + color combination, Volume Engine, RK45, or Python runtime bridges.
+
+StageTransition V1.1 may attach a value copy of the same accepted Bar to a P-04 transition when pricing StageState changes. It does not change PriceEvent, EXPM, or emission policy. See [Stage Transition Publication](QuanTRAM_STAGE_TRANSITION_PUBLICATION_V1_2026-09-04.md).
 
 **Do not improve the mathematics.** Port the accepted mathematics, prove equivalence, freeze the scientific checkpoint, and only then integrate with the runtime host.
 

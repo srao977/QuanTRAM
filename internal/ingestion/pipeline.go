@@ -1,3 +1,9 @@
+// Package ingestion owns P-02 bar finalization, quality gating, and the
+// model-eligible path.
+//
+// Optional StageTransition publication reports P-01 feed adapter health and
+// P-02 capability (observe/infer/recovering) only when those categorical
+// states change. Pipeline does not write diagnostic files.
 package ingestion
 
 import (
@@ -11,6 +17,7 @@ import (
 	"quantram/internal/config"
 	"quantram/internal/domain"
 	"quantram/internal/marketfeed"
+	"quantram/internal/stagetransition"
 )
 
 type subscriber struct {
@@ -34,6 +41,7 @@ type Pipeline struct {
 	nextSub     uint64
 	inferReady  atomic.Bool
 	filling     atomic.Bool
+	transitions *stagetransition.Hub
 }
 
 func NewPipeline(live marketfeed.LiveBarSource, historical marketfeed.HistoricalBarSource, sourceID string, symbols []string) *Pipeline {
@@ -49,6 +57,25 @@ func NewPipeline(live marketfeed.LiveBarSource, historical marketfeed.Historical
 		modelLast:   make(map[string]time.Time),
 		modelDisc:   make(map[string]domain.SkipReason),
 	}
+}
+
+func (p *Pipeline) SetTransitions(h *stagetransition.Hub) {
+	if p != nil {
+		p.transitions = h
+	}
+}
+
+func (p *Pipeline) publishTransitions(causedBy domain.Bar) {
+	if p == nil || p.transitions == nil {
+		return
+	}
+	p.transitions.OnFeed(p.live.Health())
+	p.transitions.OnIngestion(stagetransition.IngestionInput{
+		FeedState: p.breaker.State(),
+		Infer:     p.inferReady.Load(),
+		Filling:   p.filling.Load(),
+		SourceID:  p.sourceID,
+	}, causedBy)
 }
 
 func (p *Pipeline) Run(ctx context.Context) error {
@@ -72,6 +99,7 @@ func (p *Pipeline) Run(ctx context.Context) error {
 			}
 			p.breaker.Observe(p.live.Health(), time.Now())
 			p.inferReady.Store(false)
+			p.publishTransitions(domain.Bar{})
 			if err != nil && ctx.Err() == nil {
 				log.Printf("live source ended: %v", err)
 			}
@@ -80,6 +108,7 @@ func (p *Pipeline) Run(ctx context.Context) error {
 			p.accept(bar)
 			p.breaker.Observe(p.live.Health(), time.Now())
 			p.refreshInfer(time.Now().UTC())
+			p.publishTransitions(domain.Bar{})
 		case <-ticker.C:
 			state := p.breaker.Observe(p.live.Health(), time.Now())
 			if state == domain.FeedFailed || state == domain.FeedRecovering {
@@ -90,6 +119,7 @@ func (p *Pipeline) Run(ctx context.Context) error {
 			if state == domain.FeedRecovering {
 				p.startRecovery(ctx)
 			}
+			p.publishTransitions(domain.Bar{})
 		}
 	}
 }
@@ -115,6 +145,7 @@ func (p *Pipeline) accept(bar domain.Bar) {
 	p.refreshInfer(time.Now().UTC())
 	p.fanout(bar)
 	p.fanoutModel(bar)
+	p.publishTransitions(bar)
 }
 
 func (p *Pipeline) InjectBar(bar domain.Bar) {
@@ -124,6 +155,7 @@ func (p *Pipeline) InjectBar(bar domain.Bar) {
 func (p *Pipeline) MarkFeedHealthy() {
 	p.breaker.MarkHealthy()
 	p.refreshInfer(time.Now().UTC())
+	p.publishTransitions(domain.Bar{})
 }
 
 func (p *Pipeline) refreshInfer(now time.Time) {
@@ -230,6 +262,7 @@ func (p *Pipeline) GapFill(ctx context.Context, symbol string, from, to time.Tim
 	}
 	p.breaker.MarkRecovering()
 	p.inferReady.Store(false)
+	p.publishTransitions(domain.Bar{})
 	bars, err := p.historical.Bars(ctx, marketfeed.BarRangeRequest{Symbol: symbol, From: from, To: to})
 	if err != nil {
 		return 0, 0, 0, err
@@ -246,6 +279,7 @@ func (p *Pipeline) GapFill(ctx context.Context, symbol string, from, to time.Tim
 	}
 	p.breaker.MarkHealthy()
 	p.refreshInfer(time.Now().UTC())
+	p.publishTransitions(domain.Bar{})
 	return fetched, injected, deduped, nil
 }
 
@@ -263,6 +297,7 @@ func (p *Pipeline) RecoverAfterReconnect(ctx context.Context) {
 	if p.historical == nil {
 		p.breaker.MarkHealthy()
 		p.refreshInfer(time.Now().UTC())
+		p.publishTransitions(domain.Bar{})
 		return
 	}
 	now := time.Now().UTC()

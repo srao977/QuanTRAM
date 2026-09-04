@@ -1,7 +1,7 @@
 # QuanTRAM Process Model
 
 **Date:** August 29, 2026  
-**Last updated:** September 2, 2026  
+**Last updated:** September 4, 2026
 **Status:** Process decomposition and service-contract proposal. P-01–P-04 are in-process (P-04 Go PriceEngine/EXPM landed 2 Sep, default `QUANTRAM_PRICING=off`).  
 **Parent Architecture:** [QuanTRAM System Specification](QuanTRAM_hi-level_design_082826.md)  
 **Derived Artifact Specification:** [E2E QuanTRAM Artifacts](E2E_QuanTRAM_ARTIFACTS.md)  
@@ -778,6 +778,7 @@ Do not invent silent defaults for these in code that will drive money or promoti
 
 | Date | Version | Change |
 | :--- | :--- | :--- |
+| September 4, 2026 | 0.7 | Sideways StageTransition publication V1.1 (`internal/stagetransition`). P-01–P-04 publish only on meaningful StageState change. Bar-driven P-03/P-04 events carry a value copy of the accepted `domain.Bar`. Not a new pipeline stage. Snapshot/Persistence not implemented. See [Stage Transition Publication](QuanTRAM_STAGE_TRANSITION_PUBLICATION_V1_2026-09-04.md). |
 | September 2, 2026 | 0.4 | P-04 redefined as collocated Go PriceEngine (EXPM). Python `ModelInferenceService` sidecar withdrawn. Linked P-04 design/implementation. S2/S3 marked partial after P-03 live DecisionEvents. |
 | September 2, 2026 | 0.5 | P-04 Phases A–I landed: `internal/pricing`, host join, `StreamPriceEvents`, dashboard Price Engine cards/boards. Default still `QUANTRAM_PRICING=off`. Live IEX `INPUT_GAP` documented as missing adjacent minute, not end-of-data. |
 | September 2, 2026 | 0.6 | Causal continuity: skipped provider minutes no longer latch `STATE_DISCONTINUOUS`. D01/D02/D04/P-04 mathematics unchanged. |

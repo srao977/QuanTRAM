@@ -17,6 +17,7 @@ import (
 	"quantram/internal/modelhost"
 	"quantram/internal/semantics"
 	"quantram/internal/server"
+	"quantram/internal/stagetransition"
 
 	"google.golang.org/grpc"
 )
@@ -32,10 +33,27 @@ func main() {
 		log.Fatalf("create pipeline: %v", err)
 	}
 
+	transitions := stagetransition.NewHub()
+	pipeline.SetTransitions(transitions)
+	var diagnostic *stagetransition.Diagnostic
+	if d, diagErr := stagetransition.NewDiagnostic(transitions, cfg.StageTransitionLog); diagErr != nil {
+		log.Printf("stage transition diagnostic unavailable: %v", diagErr)
+	} else {
+		diagnostic = d
+		log.Printf("stage transition diagnostic %s", d.Path())
+	}
+	defer func() {
+		if diagnostic != nil {
+			diagnostic.Close()
+		}
+		transitions.Close()
+	}()
+
 	host, hostErr := modelhost.New(pipeline, cfg.Symbols, modelhost.Options{
-		Mode:     cfg.Model,
-		Pricing:  cfg.Pricing,
-		Deadline: cfg.ModelDeadline,
+		Mode:        cfg.Model,
+		Pricing:     cfg.Pricing,
+		Deadline:    cfg.ModelDeadline,
+		Transitions: transitions,
 	})
 	modelUnavailable := false
 	if hostErr != nil {

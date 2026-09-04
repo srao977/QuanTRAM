@@ -11,6 +11,7 @@ import (
 	"quantram/internal/config"
 	"quantram/internal/domain"
 	"quantram/internal/ingestion"
+	"quantram/internal/stagetransition"
 )
 
 type missingEligible struct {
@@ -813,5 +814,135 @@ func TestSubscribeEventsFanout(t *testing.T) {
 	e2 := collect(t, ch2, 1, time.Second)[0]
 	if e1.EventID == "" || e1.EventID != e2.EventID {
 		t.Fatalf("fanout mismatch %q vs %q", e1.EventID, e2.EventID)
+	}
+}
+
+func collectTransitions(t *testing.T, ch <-chan stagetransition.Event, n int, timeout time.Duration) []stagetransition.Event {
+	t.Helper()
+	out := make([]stagetransition.Event, 0, n)
+	deadline := time.After(timeout)
+	for len(out) < n {
+		select {
+		case ev, ok := <-ch:
+			if !ok {
+				t.Fatalf("transitions closed after %d, want %d", len(out), n)
+			}
+			out = append(out, ev)
+		case <-deadline:
+			t.Fatalf("timed out after %d transitions, want %d", len(out), n)
+		}
+	}
+	return out
+}
+
+func TestStageTransitionsAfterCommitOnly(t *testing.T) {
+	hub := stagetransition.NewHub()
+	_, tr := hub.Subscribe(16)
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{Pricing: config.PricingExpm, Transitions: hub})
+	start := time.Date(2026, 9, 1, 13, 30, 0, 0, time.UTC)
+	src.push(finalBar("AAPL", start, 100))
+	_ = collect(t, host.Events(), 1, time.Second)
+	evs := collectTransitions(t, tr, 2, time.Second)
+	if evs[0].StageID != stagetransition.StageP04PriceEngine || evs[1].StageID != stagetransition.StageP03Adaptive {
+		t.Fatalf("want P-04 then P-03, got %s then %s", evs[0].StageID, evs[1].StageID)
+	}
+	if evs[1].Current.Code != "SKIP:"+string(domain.SkipInitializing) && evs[1].Current.Code != "DECISION:"+string(domain.SideHold) {
+		t.Fatalf("unexpected first adaptive %s", evs[1].Current.Code)
+	}
+	src.push(finalBar("AAPL", start.Add(time.Minute), 101))
+	_ = collect(t, host.Events(), 1, time.Second)
+	select {
+	case extra := <-tr:
+		if extra.StageID == stagetransition.StageP03Adaptive && extra.Current.Code == evs[1].Current.Code {
+			t.Fatalf("same adaptive state republished: %+v", extra)
+		}
+	case <-time.After(50 * time.Millisecond):
+	}
+}
+
+func TestPricingFailPublishesAdaptiveSkipNotPriceTransition(t *testing.T) {
+	hub := stagetransition.NewHub()
+	_, tr := hub.Subscribe(16)
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{Pricing: config.PricingExpm, Transitions: hub})
+	start := time.Date(2026, 9, 1, 13, 30, 0, 0, time.UTC)
+	src.push(finalBar("AAPL", start, 100))
+	src.push(finalBar("AAPL", start.Add(time.Minute), 101))
+	_ = collect(t, host.Events(), 2, time.Second)
+	drainTransitions(tr)
+	host.FailNextPricing()
+	src.push(finalBar("AAPL", start.Add(2*time.Minute), 102))
+	ev := collect(t, host.Events(), 1, time.Second)[0]
+	if !ev.IsSkip() || ev.Skip.Reason != domain.SkipEngineError {
+		t.Fatalf("want ENGINE_ERROR, got %+v", ev.Skip)
+	}
+	got := collectTransitions(t, tr, 1, time.Second)[0]
+	if got.StageID != stagetransition.StageP03Adaptive || got.Current.Code != "SKIP:"+string(domain.SkipEngineError) {
+		t.Fatalf("want adaptive ENGINE_ERROR transition, got %+v", got)
+	}
+	select {
+	case extra := <-tr:
+		if extra.StageID == stagetransition.StageP04PriceEngine {
+			t.Fatalf("failed pricing published P-04 %+v", extra)
+		}
+	case <-time.After(50 * time.Millisecond):
+	}
+}
+
+func TestHostP03P04ShareAcceptedBar(t *testing.T) {
+	hub := stagetransition.NewHub()
+	_, tr := hub.Subscribe(16)
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{Pricing: config.PricingExpm, Transitions: hub})
+	start := time.Date(2026, 9, 1, 13, 30, 0, 0, time.UTC)
+	bar := finalBar("AAPL", start, 100)
+	src.push(bar)
+	_ = collect(t, host.Events(), 1, time.Second)
+	evs := collectTransitions(t, tr, 2, time.Second)
+	if evs[0].StageID != stagetransition.StageP04PriceEngine || evs[1].StageID != stagetransition.StageP03Adaptive {
+		t.Fatalf("order %s %s", evs[0].StageID, evs[1].StageID)
+	}
+	if evs[0].InitiatingBar == nil || evs[1].InitiatingBar == nil {
+		t.Fatal("committed transitions must carry the accepted bar")
+	}
+	if *evs[0].InitiatingBar != bar || *evs[1].InitiatingBar != bar {
+		t.Fatal("P-03 and P-04 must carry the same accepted bar")
+	}
+	if !evs[0].BarAgrees() || !evs[1].BarAgrees() {
+		t.Fatal("correlation must agree with initiating bar")
+	}
+}
+
+func TestTransitionsDoNotChangeScientificHashes(t *testing.T) {
+	start := time.Date(2026, 9, 1, 13, 30, 0, 0, time.UTC)
+	bar := finalBar("AAPL", start, 100)
+
+	cleanSrc := newFake(8)
+	clean, _ := startHost(t, cleanSrc, []string{"AAPL"}, Options{Pricing: config.PricingExpm})
+	cleanSrc.push(bar)
+	_ = collect(t, clean.Events(), 1, time.Second)
+
+	hub := stagetransition.NewHub()
+	src := newFake(8)
+	host, _ := startHost(t, src, []string{"AAPL"}, Options{Pricing: config.PricingExpm, Transitions: hub})
+	src.push(bar)
+	_ = collect(t, host.Events(), 1, time.Second)
+
+	if host.WorkerHash("AAPL") != clean.WorkerHash("AAPL") {
+		t.Fatal("adaptive hash changed with transitions")
+	}
+	if host.WorkerPricingHash("AAPL") != clean.WorkerPricingHash("AAPL") {
+		t.Fatal("pricing hash changed with transitions")
+	}
+}
+
+func drainTransitions(ch <-chan stagetransition.Event) {
+	for {
+		select {
+		case <-ch:
+		default:
+			return
+		}
 	}
 }

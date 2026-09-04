@@ -98,6 +98,29 @@ func TestLoadExpmRequiresAdaptive(t *testing.T) {
 	}
 }
 
+func TestStageTransitionLogDefaultAndOverride(t *testing.T) {
+	t.Setenv("QUANTRAM_SOURCE", "csv")
+	t.Setenv("QUANTRAM_SYMBOLS", "AAPL")
+	t.Setenv("QUANTRAM_MODEL", "off")
+	t.Setenv("QUANTRAM_PRICING", "off")
+	t.Setenv("QUANTRAM_STAGE_TRANSITION_LOG", "")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.StageTransitionLog != DefaultStageTransitionLog {
+		t.Fatalf("default log %q", cfg.StageTransitionLog)
+	}
+	t.Setenv("QUANTRAM_STAGE_TRANSITION_LOG", `C:\tmp\transitions.txt`)
+	cfg, err = Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.StageTransitionLog != `C:\tmp\transitions.txt` {
+		t.Fatalf("override %q", cfg.StageTransitionLog)
+	}
+}
+
 func TestLoadExpmWithAdaptive(t *testing.T) {
 	t.Setenv("QUANTRAM_SOURCE", "csv")
 	t.Setenv("QUANTRAM_SYMBOLS", "AAPL")

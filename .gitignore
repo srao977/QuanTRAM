@@ -3,3 +3,4 @@
 *.test
 bin/
 Alpaca Usage.pdf
+/stage_transitions.txt

@@ -1,7 +1,7 @@
 # QuanTRAM P-03 — Implementation Increment
 
 **Date:** August 31, 2026  
-**Last updated:** September 2, 2026  
+**Last updated:** September 4, 2026
 **Status:** Phases A–E complete in-process (Go adaptive box + host + `ModelService.StreamDecisions`). Default `QUANTRAM_MODEL=off`. Live IEX DecisionEvents observed 1 Sep. P-04 PriceEngine/EXPM Phases A–I landed 2 Sep (default `QUANTRAM_PRICING=off`). Paper orders remain out of scope.  
 **Design:** [P-03 Adaptive Model Host](QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md)  
 **Review:** [P03_feedback_083126.md](../../P03_feedback_083126.md)  
@@ -17,6 +17,8 @@ Add a collocated Go adaptive engine that:
 4. Proves numerical agreement with SADE Unit Run 001 **without SDX**.
 
 Out of scope **for this coding increment:** risk, orders, Go EXPM / F4 / PriceEngine, joining adaptive output to PriceEngine, Python `Predict` worker. Adaptive Pipeline decision UI lives in `quantram-dashboard` (landed 1 Sep); this repo does not host frontend.
+
+StageTransition V1.1 is sideways publication after committed DecisionEvents. It does not change D01/D02/D04, DecisionEvent, or the host mailbox. See [Stage Transition Publication](QuanTRAM_STAGE_TRANSITION_PUBLICATION_V1_2026-09-04.md).
 
 Those pricing items are **P-04**, not a discarded design. Design: [P-04 Price Engine](QuanTRAM_P04_PRICE_ENGINE_090226.md) · [Implementation](QuanTRAM_P04_IMPLEMENTATION_090226.md). **Go production destination:** PriceEngine decisions on EXPM trajectories (`time_term == false` only). Offline Gold Nugget oracle is SADE `sade/pricing_pipeline/projection.py::solve_cover_rk45_reference`. Do not port RK45, do not wire it, and do not make QuanTRAM depend on the APTF repo.
 
