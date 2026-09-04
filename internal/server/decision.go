@@ -11,6 +11,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// StreamDecisions sends the latest per-symbol decisions before forwarding live
+// model events, subject to optional symbol and event-count limits.
 func (s *Server) StreamDecisions(request *quantramv1.StreamDecisionsRequest, stream quantramv1.ModelService_StreamDecisionsServer) error {
 	if s.events == nil {
 		if s.host != nil {
@@ -26,6 +28,8 @@ func (s *Server) StreamDecisions(request *quantramv1.StreamDecisionsRequest, str
 	id, events := s.events.SubscribeEvents(config.SubscriberQueue)
 	defer s.events.UnsubscribeEvents(id)
 
+	// Subscribe before reading the latest cache. Event IDs suppress the overlap
+	// created when an event is both cached and queued during this handoff.
 	var sent uint32
 	seen := make(map[string]struct{})
 	for _, ev := range s.events.LastEvents() {

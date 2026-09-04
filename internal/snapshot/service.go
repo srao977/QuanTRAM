@@ -15,12 +15,16 @@ import (
 )
 
 var (
-	ErrInvalid  = errors.New("invalid snapshot request")
+	// ErrInvalid classifies invalid Snapshot API input.
+	ErrInvalid = errors.New("invalid snapshot request")
+	// ErrNotFound classifies absent Snapshot resources.
 	ErrNotFound = errors.New("snapshot resource not found")
 )
 
 const persistenceAttempts = 3
 
+// Service evaluates checkpoint policies for one Aperture and delegates all
+// durable reads and writes through Source and Store.
 type Service struct {
 	source     Source
 	store      Store
@@ -30,6 +34,8 @@ type Service struct {
 	evaluateMu sync.Mutex
 }
 
+// NewService binds checkpoint evaluation to one Aperture and applies a
+// one-second scan interval when interval is not positive.
 func NewService(source Source, store Store, apertureID string, interval time.Duration) *Service {
 	if interval <= 0 {
 		interval = time.Second
@@ -40,6 +46,8 @@ func NewService(source Source, store Store, apertureID string, interval time.Dur
 	}
 }
 
+// Run evaluates immediately and then periodically until ctx is canceled.
+// Scan errors are logged and do not terminate the background lifecycle.
 func (s *Service) Run(ctx context.Context) {
 	s.evaluateAndLog(ctx)
 	ticker := time.NewTicker(s.interval)
@@ -60,6 +68,9 @@ func (s *Service) evaluateAndLog(ctx context.Context) {
 	}
 }
 
+// Evaluate serializes one policy scan. Counts are reconstructed from durable
+// Payloads and partitioned by symbol; only the Nth, 2Nth, and later exact
+// multiples become candidates, regardless of timestamp regularity.
 func (s *Service) Evaluate(ctx context.Context) error {
 	s.evaluateMu.Lock()
 	defer s.evaluateMu.Unlock()
@@ -100,6 +111,8 @@ func (s *Service) Evaluate(ctx context.Context) error {
 			if count%uint64(policy.Trigger.EveryNBars) != 0 {
 				continue
 			}
+			// Checkpoint identity is stable across scans and service restarts;
+			// CapturedAt is metadata, not part of idempotency.
 			candidate := Snapshot{
 				ApertureID: s.apertureID, PolicyID: policy.ID, PayloadID: payload.ID,
 				Symbol: payload.Symbol, SnapshotNum: count / uint64(policy.Trigger.EveryNBars), CapturedAt: s.now(),
@@ -140,6 +153,8 @@ func (s *Service) runCandidate(ctx context.Context, candidate Snapshot, triggerC
 		log.Printf("snapshot run start failed checkpoint=%s: %v", candidate.PayloadID, err)
 		return
 	}
+	// Only the checkpoint write is retried. The STARTED audit record is created
+	// once and finalized after success or after all bounded attempts fail.
 	var created Snapshot
 	for attempt := 0; attempt < persistenceAttempts; attempt++ {
 		created, err = s.store.CreateSnapshot(ctx, candidate)
@@ -159,6 +174,7 @@ func (s *Service) runCandidate(ctx context.Context, candidate Snapshot, triggerC
 	}
 }
 
+// GetPolicy returns one policy after validating its opaque ID.
 func (s *Service) GetPolicy(ctx context.Context, id string) (Policy, error) {
 	if strings.TrimSpace(id) == "" {
 		return Policy{}, fmt.Errorf("%w: policy ID is required", ErrInvalid)
@@ -166,10 +182,12 @@ func (s *Service) GetPolicy(ctx context.Context, id string) (Policy, error) {
 	return s.store.GetPolicy(ctx, id)
 }
 
+// ListPolicies returns a normalized provider-backed page of policies.
 func (s *Service) ListPolicies(ctx context.Context, page Page) (PolicyPage, error) {
 	return s.store.ListPolicies(ctx, normalizePage(page))
 }
 
+// CreatePolicy validates mutable fields and assigns service-owned timestamps.
 func (s *Service) CreatePolicy(ctx context.Context, policy Policy) (Policy, error) {
 	policy.Name = strings.TrimSpace(policy.Name)
 	if err := validatePolicy(policy, false); err != nil {
@@ -182,6 +200,8 @@ func (s *Service) CreatePolicy(ctx context.Context, policy Policy) (Policy, erro
 	return s.store.CreatePolicy(ctx, policy)
 }
 
+// UpdatePolicy preserves the original creation time and replaces mutable
+// fields with a service-owned update timestamp.
 func (s *Service) UpdatePolicy(ctx context.Context, policy Policy) (Policy, error) {
 	policy.ID = strings.TrimSpace(policy.ID)
 	policy.Name = strings.TrimSpace(policy.Name)
@@ -197,6 +217,7 @@ func (s *Service) UpdatePolicy(ctx context.Context, policy Policy) (Policy, erro
 	return s.store.UpdatePolicy(ctx, policy)
 }
 
+// GetSnapshot returns one checkpoint after validating its opaque ID.
 func (s *Service) GetSnapshot(ctx context.Context, id string) (Snapshot, error) {
 	if strings.TrimSpace(id) == "" {
 		return Snapshot{}, fmt.Errorf("%w: snapshot ID is required", ErrInvalid)
@@ -204,11 +225,13 @@ func (s *Service) GetSnapshot(ctx context.Context, id string) (Snapshot, error) 
 	return s.store.GetSnapshot(ctx, id)
 }
 
+// ListSnapshots returns a normalized provider-backed checkpoint page.
 func (s *Service) ListSnapshots(ctx context.Context, filter SnapshotFilter) (SnapshotPage, error) {
 	filter.Page = normalizePage(filter.Page)
 	return s.store.ListSnapshots(ctx, filter)
 }
 
+// ListRuns returns a normalized provider-backed checkpoint audit page.
 func (s *Service) ListRuns(ctx context.Context, filter RunFilter) (RunPage, error) {
 	filter.Page = normalizePage(filter.Page)
 	return s.store.ListRuns(ctx, filter)

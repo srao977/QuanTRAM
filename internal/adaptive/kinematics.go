@@ -1,5 +1,7 @@
 package adaptive
 
+// This file derives bounded normalized price kinematics.
+
 import "math"
 
 func clip(value, bound float64) (float64, bool) {
@@ -12,6 +14,9 @@ func clip(value, bound float64) (float64, bool) {
 	return value, false
 }
 
+// computeKinematics normalizes price around the adaptive reference, computes
+// finite-difference velocity and acceleration using the dt floor, and bounds
+// each derivative while counting numerical clipping events.
 func computeKinematics(
 	price, reference, scale, prevLevel, prevVelocity, dt float64,
 	cfg KinematicsConfig,

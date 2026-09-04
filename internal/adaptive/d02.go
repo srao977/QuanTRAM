@@ -1,5 +1,7 @@
 package adaptive
 
+// This file converts paired DMO/FMO outputs into a validated return shape.
+
 import (
 	"fmt"
 	"math"
@@ -7,6 +9,7 @@ import (
 	"quantram/internal/domain"
 )
 
+// ForwardSample is one projected state sample carried into a ReturnShape.
 type ForwardSample struct {
 	Tau                float64 `bson:"tau"`
 	Level              float64 `bson:"level"`
@@ -17,6 +20,8 @@ type ForwardSample struct {
 	ReversalPropensity float64 `bson:"reversal_propensity"`
 }
 
+// ReturnShape summarizes the geometry and scientific support of one forward
+// projection for downstream capturability evaluation.
 type ReturnShape struct {
 	ModelTime                   float64              `bson:"model_time"`
 	EntityID                    string               `bson:"entity_id"`
@@ -54,6 +59,8 @@ func requireBounded(name string, value, lower, upper float64) error {
 	return nil
 }
 
+// BuildReturnShape validates a paired DMO/FMO result and derives terminal
+// displacement, maximum excursion, path direction, and terminal decay.
 func BuildReturnShape(dmo DMOOutput, fmo FMOOutput) (ReturnShape, error) {
 	if err := validateD02Input(dmo, fmo); err != nil {
 		return ReturnShape{}, err

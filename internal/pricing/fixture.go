@@ -1,5 +1,7 @@
 package pricing
 
+// This file joins the frozen pricing and OHLCV equivalence fixtures.
+
 import (
 	"crypto/sha256"
 	"encoding/csv"
@@ -32,6 +34,7 @@ type pricingRow struct {
 	Volume            uint64
 }
 
+// FileSHA256 returns the lowercase SHA-256 identity of a fixture file.
 func FileSHA256(path string) (string, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -41,6 +44,8 @@ func FileSHA256(path string) (string, error) {
 	return hex.EncodeToString(sum[:]), nil
 }
 
+// loadPricingFixture requires an OHLCV record for every pricing timestamp so
+// reconstructed bars retain the reference run's market inputs.
 func loadPricingFixture(pricingPath, ohlcvPath string) ([]pricingRow, error) {
 	ohlcv, err := loadOHLCV(ohlcvPath)
 	if err != nil {
@@ -140,6 +145,7 @@ func loadOHLCV(path string) (map[string]ohlcv, error) {
 	return out, nil
 }
 
+// Bar converts a joined fixture row into the canonical offline domain bar.
 func (row pricingRow) Bar() (domain.Bar, error) {
 	return BarFromOHLCV(row.EntityID, row.SourceTimestamp, row.Open, row.High, row.Low, row.Close, row.Volume)
 }

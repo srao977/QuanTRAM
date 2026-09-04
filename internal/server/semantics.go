@@ -10,10 +10,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// SetSemantics enables semantic query RPCs with a validated dictionary.
 func (s *Server) SetSemantics(dict *semantics.Dictionary) {
 	s.semantics = dict
 }
 
+// GetTerm returns one canonical term by semantic ID.
 func (s *Server) GetTerm(_ context.Context, req *quantramv1.GetSemanticTermRequest) (*quantramv1.SemanticTerm, error) {
 	dict, err := s.requireSemantics()
 	if err != nil {
@@ -27,6 +29,7 @@ func (s *Server) GetTerm(_ context.Context, req *quantramv1.GetSemanticTermReque
 	return toProtoSemanticTerm(term, dict.Version()), nil
 }
 
+// ListTerms returns canonical terms filtered by component and type.
 func (s *Server) ListTerms(_ context.Context, req *quantramv1.ListSemanticTermsRequest) (*quantramv1.ListSemanticTermsResponse, error) {
 	dict, err := s.requireSemantics()
 	if err != nil {
@@ -43,6 +46,7 @@ func (s *Server) ListTerms(_ context.Context, req *quantramv1.ListSemanticTermsR
 	}, nil
 }
 
+// GetSemanticContract returns metadata for the loaded semantic dictionary.
 func (s *Server) GetSemanticContract(context.Context, *quantramv1.GetSemanticContractRequest) (*quantramv1.SemanticContractInfo, error) {
 	dict, err := s.requireSemantics()
 	if err != nil {

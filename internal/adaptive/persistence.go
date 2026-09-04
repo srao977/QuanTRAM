@@ -1,5 +1,9 @@
 package adaptive
 
+// This file updates directional persistence from motion and perturbation.
+
+// updatePersistence smooths directional agreement after acceleration and
+// adverse-perturbation penalties, then enforces the configured score bounds.
 func updatePersistence(prevPersistence, velocity, prevVelocity, acceleration float64, perturbationClass string, cfg PersistenceConfig) float64 {
 	directionAgreement := 0.0
 	if velocity*prevVelocity >= 0.0 {

@@ -1,5 +1,7 @@
 package adaptive
 
+// This file orchestrates the adaptive stages and decision-context state machine.
+
 import (
 	"fmt"
 	"slices"
@@ -27,6 +29,8 @@ type contextRecord struct {
 	SourceTimestamp string
 }
 
+// AdaptiveProperties summarizes the prior fixed-length capturability and path
+// context used by the baseline decision predicate.
 type AdaptiveProperties struct {
 	Prior15MedianC   float64
 	Prior15MinC      float64
@@ -40,6 +44,8 @@ type AdaptiveProperties struct {
 	DirectionBalance int
 }
 
+// Engine owns committed D01 state, the rolling decision context, and the last
+// canonical outputs for one entity.
 type Engine struct {
 	entityID         string
 	ruleFingerprint  string
@@ -81,6 +87,7 @@ type EvalSnapshot struct {
 	PositionAfter        domain.EmitterPosition
 }
 
+// NewEngine creates an adaptive engine at flat position with empty context.
 func NewEngine(entityID string) *Engine {
 	cfg := DefaultConfig()
 	return &Engine{
@@ -93,14 +100,20 @@ func NewEngine(entityID string) *Engine {
 	}
 }
 
+// CompletedCount returns the number of successfully committed observations.
 func (e *Engine) CompletedCount() int { return e.completedCount }
 
+// PositionState returns the emitter position after the last committed decision.
 func (e *Engine) PositionState() domain.EmitterPosition { return e.positionState }
 
+// StateHash returns the canonical hash of the committed D01 state.
 func (e *Engine) StateHash() string { return e.d01.StateHash() }
 
+// LastEval returns the last committed scientific evaluation summary.
 func (e *Engine) LastEval() EvalSnapshot { return e.last }
 
+// LastPipelineOutputs returns defensive copies of the last committed D01, D02,
+// and D04 outputs.
 func (e *Engine) LastPipelineOutputs() PipelineOutputs {
 	out := e.lastPipeline
 	out.DMO.ParameterState = cloneFloatMap(out.DMO.ParameterState)
@@ -172,6 +185,7 @@ func (e *Engine) PrepareStep(bar domain.Bar) (domain.DecisionEvent, *Engine, boo
 	return event, working, true
 }
 
+// Commit atomically adopts a successfully prepared engine state.
 func (e *Engine) Commit(working *Engine) {
 	if working != nil {
 		e.adopt(working)

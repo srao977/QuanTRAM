@@ -1,5 +1,7 @@
 package adaptive
 
+// This file maps accepted bars and offline fixtures into adaptive inputs.
+
 import (
 	"fmt"
 	"strconv"
@@ -89,6 +91,8 @@ func parseFixtureTimestamp(value string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("unparseable fixture timestamp %q", value)
 }
 
+// ParseVolume parses a finite, nonnegative fixture volume and truncates any
+// fractional component to the domain's integer representation.
 func ParseVolume(value string) (uint64, error) {
 	value = strings.TrimSpace(value)
 	if value == "" {

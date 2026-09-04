@@ -1,9 +1,12 @@
 package adaptive
 
+// This file defines D01 observations and their causal input validation.
+
 import (
 	"fmt"
 )
 
+// Observation is one timestamped market input to the stateful D01 model.
 type Observation struct {
 	EntityID         string
 	EventTime        float64
@@ -20,6 +23,8 @@ type Observation struct {
 	AvailabilityMask map[string]bool
 }
 
+// WithDefaults returns an observation with a complete availability mask and a
+// non-empty session label.
 func (o Observation) WithDefaults() Observation {
 	out := o
 	mask := make(map[string]bool, len(o.AvailabilityMask)+4)
@@ -45,6 +50,7 @@ func (o Observation) WithDefaults() Observation {
 	return out
 }
 
+// Clone returns a deep copy of the observation's pointers and availability map.
 func (o Observation) Clone() Observation {
 	out := o
 	if o.Bid != nil {
@@ -72,6 +78,8 @@ func (o Observation) Clone() Observation {
 	return out
 }
 
+// AssertCausalSequence requires nondecreasing event time and strictly
+// increasing sequence identifiers after the first observation.
 func AssertCausalSequence(previous *Observation, current Observation) error {
 	if previous == nil {
 		return nil
@@ -85,6 +93,7 @@ func AssertCausalSequence(previous *Observation, current Observation) error {
 	return nil
 }
 
+// FiniteInputs rejects non-finite price, volume, or event time.
 func FiniteInputs(obs Observation) error {
 	if !finite(obs.Price) || !finite(obs.Volume) || !finite(obs.EventTime) {
 		return fmt.Errorf("non-finite price, volume, or event_time")

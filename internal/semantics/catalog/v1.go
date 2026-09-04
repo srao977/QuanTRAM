@@ -1,3 +1,5 @@
+// Package catalog contains the curated authoring source for published
+// QuanTRAM semantic contracts.
 package catalog
 
 import "quantram/internal/semantics"

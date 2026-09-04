@@ -1,3 +1,4 @@
+// Package domain defines the shared market-data, health, and model outcome contracts.
 package domain
 
 import (
@@ -6,10 +7,13 @@ import (
 	"time"
 )
 
+// Interval1Min is the canonical one-minute interval label used across feeds.
 const Interval1Min = "1Min"
 
+// InstrumentType identifies the market instrument represented by a bar.
 type InstrumentType string
 
+// Instrument types classify normalized market symbols.
 const (
 	InstrumentUnspecified InstrumentType = ""
 	InstrumentStock       InstrumentType = "STOCK"
@@ -17,8 +21,10 @@ const (
 	InstrumentIndex       InstrumentType = "INDEX"
 )
 
+// QualityStatus describes whether a bar is suitable for downstream use.
 type QualityStatus string
 
+// Quality statuses classify bar completeness and provenance.
 const (
 	QualityUnspecified   QualityStatus = ""
 	QualityComplete      QualityStatus = "COMPLETE"
@@ -29,6 +35,7 @@ const (
 	QualityInvalid       QualityStatus = "INVALID"
 )
 
+// Bar is a normalized market interval and its ingestion provenance.
 type Bar struct {
 	Symbol           string         `bson:"symbol"`
 	InstrumentID     string         `bson:"instrument_id"`
@@ -53,6 +60,7 @@ type Bar struct {
 	MarketSnapshotID string         `bson:"market_snapshot_id"`
 }
 
+// DataAge returns the elapsed time since the interval began.
 func (b Bar) DataAge(now time.Time) time.Duration {
 	if b.IntervalStart.IsZero() {
 		return 0
@@ -60,15 +68,18 @@ func (b Bar) DataAge(now time.Time) time.Duration {
 	return now.Sub(b.IntervalStart)
 }
 
+// DedupKey identifies a symbol and UTC interval independently of its source.
 func (b Bar) DedupKey() string {
 	return b.Symbol + "|" + b.IntervalStart.UTC().Format(time.RFC3339Nano)
 }
 
+// SnapshotID deterministically fingerprints the source observation payload.
 func SnapshotID(symbol, source, sourceTimestamp string, open, high, low, close float64, volume uint64) string {
 	payload := fmt.Sprintf("%s|%s|%s|%.8f|%.8f|%.8f|%.8f|%d", symbol, source, sourceTimestamp, open, high, low, close, volume)
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(payload)))
 }
 
+// ClassifyInstrument returns the supported instrument class and tradability.
 func ClassifyInstrument(symbol string) (InstrumentType, bool) {
 	switch symbol {
 	case "":

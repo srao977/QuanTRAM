@@ -6,10 +6,13 @@ import (
 	"os"
 )
 
+// LoadEmbedded parses and validates the semantic contract compiled into the
+// binary.
 func LoadEmbedded() (*Dictionary, error) {
 	return Parse(embeddedJSON)
 }
 
+// LoadFile reads, parses, and validates a semantic contract file.
 func LoadFile(path string) (*Dictionary, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -18,6 +21,8 @@ func LoadFile(path string) (*Dictionary, error) {
 	return Parse(raw)
 }
 
+// Parse decodes and validates a semantic contract before building its ID
+// index; invalid documents are never exposed as dictionaries.
 func Parse(raw []byte) (*Dictionary, error) {
 	var doc Document
 	if err := json.Unmarshal(raw, &doc); err != nil {

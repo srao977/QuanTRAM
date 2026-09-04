@@ -1,20 +1,25 @@
 package pricing
 
+// This file classifies projected trajectories and applies emission-color policy.
+
 import (
 	"math"
 
 	"quantram/internal/domain"
 )
 
+// PolicyState retains color and pending direct-reversal state across emissions.
 type PolicyState struct {
 	PreviousColor   string
 	PendingReversal string
 }
 
+// EmissionPolicy maps numerical trajectory evidence to a semantic emission.
 type EmissionPolicy struct {
 	cfg Config
 }
 
+// NewEmissionPolicy creates an emission policy from the frozen configuration.
 func NewEmissionPolicy(cfg Config) EmissionPolicy {
 	return EmissionPolicy{cfg: cfg}
 }
@@ -39,6 +44,7 @@ func acceleration(value float64) string {
 	return "ZERO"
 }
 
+// phase classifies current motion and projected first-derivative crossings.
 func phase(p1, p2, projectedP1, epsilon float64) string {
 	if math.Abs(p1) <= epsilon {
 		if projectedP1 > epsilon {
@@ -67,6 +73,8 @@ func phase(p1, p2, projectedP1, epsilon float64) string {
 	return "DOWN_ACCELERATING"
 }
 
+// turningTendency identifies crossing, deterioration, recovery, or projected
+// acceleration reversal that has not necessarily changed the current phase.
 func turningTendency(p1, p2, projectedP1, projectedP2, epsilon float64) string {
 	if p1 > epsilon && projectedP1 <= -epsilon {
 		return "TURNING_DOWN"
@@ -99,6 +107,8 @@ func uniqueReasons(reasons []string) []string {
 	return out
 }
 
+// emit applies domain, confidence, stability, phase, and direct-reversal
+// debounce rules to one aligned numerical row.
 func (p EmissionPolicy) emit(n numericalRow, state PolicyState) (domain.PriceEmission, PolicyState) {
 	finite := allFinite(n.P, n.P1, n.P2, n.ProjectedP, n.ProjectedP1, n.ProjectedP2)
 	if !n.RKSuccess || !finite {

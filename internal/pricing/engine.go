@@ -1,11 +1,15 @@
 package pricing
 
+// This file binds numerical rows to the pricing emission policy.
+
 import "quantram/internal/domain"
 
+// PriceEngine validates row alignment before applying emission policy state.
 type PriceEngine struct {
 	policy EmissionPolicy
 }
 
+// NewPriceEngine creates a policy-backed pricing engine.
 func NewPriceEngine(cfg Config) PriceEngine {
 	return PriceEngine{policy: NewEmissionPolicy(cfg)}
 }

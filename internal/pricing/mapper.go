@@ -1,5 +1,7 @@
 package pricing
 
+// This file maps accepted bars and offline OHLCV fixtures into pricing inputs.
+
 import (
 	"fmt"
 	"strconv"

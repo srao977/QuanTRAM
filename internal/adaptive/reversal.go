@@ -1,5 +1,9 @@
 package adaptive
 
+// This file scores reversal propensity from opposing and unstable evidence.
+
+// computeReversalPropensity combines motion opposition, adverse perturbation,
+// low persistence, extreme level, and uncertainty through a bounded sigmoid.
 func computeReversalPropensity(
 	velocity, acceleration float64,
 	perturbationClass string,

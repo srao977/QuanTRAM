@@ -98,6 +98,8 @@ func rawInt(fields map[string]json.RawMessage, key string) int {
 }
 
 func barFromRaw(raw json.RawMessage, source string, receipt time.Time, backfilled bool) (domain.Bar, error) {
+	// Decode required numeric fields independently so absent and zero values do
+	// not collapse into the permissive control-message representation.
 	fields, err := rawObject(raw)
 	if err != nil {
 		return domain.Bar{}, err
@@ -185,6 +187,8 @@ func barFromAlpaca(raw alpacaBar, source string, receipt time.Time, backfilled b
 		return domain.Bar{}, fmt.Errorf("parse alpaca volume: %w", err)
 	}
 	trades, _ := parseUint32(raw.Trades)
+	// Normalization fixes interval bounds, quality, and provenance before a bar
+	// crosses the provider boundary.
 	instrumentType, tradable := domain.ClassifyInstrument(raw.Symbol)
 	quality, isFinal := classifyAlpacaBar(raw.Type, backfilled)
 	return domain.Bar{

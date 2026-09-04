@@ -3,12 +3,16 @@ package snapshot
 import "context"
 
 // Source exposes only the durable ledger facts needed for checkpoint selection.
+// ListPayloads is scoped to one Aperture; DecisionComplete identifies a
+// terminal decision record without requiring optional scientific children.
 type Source interface {
 	ListPayloads(context.Context, string) ([]Payload, error)
 	DecisionComplete(context.Context, string, string) (bool, error)
 }
 
 // Store persists Snapshot application state without exposing provider types.
+// Snapshot creation must be idempotent for the same Aperture, policy, symbol,
+// and trigger Payload.
 type Store interface {
 	ActivePolicies(context.Context) ([]Policy, error)
 	GetPolicy(context.Context, string) (Policy, error)

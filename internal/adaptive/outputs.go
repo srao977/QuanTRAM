@@ -1,5 +1,8 @@
 package adaptive
 
+// This file defines the canonical direct and forward model outputs.
+
+// FMOSample is one time-offset state in the forward model trajectory.
 type FMOSample struct {
 	Tau                float64 `bson:"tau"`
 	Level              float64 `bson:"level"`
@@ -10,6 +13,7 @@ type FMOSample struct {
 	ReversalPropensity float64 `bson:"reversal_propensity"`
 }
 
+// DMOOutput is the complete direct model output for one committed D01 step.
 type DMOOutput struct {
 	ModelTime                float64            `bson:"model_time"`
 	EntityID                 string             `bson:"entity_id"`
@@ -39,6 +43,7 @@ type DMOOutput struct {
 	TraceID                  string             `bson:"trace_id"`
 }
 
+// FMOOutput is the sampled forward trajectory paired with a DMOOutput.
 type FMOOutput struct {
 	ModelTime      float64     `bson:"model_time"`
 	EntityID       string      `bson:"entity_id"`

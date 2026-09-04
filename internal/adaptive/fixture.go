@@ -1,5 +1,7 @@
 package adaptive
 
+// This file loads and adapts the frozen Unit Run 001 equivalence fixture.
+
 import (
 	"crypto/sha256"
 	"encoding/csv"
@@ -13,6 +15,7 @@ import (
 	"quantram/internal/domain"
 )
 
+// UnitRunRow is one expected observation and adaptive result from Unit Run 001.
 type UnitRunRow struct {
 	Index                int
 	SourceRowIndex       int
@@ -41,6 +44,7 @@ type UnitRunRow struct {
 	PositionAfter        domain.EmitterPosition
 }
 
+// LoadUnitRun001 parses the frozen adaptive equivalence fixture at path.
 func LoadUnitRun001(path string) ([]UnitRunRow, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -72,6 +76,7 @@ func LoadUnitRun001(path string) ([]UnitRunRow, error) {
 	return rows, nil
 }
 
+// FileSHA256 returns the lowercase SHA-256 identity of a fixture file.
 func FileSHA256(path string) (string, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -81,6 +86,7 @@ func FileSHA256(path string) (string, error) {
 	return hex.EncodeToString(sum[:]), nil
 }
 
+// Bar converts the fixture row into the canonical offline domain bar.
 func (row UnitRunRow) Bar() (domain.Bar, error) {
 	return BarFromOHLCV(row.EntityID, row.SourceTimestamp, row.Open, row.High, row.Low, row.Close, row.Volume)
 }

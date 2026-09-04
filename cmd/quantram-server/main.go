@@ -70,6 +70,8 @@ func run() (returnErr error) {
 	}
 	defer listener.Close()
 
+	// Persistence opens the process Aperture before any producer can publish
+	// facts, so every accepted record is lineage-bound to that OPEN interval.
 	store, snapshotService, err := newPersistence(cfg)
 	if err != nil {
 		return fmt.Errorf("create persistence: %w", err)
@@ -131,6 +133,8 @@ func run() (returnErr error) {
 
 	shutdownCtx, stopSignals := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stopSignals()
+	// Producers and Snapshot evaluation have separate cancellation domains:
+	// shutdown joins producers first, then evaluates their durable tail.
 	producerCtx, cancelProducers := context.WithCancel(context.Background())
 	snapshotCtx, cancelSnapshot := context.WithCancel(context.Background())
 	defer cancelProducers()
@@ -215,6 +219,8 @@ func shutdownRuntime(
 
 	var closeErr error
 	if store != nil {
+		// Sealing and draining the queue establishes the complete durable input
+		// set consumed by the final Snapshot evaluation.
 		ctx, cancel := context.WithTimeout(context.Background(), persistenceCloseTimeout)
 		closeErr = errors.Join(closeErr, store.Drain(ctx))
 		cancel()

@@ -7,6 +7,7 @@ import (
 	"quantram/internal/semantics"
 )
 
+// CanonicalJSONPath is the checked-in runtime publication artifact.
 const CanonicalJSONPath = "internal/semantics/data/quantram_semantics_v1.json"
 
 type publishedDocument struct {
@@ -36,6 +37,8 @@ type publishedTerm struct {
 	UI                   semantics.UI     `json:"ui"`
 }
 
+// Encode validates and emits deterministic indented JSON with non-nil list
+// fields and a trailing newline.
 func Encode(doc semantics.Document) ([]byte, error) {
 	if err := semantics.Validate(doc); err != nil {
 		return nil, err
@@ -74,6 +77,7 @@ func Encode(doc semantics.Document) ([]byte, error) {
 	return raw, nil
 }
 
+// DocumentsEqual compares documents by their canonical encoded form.
 func DocumentsEqual(a, b semantics.Document) error {
 	left, err := Encode(a)
 	if err != nil {

@@ -3,14 +3,19 @@ package domain
 import "time"
 
 const (
+	// MinInferContiguous is the minimum causal finalized history required for inference.
 	MinInferContiguous = 2
-	MaxFinalLateness   = 90 * time.Second
+	// MaxFinalLateness is the live-source freshness allowance after interval end.
+	MaxFinalLateness = 90 * time.Second
 )
 
+// ModelEligible reports whether a bar may enter the live model path.
 func (b Bar) ModelEligible() bool {
 	return b.IsFinal && b.QualityStatus == QualityComplete && !b.IsBackfilled
 }
 
+// LiveFresh reports whether a live bar is within the finalization watermark.
+// Replay sources are exempt from wall-clock freshness.
 func (b Bar) LiveFresh(now time.Time) bool {
 	if !liveSource(b.Source) {
 		return true
@@ -28,6 +33,7 @@ func liveSource(source string) bool {
 	return source == "ALPACA_IEX" || source == "ALPACA_TEST"
 }
 
+// Finalized returns finalized bars in their input order.
 func Finalized(bars []Bar) []Bar {
 	out := make([]Bar, 0, len(bars))
 	for _, bar := range bars {
@@ -38,6 +44,7 @@ func Finalized(bars []Bar) []Bar {
 	return out
 }
 
+// LastFinalized returns the last finalized bar in input order.
 func LastFinalized(bars []Bar) (Bar, bool) {
 	for i := len(bars) - 1; i >= 0; i-- {
 		if bars[i].IsFinal {

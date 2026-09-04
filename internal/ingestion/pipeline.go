@@ -18,10 +18,13 @@ type subscriber struct {
 	finalizedOnly bool
 }
 
+// BarCapture receives each bar accepted into the live ingestion window.
 type BarCapture interface {
 	CaptureBar(domain.Bar) bool
 }
 
+// Pipeline owns feed execution, retained bars, health gating, and subscriber fanout.
+// Its mutex protects subscriber registries and model-path delivery metadata.
 type Pipeline struct {
 	live       marketfeed.LiveBarSource
 	historical marketfeed.HistoricalBarSource
@@ -41,6 +44,8 @@ type Pipeline struct {
 	filling     atomic.Bool
 }
 
+// NewPipeline constructs an ingestion pipeline for the configured symbols.
+// At most the first optional capture is used.
 func NewPipeline(live marketfeed.LiveBarSource, historical marketfeed.HistoricalBarSource, sourceID string, symbols []string, captures ...BarCapture) *Pipeline {
 	pipeline := &Pipeline{
 		live:        live,
@@ -60,6 +65,7 @@ func NewPipeline(live marketfeed.LiveBarSource, historical marketfeed.Historical
 	return pipeline
 }
 
+// Run consumes the live source until it ends or the context is canceled.
 func (p *Pipeline) Run(ctx context.Context) error {
 	incoming := make(chan domain.Bar, config.SubscriberQueue)
 	errCh := make(chan error, 1)
@@ -118,6 +124,7 @@ func (p *Pipeline) accept(bar domain.Bar) {
 	if !p.window.Add(bar) {
 		return
 	}
+	// Capture follows deduplication but precedes every downstream observation.
 	if p.capture != nil {
 		p.capture.CaptureBar(bar)
 	}
@@ -129,10 +136,12 @@ func (p *Pipeline) accept(bar domain.Bar) {
 	p.fanoutModel(bar)
 }
 
+// InjectBar submits a bar through the same acceptance path as a live source.
 func (p *Pipeline) InjectBar(bar domain.Bar) {
 	p.accept(bar)
 }
 
+// MarkFeedHealthy explicitly releases feed-health gating and recomputes readiness.
 func (p *Pipeline) MarkFeedHealthy() {
 	p.breaker.MarkHealthy()
 	p.refreshInfer(time.Now().UTC())
@@ -155,6 +164,8 @@ func (p *Pipeline) refreshInfer(now time.Time) {
 func (p *Pipeline) fanout(bar domain.Bar) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	// Observation subscribers are lossy by contract: a full buffer drops its
+	// oldest value so the latest accepted state remains observable.
 	for id, sub := range p.subscribers {
 		if sub.finalizedOnly && !bar.IsFinal {
 			continue
@@ -178,10 +189,12 @@ func (p *Pipeline) fanout(bar domain.Bar) {
 	}
 }
 
+// Subscribe registers a lossy subscriber for partial and finalized bars.
 func (p *Pipeline) Subscribe(buffer int) (uint64, <-chan domain.Bar) {
 	return p.subscribe(buffer, false)
 }
 
+// SubscribeFinalized registers a lossy subscriber restricted to finalized bars.
 func (p *Pipeline) SubscribeFinalized(buffer int) (uint64, <-chan domain.Bar) {
 	if buffer <= 0 {
 		buffer = config.ConsumerQueue
@@ -201,6 +214,7 @@ func (p *Pipeline) subscribe(buffer int, finalizedOnly bool) (uint64, <-chan dom
 	return id, ch
 }
 
+// Unsubscribe removes and closes an observation or model subscription.
 func (p *Pipeline) Unsubscribe(id uint64) {
 	p.mu.Lock()
 	if sub, ok := p.subscribers[id]; ok {
@@ -218,14 +232,17 @@ func (p *Pipeline) Unsubscribe(id uint64) {
 	p.mu.Unlock()
 }
 
+// Symbols returns a copy of the configured symbol set.
 func (p *Pipeline) Symbols() []string {
 	return append([]string(nil), p.symbols...)
 }
 
+// Window returns the newest retained bars for a symbol in chronological order.
 func (p *Pipeline) Window(symbol string, limit int) []domain.Bar {
 	return p.window.Window(symbol, limit)
 }
 
+// GapFill loads historical bars into the retained window while inference is gated.
 func (p *Pipeline) GapFill(ctx context.Context, symbol string, from, to time.Time) (fetched, injected, deduped int, err error) {
 	if p.historical == nil {
 		return 0, 0, 0, fmt.Errorf("historical source is not configured")
@@ -271,6 +288,7 @@ func (p *Pipeline) startRecovery(ctx context.Context) {
 	}()
 }
 
+// RecoverAfterReconnect fills each symbol from its newest retained interval.
 func (p *Pipeline) RecoverAfterReconnect(ctx context.Context) {
 	if p.historical == nil {
 		p.breaker.MarkHealthy()
@@ -289,6 +307,7 @@ func (p *Pipeline) RecoverAfterReconnect(ctx context.Context) {
 	}
 }
 
+// FeedHealth combines source telemetry with the pipeline breaker's state.
 func (p *Pipeline) FeedHealth() domain.FeedHealth {
 	health := p.live.Health()
 	health.State = p.breaker.State()
@@ -301,6 +320,7 @@ func (p *Pipeline) FeedHealth() domain.FeedHealth {
 	return health
 }
 
+// Health returns the feed and ingestion component health report.
 func (p *Pipeline) Health() domain.HealthReport {
 	feed := p.FeedHealth()
 	feedState := domain.ComponentHealthy
@@ -322,6 +342,7 @@ func (p *Pipeline) Health() domain.HealthReport {
 	return report
 }
 
+// Readiness reports observation availability and current inference eligibility.
 func (p *Pipeline) Readiness() domain.Readiness {
 	state := p.breaker.State()
 	observe := state == domain.FeedHealthy || state == domain.FeedDegraded || state == domain.FeedRecovering

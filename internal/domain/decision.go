@@ -2,8 +2,10 @@ package domain
 
 import "time"
 
+// Side is the terminal trading action carried by a decision.
 type Side string
 
+// Sides are the complete terminal decision action set.
 const (
 	SideUnspecified Side = ""
 	SideBuy         Side = "BUY"
@@ -11,8 +13,10 @@ const (
 	SideHold        Side = "HOLD"
 )
 
+// PathDirection summarizes the model's projected path orientation.
 type PathDirection string
 
+// Path directions classify the projected return path.
 const (
 	PathUnspecified PathDirection = ""
 	PathUpward      PathDirection = "UPWARD"
@@ -20,8 +24,10 @@ const (
 	PathFlat        PathDirection = "FLAT"
 )
 
+// EmitterPosition is the position state maintained by the decision emitter.
 type EmitterPosition string
 
+// Emitter positions describe committed directional exposure.
 const (
 	EmitterUnspecified EmitterPosition = ""
 	EmitterFlat        EmitterPosition = "FLAT"
@@ -29,16 +35,20 @@ const (
 	EmitterShort       EmitterPosition = "SHORT"
 )
 
+// ModelStatus identifies whether model output is still warming or actionable.
 type ModelStatus string
 
+// Model statuses separate warm-up output from actionable output.
 const (
 	StatusUnspecified  ModelStatus = ""
 	StatusInitializing ModelStatus = "INITIALIZING"
 	StatusActionable   ModelStatus = "ACTIONABLE"
 )
 
+// SkipReason classifies why a considered bar produced no decision.
 type SkipReason string
 
+// Skip reasons preserve the terminal cause of every non-decision outcome.
 const (
 	SkipUnspecified           SkipReason = ""
 	SkipInferOff              SkipReason = "INFER_OFF"
@@ -102,10 +112,12 @@ type DecisionEvent struct {
 	Skip             *Skip         `bson:"skip,omitempty"`
 }
 
+// IsDecision reports whether the event contains only a decision outcome.
 func (e DecisionEvent) IsDecision() bool {
 	return e.Decision != nil && e.Skip == nil
 }
 
+// IsSkip reports whether the event contains only a skip outcome.
 func (e DecisionEvent) IsSkip() bool {
 	return e.Skip != nil && e.Decision == nil
 }

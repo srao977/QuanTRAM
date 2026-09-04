@@ -1,5 +1,7 @@
 package pricing
 
+// This file projects affine F4 dynamics and detects training-envelope exits.
+
 import (
 	"math"
 )
@@ -14,6 +16,8 @@ var coverGrid = func() []float64 {
 	return g
 }()
 
+// coverResult contains the projected trajectory, standardized excursion,
+// envelope-exit metadata, and numerical failure state.
 type coverResult struct {
 	Trajectory    [][3]float64
 	DLocalMaximum float64
@@ -25,6 +29,8 @@ type coverResult struct {
 	Err           error
 }
 
+// analyticAffineTrajectory integrates [P,P1,P2] by exponentiating a 4x4
+// homogeneous lift of the affine F4 system at each requested time.
 func analyticAffineTrajectory(initial [3]float64, physical [4]float64, times []float64) ([][3]float64, error) {
 	if !allFinite(initial[0], initial[1], initial[2], physical[0], physical[1], physical[2], physical[3]) {
 		return nil, errf("ANALYTIC_INPUT_NONFINITE")
@@ -65,6 +71,8 @@ func analyticAffineTrajectory(initial [3]float64, physical [4]float64, times []f
 	return out, nil
 }
 
+// solveCover projects over the fixed cover grid, rejects explosive terminal
+// growth, and records the first departure from the fitted training envelope.
 func solveCover(fit *f4Fit, p, p1, p2 float64, timeTerm bool) coverResult {
 	if timeTerm {
 		return coverResult{Err: errf("ANALYTIC_TIME_TERM_UNSUPPORTED")}

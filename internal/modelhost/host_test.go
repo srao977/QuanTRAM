@@ -24,6 +24,7 @@ type eventRecorder struct {
 	outputs *adaptive.PipelineOutputs
 }
 
+// eventRecorder observes the persistence boundary and committed output snapshot.
 func (r *eventRecorder) CaptureDecision(_ domain.DecisionEvent, outputs *adaptive.PipelineOutputs) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -39,6 +40,8 @@ func (r *eventRecorder) CapturePrice(domain.PriceEvent) bool {
 	return true
 }
 
+// fakeSource is a synchronized controllable model path; missing records represent
+// positive evidence of lost eligible observations rather than provider silence.
 type fakeSource struct {
 	mu      sync.Mutex
 	bars    chan domain.Bar

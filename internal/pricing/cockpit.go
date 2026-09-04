@@ -1,11 +1,15 @@
 package pricing
 
+// This file refines projected motion into persistent cockpit state and color.
+
 import (
 	"math"
 
 	"quantram/internal/domain"
 )
 
+// CockpitState retains motion, opposing-direction, and turn-candidate history
+// across pricing emissions.
 type CockpitState struct {
 	PreviousMotionState string
 	PreviousColor       string
@@ -23,6 +27,8 @@ func newCockpit(cfg Config) cockpitInterpreter {
 	return cockpitInterpreter{cfg: cfg}
 }
 
+// observe classifies motion, measures approach to zero velocity, and applies
+// persistence and candidate hysteresis before choosing the cockpit color.
 func (c cockpitInterpreter) observe(em domain.PriceEmission, state CockpitState) (domain.PriceCockpit, CockpitState) {
 	values := []float64{em.P, em.P1, em.P2, em.ProjectedP, em.ProjectedP1, em.ProjectedP2}
 	if !em.RKSuccess || !allFinite(values...) {

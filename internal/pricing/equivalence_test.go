@@ -10,8 +10,12 @@ import (
 	"quantram/internal/domain"
 )
 
+// pricingFixtureSHA256 freezes the reference P-04 output independently of the
+// OHLCV fixture joined by the harness.
 const pricingFixtureSHA256 = "4b3b8783108988e71c4bf2cec9b6f8a4c6bf929fb93a4be27706a16ef4c1752a"
 
+// equivalenceManifest records both warmup topology and row-level semantic
+// matches so a count-only pass cannot hide an earlier divergence.
 type equivalenceManifest struct {
 	FixtureSHA256        string `json:"fixture_sha256"`
 	GonumVersion         string `json:"gonum_version"`

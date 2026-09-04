@@ -6,6 +6,7 @@ import (
 	"quantram/internal/semantics"
 )
 
+// ValidatePath validates a semantic JSON artifact at path.
 func ValidatePath(path string) error {
 	raw, err := os.ReadFile(path)
 	if err != nil {
@@ -15,6 +16,7 @@ func ValidatePath(path string) error {
 	return err
 }
 
+// ValidateCatalog validates the curated authoring document.
 func ValidateCatalog() error {
 	return semantics.Validate(Catalog())
 }

@@ -1,3 +1,5 @@
+// Package modelhost runs isolated per-symbol adaptive and pricing workers over
+// the ingestion model path and publishes terminal outcomes.
 package modelhost
 
 import (
@@ -23,22 +25,27 @@ const (
 	pathPollInterval     = 50 * time.Millisecond
 )
 
+// ErrUnavailable identifies failures that prevent the adaptive host from starting.
 var ErrUnavailable = errors.New("adaptive model unavailable")
 
 // Unavailable is a Health-only stand-in when adaptive was requested but could not start.
 // Do not call Run on it; ingestion stays up and GetHealth reports unavailable (not off).
 type Unavailable struct{}
 
+// Health reports the requested model as unavailable rather than disabled.
 func (Unavailable) Health() domain.ComponentHealth {
 	return domain.ComponentHealth{Name: "model", State: domain.ComponentUnavailable, Detail: "unavailable"}
 }
 
+// PricingHealth reports pricing as disabled for an unavailable model stand-in.
 func (Unavailable) PricingHealth() domain.ComponentHealth {
 	return domain.ComponentHealth{Name: "pricing", State: domain.ComponentHealthy, Detail: "off"}
 }
 
+// SymbolStatus describes one symbol worker's lifecycle and continuity state.
 type SymbolStatus string
 
+// Symbol statuses describe worker readiness, continuity, and failure states.
 const (
 	StatusOff           SymbolStatus = "off"
 	StatusCold          SymbolStatus = "cold"
@@ -49,6 +56,7 @@ const (
 	StatusError         SymbolStatus = "error"
 )
 
+// BarSource is the ordered, loss-intolerant ingestion boundary consumed by Host.
 type BarSource interface {
 	SubscribeModelBars(buffer int) (uint64, <-chan domain.Bar)
 	Unsubscribe(id uint64)
@@ -71,6 +79,7 @@ func continuityDetail(class domain.ContinuityClass, last, current time.Time, ela
 	return fmt.Sprintf("%s last=%s current=%s elapsed=%s", class, last.UTC().Format(time.RFC3339), current.UTC().Format(time.RFC3339), elapsed)
 }
 
+// Options configures model execution, deadlines, fault injection, and capture.
 type Options struct {
 	Mode      config.ModelMode
 	Pricing   config.PricingMode
@@ -81,11 +90,14 @@ type Options struct {
 	Capture   EventCapture
 }
 
+// EventCapture persists terminal model and pricing outcomes.
 type EventCapture interface {
 	CaptureDecision(domain.DecisionEvent, *adaptive.PipelineOutputs) bool
 	CapturePrice(domain.PriceEvent) bool
 }
 
+// Host owns one serial worker per symbol and fans out their terminal outcomes.
+// The host mutex protects lifecycle state, subscriptions, and last-event indexes.
 type Host struct {
 	src            BarSource
 	symbols        []string
@@ -112,6 +124,7 @@ type Host struct {
 }
 
 type worker struct {
+	// engine, pricing, inbox, and acceptance history are owned by runWorker.
 	symbol       string
 	engine       *adaptive.Engine
 	pricing      *pricing.Engine
@@ -128,6 +141,7 @@ type worker struct {
 	lastPrice    atomic.Value
 }
 
+// SymbolHealth reports progress and the latest gate state for one symbol.
 type SymbolHealth struct {
 	Symbol    string
 	Status    SymbolStatus
@@ -137,6 +151,8 @@ type SymbolHealth struct {
 	LastEvent time.Time
 }
 
+// New validates configuration and constructs an adaptive host.
+// It returns a nil host without error when model execution is disabled.
 func New(src BarSource, symbols []string, opts Options) (*Host, error) {
 	if opts.Mode == "" {
 		opts.Mode = config.ModelOff
@@ -246,16 +262,19 @@ func (h *Host) ResetSymbol(symbol string) error {
 	return nil
 }
 
+// FailNextPricing injects one pricing prepare failure for verification.
 func (h *Host) FailNextPricing() {
 	if h != nil {
 		h.failPricing.Store(true)
 	}
 }
 
+// Started reports whether Run has subscribed to its bar source.
 func (h *Host) Started() bool {
 	return h != nil && h.started.Load()
 }
 
+// Events returns the lazily created default decision-event subscription.
 func (h *Host) Events() <-chan domain.DecisionEvent {
 	if h == nil {
 		return nil
@@ -266,6 +285,8 @@ func (h *Host) Events() <-chan domain.DecisionEvent {
 	return h.events
 }
 
+// SubscribeEvents registers a non-blocking decision-event subscriber.
+// A full subscriber buffer drops the new event without blocking model workers.
 func (h *Host) SubscribeEvents(buffer int) (uint64, <-chan domain.DecisionEvent) {
 	if h == nil {
 		ch := make(chan domain.DecisionEvent)
@@ -287,6 +308,7 @@ func (h *Host) SubscribeEvents(buffer int) (uint64, <-chan domain.DecisionEvent)
 	return id, ch
 }
 
+// UnsubscribeEvents removes and closes a decision-event subscription.
 func (h *Host) UnsubscribeEvents(id uint64) {
 	if h == nil || id == 0 {
 		return
@@ -302,6 +324,7 @@ func (h *Host) UnsubscribeEvents(id uint64) {
 	}
 }
 
+// LastEvents returns the latest decision event retained for each symbol.
 func (h *Host) LastEvents() []domain.DecisionEvent {
 	if h == nil {
 		return nil
@@ -315,6 +338,7 @@ func (h *Host) LastEvents() []domain.DecisionEvent {
 	return out
 }
 
+// SubscribePriceEvents registers a non-blocking price-event subscriber.
 func (h *Host) SubscribePriceEvents(buffer int) (uint64, <-chan domain.PriceEvent) {
 	if h == nil {
 		ch := make(chan domain.PriceEvent)
@@ -336,6 +360,7 @@ func (h *Host) SubscribePriceEvents(buffer int) (uint64, <-chan domain.PriceEven
 	return id, ch
 }
 
+// UnsubscribePriceEvents removes and closes a price-event subscription.
 func (h *Host) UnsubscribePriceEvents(id uint64) {
 	if h == nil || id == 0 {
 		return
@@ -351,6 +376,7 @@ func (h *Host) UnsubscribePriceEvents(id uint64) {
 	}
 }
 
+// LastPriceEvents returns the latest price event retained for each symbol.
 func (h *Host) LastPriceEvents() []domain.PriceEvent {
 	if h == nil {
 		return nil
@@ -364,10 +390,12 @@ func (h *Host) LastPriceEvents() []domain.PriceEvent {
 	return out
 }
 
+// PricingEnabled reports whether EXPM pricing is configured and available.
 func (h *Host) PricingEnabled() bool {
 	return h != nil && h.opts.Pricing == config.PricingExpm && !h.pricingUnavail.Load()
 }
 
+// Run dispatches ordered model bars and manages the per-symbol worker lifecycle.
 func (h *Host) Run(ctx context.Context) error {
 	if h == nil {
 		return nil
@@ -453,6 +481,7 @@ func (h *Host) dispatch(bar domain.Bar) {
 		h.emit(h.discontinuousSkip(w, bar, w.engine.StateHash()))
 		return
 	}
+	// Worker inbox overflow is a continuity failure, not a lossy queue policy.
 	select {
 	case w.inbox <- bar:
 	default:
@@ -537,6 +566,8 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 		h.emit(ev)
 		return
 	}
+	// Both engines prepare from their committed states. Neither state advances
+	// unless both preparations permit the coordinated commit below.
 	event, working, commitA := w.engine.PrepareStep(bar)
 	var priceEv domain.PriceEvent
 	var priceWork *pricing.Engine
@@ -579,6 +610,7 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 			if priceEv.EventID == "" {
 				priceEv.EventID = fmt.Sprintf("%s:price:%d", w.symbol, h.seq.Add(1))
 			}
+			// Price capture intentionally precedes adaptive capture for one bar.
 			w.lastPrice.Store(priceEv)
 			h.emitPrice(priceEv)
 		}
@@ -691,6 +723,7 @@ func (w *worker) markDisc(reason domain.SkipReason) bool {
 	return true
 }
 
+// SymbolHealth returns the current lifecycle status for one symbol worker.
 func (h *Host) SymbolHealth(symbol string) SymbolHealth {
 	if h == nil {
 		return SymbolHealth{Symbol: symbol, Status: StatusOff}
@@ -727,6 +760,7 @@ func (h *Host) SymbolHealth(symbol string) SymbolHealth {
 	return out
 }
 
+// Health aggregates adaptive worker states into model component health.
 func (h *Host) Health() domain.ComponentHealth {
 	if h == nil {
 		return domain.ComponentHealth{Name: "model", State: domain.ComponentHealthy, Detail: "off"}
@@ -776,6 +810,7 @@ func allFailed(h *Host) bool {
 	return true
 }
 
+// WorkerCompleted returns the committed adaptive step count for a symbol.
 func (h *Host) WorkerCompleted(symbol string) int {
 	if h == nil || h.workers[symbol] == nil {
 		return 0
@@ -783,6 +818,7 @@ func (h *Host) WorkerCompleted(symbol string) int {
 	return h.workers[symbol].engine.CompletedCount()
 }
 
+// WorkerHash returns the committed adaptive state hash for a symbol.
 func (h *Host) WorkerHash(symbol string) string {
 	if h == nil || h.workers[symbol] == nil {
 		return ""
@@ -790,6 +826,7 @@ func (h *Host) WorkerHash(symbol string) string {
 	return h.workers[symbol].engine.StateHash()
 }
 
+// WorkerPricingHash returns the committed pricing state hash for a symbol.
 func (h *Host) WorkerPricingHash(symbol string) string {
 	if h == nil || h.workers[symbol] == nil || h.workers[symbol].pricing == nil {
 		return ""
@@ -797,6 +834,7 @@ func (h *Host) WorkerPricingHash(symbol string) string {
 	return h.workers[symbol].pricing.StateHash()
 }
 
+// WorkerPricingReceived returns the pricing engine's accepted input count.
 func (h *Host) WorkerPricingReceived(symbol string) int {
 	if h == nil || h.workers[symbol] == nil || h.workers[symbol].pricing == nil {
 		return 0
@@ -804,6 +842,7 @@ func (h *Host) WorkerPricingReceived(symbol string) int {
 	return h.workers[symbol].pricing.Received()
 }
 
+// PricingHealth aggregates pricing worker states into component health.
 func (h *Host) PricingHealth() domain.ComponentHealth {
 	if h == nil {
 		return domain.ComponentHealth{Name: "pricing", State: domain.ComponentHealthy, Detail: "off"}

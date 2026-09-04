@@ -1,7 +1,10 @@
 package adaptive
 
+// This file classifies normalized innovation relative to prior state direction.
+
 import "math"
 
+// Perturbation classes describe how innovation relates to established motion.
 const (
 	PerturbationNone          = "NONE"
 	PerturbationReinforcing   = "REINFORCING"
@@ -20,6 +23,8 @@ func direction(value, epsilon float64) int {
 	return 0
 }
 
+// inferPerturbationClass compares established state direction with residual
+// evidence and distinguishes contradiction from an observed reversal.
 func inferPerturbationClass(innovationResidual, priorLevel, prevVelocity, velocity, directionalEpsilon float64) string {
 	stateDirection := direction(priorLevel, directionalEpsilon)
 	if stateDirection == 0 {
@@ -45,6 +50,8 @@ func inferPerturbationClass(innovationResidual, priorLevel, prevVelocity, veloci
 	return PerturbationStructural
 }
 
+// classifyPerturbation compresses innovation to [0,1], applies the source
+// quality and materiality gates, and returns the adaptation multiplier.
 func classifyPerturbation(
 	innovation, prevVelocity, velocity, sourceQuality float64,
 	cfg PerturbationConfig,
@@ -65,6 +72,8 @@ func classifyPerturbation(
 	return class, q, magMultiplier
 }
 
+// isAdversePerturbation reports whether a class should shorten memory or reduce
+// directional persistence.
 func isAdversePerturbation(class string) bool {
 	switch class {
 	case PerturbationContradicting, PerturbationReversing, PerturbationStructural:

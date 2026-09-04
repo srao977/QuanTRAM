@@ -1,5 +1,7 @@
 package pricing
 
+// This file isolates Gonum operations that must preserve reference semantics.
+
 import (
 	"math"
 
@@ -74,11 +76,13 @@ func solveSymmetric(a []float64, n int, b []float64) ([]float64, bool) {
 	return out, true
 }
 
+// cond2 returns the matrix two-norm condition number.
 func cond2(design []float64, rows, cols int) float64 {
 	a := mat.NewDense(rows, cols, append([]float64(nil), design...))
 	return mat.Cond(a, 2)
 }
 
+// maxRealEigenvalue returns the largest real part among all eigenvalues.
 func maxRealEigenvalue(a []float64, n int) (float64, bool) {
 	m := mat.NewDense(n, n, append([]float64(nil), a...))
 	var eig mat.Eigen
@@ -98,6 +102,7 @@ func maxRealEigenvalue(a []float64, n int) (float64, bool) {
 	return maxRe, true
 }
 
+// matrixExp computes exp(A) and rejects any non-finite matrix element.
 func matrixExp(a []float64, n int) (*mat.Dense, bool) {
 	m := mat.NewDense(n, n, append([]float64(nil), a...))
 	var exp mat.Dense
@@ -112,6 +117,7 @@ func matrixExp(a []float64, n int) (*mat.Dense, bool) {
 	return &exp, true
 }
 
+// maxColumnNorm2 returns the largest Euclidean norm among matrix columns.
 func maxColumnNorm2(m *mat.Dense, rows, cols int) float64 {
 	maxN := 0.0
 	for j := 0; j < cols; j++ {
@@ -128,6 +134,7 @@ func maxColumnNorm2(m *mat.Dense, rows, cols int) float64 {
 	return maxN
 }
 
+// popStd computes population standard deviation, matching NumPy ddof=0.
 func popStd(values []float64) (mean, std float64, ok bool) {
 	n := float64(len(values))
 	if n == 0 {

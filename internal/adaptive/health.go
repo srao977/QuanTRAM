@@ -1,5 +1,9 @@
 package adaptive
 
+// This file reduces runtime diagnostics to the D01 health classification.
+
+// evaluateHealth applies severity precedence: non-finite state, data gaps,
+// numerical clipping, large perturbation, then healthy operation.
 func evaluateHealth(state *RuntimeState) string {
 	values := []float64{
 		state.StateVector.Level,

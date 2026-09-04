@@ -1,4 +1,8 @@
+// Package pricing implements the causal P-04 derivative, dynamics, projection,
+// emission-policy, and cockpit pipeline for accepted market bars.
 package pricing
+
+// This file defines the frozen pricing, policy, and cockpit configuration.
 
 // Config holds SADE PricingPipelineConfig and frozen policy/cockpit defaults.
 // Do not recalibrate these values to hide gonum drift.
@@ -29,6 +33,7 @@ type Config struct {
 	DomainExitRequiresAmber       bool
 }
 
+// DefaultConfig returns the frozen pricing baseline for entity.
 func DefaultConfig(entity string) Config {
 	return Config{
 		Entity:                        entity,
@@ -58,6 +63,8 @@ func DefaultConfig(entity string) Config {
 	}
 }
 
+// HistoryLimit returns the storage needed by the larger causal fit window plus
+// one pending bar.
 func (c Config) HistoryLimit() int {
 	if c.DerivativeWindow > c.F4Window {
 		return c.DerivativeWindow + 1
@@ -70,6 +77,7 @@ func (c Config) WarmupBars() int {
 	return c.DerivativeWindow + c.F4Window
 }
 
+// Validate checks the structural preconditions required by numerical fitting.
 func (c Config) Validate() error {
 	if c.Entity == "" {
 		return errf("CONFIG_INVALID entity must be non-empty")

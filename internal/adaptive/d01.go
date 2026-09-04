@@ -1,5 +1,7 @@
 package adaptive
 
+// This file owns the D01 observation-to-DMO/FMO state transition.
+
 import (
 	"crypto/sha256"
 	"encoding/hex"
@@ -9,12 +11,14 @@ import (
 	"strings"
 )
 
+// Model holds the D01 configuration and its last committed runtime state.
 type Model struct {
 	Config     Config
 	ConfigHash string
 	state      RuntimeState
 }
 
+// NewModel creates a D01 model with fresh runtime state for entityID.
 func NewModel(entityID string, cfg Config) *Model {
 	return &Model{
 		Config:     cfg,
@@ -23,6 +27,7 @@ func NewModel(entityID string, cfg Config) *Model {
 	}
 }
 
+// Clone returns an independent copy of the model and its mutable state.
 func (m *Model) Clone() *Model {
 	return &Model{
 		Config:     m.Config,
@@ -31,14 +36,18 @@ func (m *Model) Clone() *Model {
 	}
 }
 
+// State returns a defensive copy of the last committed runtime state.
 func (m *Model) State() RuntimeState {
 	return m.state.Clone()
 }
 
+// StateHash returns the canonical hash of the last committed scientific state.
 func (m *Model) StateHash() string {
 	return stateHash(m.state)
 }
 
+// stateHash intentionally includes only the canonical scientific state vector
+// and half-lives, excluding counters and transport metadata.
 func stateHash(state RuntimeState) string {
 	payload := map[string]float64{
 		"acceleration":          state.StateVector.Acceleration,
@@ -71,6 +80,8 @@ func (m *Model) Step(observation Observation) (DMOOutput, FMOOutput, error) {
 	return dmo, fmo, nil
 }
 
+// stepD01 applies the complete causal scientific pipeline to state. Its caller
+// supplies a working copy so any validation or finite-result error is atomic.
 func stepD01(cfg Config, configHash string, state *RuntimeState, observation Observation) (DMOOutput, FMOOutput, error) {
 	obs := observation.WithDefaults()
 	if err := FiniteInputs(obs); err != nil {

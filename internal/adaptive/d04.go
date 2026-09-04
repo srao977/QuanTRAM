@@ -1,5 +1,7 @@
 package adaptive
 
+// This file evaluates whether a validated return shape is capturable.
+
 import (
 	"fmt"
 	"math"
@@ -8,15 +10,21 @@ import (
 	"quantram/internal/domain"
 )
 
+// EnvelopeContext supplies evaluation-time and optional market eligibility
+// constraints to capturability scoring.
 type EnvelopeContext struct {
 	EvaluationTime float64
 	MarketEligible *bool
 }
 
+// ProductionContext creates an envelope context without a market eligibility
+// override.
 func ProductionContext(evaluationTime float64) EnvelopeContext {
 	return EnvelopeContext{EvaluationTime: evaluationTime}
 }
 
+// CapturabilityResult contains the hard gate, component qualities, final score,
+// and deterministic reason codes for one return shape.
 type CapturabilityResult struct {
 	HardEligibility        int      `bson:"hard_eligibility"`
 	GeometryQuality        float64  `bson:"geometry_quality"`
@@ -27,6 +35,8 @@ type CapturabilityResult struct {
 	ReasonCodes            []string `bson:"reason_codes"`
 }
 
+// ValidateReturnShape verifies that stored geometry agrees exactly with the
+// forward samples from which it was derived.
 func ValidateReturnShape(shape ReturnShape) error {
 	if len(shape.ForwardSamples) == 0 {
 		return fmt.Errorf("INVALID_RETURNSHAPE")
@@ -57,6 +67,7 @@ func ValidateReturnShape(shape ReturnShape) error {
 	return nil
 }
 
+// geometryQuality is terminal displacement divided by maximum excursion.
 func geometryQuality(shape ReturnShape) float64 {
 	if shape.MaximumAbsoluteDisplacement == 0 {
 		return 0
@@ -73,6 +84,8 @@ func riskQuality(shape ReturnShape) float64 {
 	return math.Sqrt((1.0 - shape.Uncertainty) * (1.0 - shape.ReversalPropensity))
 }
 
+// EvaluateCapturability multiplies geometry, structural, and risk quality,
+// then applies projection freshness and market eligibility as a hard gate.
 func EvaluateCapturability(shape ReturnShape, ctx EnvelopeContext) (CapturabilityResult, error) {
 	if err := ValidateReturnShape(shape); err != nil {
 		return CapturabilityResult{}, err

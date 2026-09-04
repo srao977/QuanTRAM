@@ -1,3 +1,5 @@
+// Package server adapts ingestion, model, semantic, and Snapshot services to
+// the public QuanTRAM gRPC contract.
 package server
 
 import (
@@ -15,6 +17,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// Server exposes configured QuanTRAM components through the generated gRPC
+// service interfaces.
 type Server struct {
 	quantramv1.UnimplementedMarketFeedServiceServer
 	quantramv1.UnimplementedIngestionServiceServer
@@ -51,6 +55,8 @@ type priceEvents interface {
 	PricingEnabled() bool
 }
 
+// New composes a gRPC Server and enables event streams only when the supplied
+// model host implements their source interfaces.
 func New(pipeline *ingestion.Pipeline, host modelHealth) *Server {
 	s := &Server{pipeline: pipeline, host: host}
 	if ev, ok := host.(modelEvents); ok {
@@ -62,10 +68,12 @@ func New(pipeline *ingestion.Pipeline, host modelHealth) *Server {
 	return s
 }
 
+// GetFeedHealth returns the current market-feed health observation.
 func (s *Server) GetFeedHealth(context.Context, *quantramv1.GetFeedHealthRequest) (*quantramv1.FeedHealth, error) {
 	return toProtoHealth(s.pipeline.FeedHealth()), nil
 }
 
+// GetActiveSource returns the source identity and its current feed state.
 func (s *Server) GetActiveSource(context.Context, *quantramv1.GetActiveSourceRequest) (*quantramv1.ActiveSource, error) {
 	health := s.pipeline.FeedHealth()
 	return &quantramv1.ActiveSource{
@@ -74,6 +82,10 @@ func (s *Server) GetActiveSource(context.Context, *quantramv1.GetActiveSourceReq
 	}, nil
 }
 
+// StreamBars sends the current in-memory window before forwarding subscribed
+// bars. The subscription is established first so arrivals during catch-up are
+// retained by the pipeline channel; this bar stream does not deduplicate an
+// event that overlaps the window snapshot and subscription.
 func (s *Server) StreamBars(request *quantramv1.StreamBarsRequest, stream quantramv1.IngestionService_StreamBarsServer) error {
 	wanted, err := normalizeSymbols(request.GetSymbols())
 	if err != nil {
@@ -126,6 +138,7 @@ func (s *Server) StreamBars(request *quantramv1.StreamBarsRequest, stream quantr
 	}
 }
 
+// GetBarWindow returns the requested symbol's bounded in-memory bar window.
 func (s *Server) GetBarWindow(_ context.Context, request *quantramv1.GetBarWindowRequest) (*quantramv1.BarWindow, error) {
 	symbol := strings.ToUpper(strings.TrimSpace(request.GetSymbol()))
 	if symbol == "" {
@@ -139,6 +152,7 @@ func (s *Server) GetBarWindow(_ context.Context, request *quantramv1.GetBarWindo
 	return &quantramv1.BarWindow{Symbol: symbol, Bars: out}, nil
 }
 
+// TriggerGapFill requests historical recovery for one normalized symbol.
 func (s *Server) TriggerGapFill(ctx context.Context, request *quantramv1.TriggerGapFillRequest) (*quantramv1.GapFillResult, error) {
 	symbol := strings.ToUpper(strings.TrimSpace(request.GetSymbol()))
 	if symbol == "" {
@@ -161,6 +175,7 @@ func (s *Server) TriggerGapFill(ctx context.Context, request *quantramv1.Trigger
 	return result, nil
 }
 
+// GetHealth aggregates ingestion, model, and pricing component health.
 func (s *Server) GetHealth(context.Context, *quantramv1.GetHealthRequest) (*quantramv1.HealthReport, error) {
 	report := s.pipeline.Health()
 	if s.host != nil {
@@ -193,6 +208,7 @@ func (s *Server) GetHealth(context.Context, *quantramv1.GetHealthRequest) (*quan
 	return out, nil
 }
 
+// GetReadiness returns the pipeline's observation and inference gates.
 func (s *Server) GetReadiness(context.Context, *quantramv1.GetReadinessRequest) (*quantramv1.ReadinessReport, error) {
 	ready := s.pipeline.Readiness()
 	return &quantramv1.ReadinessReport{

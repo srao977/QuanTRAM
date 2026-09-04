@@ -43,6 +43,8 @@ type capture struct {
 	price    domain.PriceEvent
 }
 
+// AsyncStore decouples runtime producers from one ordered persistence worker.
+// Its bounded queue is intentionally lossy rather than backpressuring science.
 type AsyncStore struct {
 	writer   writer
 	queue    chan capture
@@ -74,6 +76,7 @@ func NewAsyncStore(w writer, capacity int) *AsyncStore {
 	return store
 }
 
+// CaptureBar enqueues a lineage-addressable Bar without blocking for capacity.
 func (s *AsyncStore) CaptureBar(bar domain.Bar) bool {
 	if bar.MarketSnapshotID == "" {
 		s.dropped.Add(1)
@@ -82,6 +85,8 @@ func (s *AsyncStore) CaptureBar(bar domain.Bar) bool {
 	return s.enqueue(capture{kind: captureBar, bar: bar})
 }
 
+// CaptureDecision enqueues a terminal decision and optional adaptive outputs
+// without blocking for capacity.
 func (s *AsyncStore) CaptureDecision(event domain.DecisionEvent, outputs *adaptive.PipelineOutputs) bool {
 	if event.MarketSnapshotID == "" {
 		s.dropped.Add(1)
@@ -90,6 +95,7 @@ func (s *AsyncStore) CaptureDecision(event domain.DecisionEvent, outputs *adapti
 	return s.enqueue(capture{kind: captureDecision, decision: event, outputs: outputs})
 }
 
+// CapturePrice enqueues a pricing outcome without blocking for capacity.
 func (s *AsyncStore) CapturePrice(event domain.PriceEvent) bool {
 	if event.MarketSnapshotID == "" {
 		s.dropped.Add(1)
@@ -177,6 +183,7 @@ func (s *AsyncStore) write(ctx context.Context, item capture) error {
 	}
 }
 
+// Health returns a point-in-time view of queue depth and cumulative outcomes.
 func (s *AsyncStore) Health() Health {
 	health := Health{QueueDepth: len(s.queue), Dropped: s.dropped.Load(), Written: s.written.Load(), Failures: s.failures.Load()}
 	if value := s.lastErr.Load(); value != nil {

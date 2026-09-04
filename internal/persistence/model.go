@@ -9,6 +9,7 @@ import (
 	"quantram/internal/domain"
 )
 
+// Database and collection names are the fixed MongoDB ledger namespace.
 const (
 	DatabaseName               = "quantram_db"
 	AperturesCollection        = "quantram_apertures"
@@ -19,6 +20,7 @@ const (
 	SnapshotRunsCollection     = "quantram_snapshot_runs"
 )
 
+// Aperture is one process-lifetime lineage boundary in the historical ledger.
 type Aperture struct {
 	ID                      bson.ObjectID `bson:"_id"`
 	SequenceNum             int64         `bson:"sequence_num"`
@@ -31,12 +33,14 @@ type Aperture struct {
 	CreatedAt               time.Time     `bson:"created_at"`
 }
 
+// Payload persists one canonical Bar under its owning Aperture.
 type Payload struct {
 	ID         bson.ObjectID `bson:"_id"`
 	ApertureID bson.ObjectID `bson:"aperture_id"`
 	Bar        domain.Bar    `bson:"bar"`
 }
 
+// DecisionRecord joins terminal model and pricing facts to one Payload.
 type DecisionRecord struct {
 	ID              bson.ObjectID             `bson:"_id"`
 	ApertureID      bson.ObjectID             `bson:"aperture_id"`
@@ -46,6 +50,7 @@ type DecisionRecord struct {
 	PriceEvent      *domain.PriceEvent        `bson:"price_event,omitempty"`
 }
 
+// Health reports asynchronous persistence queue and write outcomes.
 type Health struct {
 	QueueDepth int
 	Dropped    uint64

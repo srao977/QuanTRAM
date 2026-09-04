@@ -1,3 +1,5 @@
+// Package tooling builds, validates, and audits the canonical semantic
+// contract and its repository evidence.
 package tooling
 
 import (
@@ -10,21 +12,30 @@ import (
 	"quantram/internal/semantics"
 )
 
+// FindingKind classifies the relationship between an observed token and the
+// semantic catalog.
 type FindingKind string
 
 const (
-	FindingKnown            FindingKind = "KNOWN"
-	FindingMissing          FindingKind = "MISSING"
-	FindingOrphaned         FindingKind = "ORPHANED"
+	// FindingKnown identifies an unambiguous cataloged token.
+	FindingKnown FindingKind = "KNOWN"
+	// FindingMissing identifies an observed token with no exact catalog term.
+	FindingMissing FindingKind = "MISSING"
+	// FindingOrphaned identifies catalog source evidence absent from the repo.
+	FindingOrphaned FindingKind = "ORPHANED"
+	// FindingPresentationOnly identifies a render-only catalog alias.
 	FindingPresentationOnly FindingKind = "PRESENTATION_ONLY"
-	FindingReview           FindingKind = "REVIEW"
+	// FindingReview identifies an English token shared by multiple semantic IDs.
+	FindingReview FindingKind = "REVIEW"
 )
 
+// Candidate is one executable, proto, viewer, or caller-supplied audit token.
 type Candidate struct {
 	Token  string
 	Source string
 }
 
+// Finding records one classified token or source-evidence observation.
 type Finding struct {
 	Kind   FindingKind
 	ID     string
@@ -33,10 +44,12 @@ type Finding struct {
 	Detail string
 }
 
+// AuditReport is the deterministically ordered set of semantic audit findings.
 type AuditReport struct {
 	Findings []Finding
 }
 
+// ByKind returns findings with the requested classification.
 func (r AuditReport) ByKind(kind FindingKind) []Finding {
 	var out []Finding
 	for _, f := range r.Findings {
@@ -50,6 +63,9 @@ func (r AuditReport) ByKind(kind FindingKind) []Finding {
 var constString = regexp.MustCompile(`=\s+"([A-Za-z][A-Za-z0-9_ ]*)"`)
 var protoEnum = regexp.MustCompile(`^\s+([A-Z][A-Z0-9_]+) = [0-9]+;`)
 
+// Audit classifies discovered and supplied tokens, then verifies each local
+// catalog source file and symbol. It reports evidence gaps without modifying
+// the catalog or source tree.
 func Audit(repoRoot string, extra []Candidate) (AuditReport, error) {
 	doc := Catalog()
 	if err := semantics.Validate(doc); err != nil {
@@ -97,6 +113,8 @@ func Audit(repoRoot string, extra []Candidate) (AuditReport, error) {
 		}
 		matches := byToken[c.Token]
 		if len(matches) == 0 {
+			// A missing finding concerns observed vocabulary, not a broken source
+			// reference from an existing catalog term.
 			report.Findings = append(report.Findings, Finding{
 				Kind:   FindingMissing,
 				Token:  c.Token,
@@ -111,6 +129,8 @@ func Audit(repoRoot string, extra []Candidate) (AuditReport, error) {
 			kind = FindingPresentationOnly
 		}
 		if len(matches) > 1 {
+			// Shared display vocabulary is not guessed: callers must review the
+			// distinct semantic identities.
 			kind = FindingReview
 			ids := make([]string, 0, len(matches))
 			for _, m := range matches {
@@ -143,6 +163,8 @@ func Audit(repoRoot string, extra []Candidate) (AuditReport, error) {
 		path := filepath.Join(repoRoot, filepath.FromSlash(t.Source.GoFile))
 		body, err := os.ReadFile(path)
 		if err != nil {
+			// Orphaned findings run in the opposite direction from missing ones:
+			// the catalog term exists, but its claimed implementation does not.
 			report.Findings = append(report.Findings, Finding{
 				Kind:   FindingOrphaned,
 				ID:     t.ID,

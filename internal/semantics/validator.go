@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+// Validate checks required meanings and UI text, controlled classifications,
+// unique IDs, and resolvable semantic relationships.
 func Validate(doc Document) error {
 	return validate(doc)
 }

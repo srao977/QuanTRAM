@@ -1,7 +1,11 @@
 package pricing
 
+// This file fits the local F4 jerk dynamics used for forward projection.
+
 import "math"
 
+// f4Fit retains both standardized regression coefficients and their physical
+// coordinate equivalent, together with the fitted training envelope.
 type f4Fit struct {
 	Standardized [4]float64
 	Physical     [4]float64
@@ -12,7 +16,8 @@ type f4Fit struct {
 	Condition    float64
 }
 
-// fitF4AtIndex is SADE dynamics.fit_f4_at_index (population std ddof=0).
+// fitF4AtIndex ridge-fits jerk against standardized P, P1, and P2 over the
+// trailing window. Scaling uses population standard deviation (ddof=0).
 func fitF4AtIndex(p, p1, p2, jp []float64, index, window int, ridgeLambda float64) *f4Fit {
 	if index < window-1 || index < 0 || index >= len(p)-1 {
 		return nil

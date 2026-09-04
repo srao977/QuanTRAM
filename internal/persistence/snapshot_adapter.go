@@ -84,6 +84,8 @@ func snapshotIndexModels() map[string][]mongo.IndexModel {
 			{Keys: bson.D{{Key: "aperture_id", Value: 1}, {Key: "policy_id", Value: 1}, {Key: "symbol", Value: 1}, {Key: "trigger_count", Value: 1}, {Key: "started_at", Value: 1}}},
 			{Keys: bson.D{{Key: "status", Value: 1}, {Key: "started_at", Value: 1}}},
 			{
+				// Only one SUCCESS may claim a checkpoint; failed attempts remain
+				// append-only audit records and may be retried by a later scan.
 				Keys:    bson.D{{Key: "aperture_id", Value: 1}, {Key: "policy_id", Value: 1}, {Key: "symbol", Value: 1}, {Key: "trigger_payload_id", Value: 1}},
 				Options: options.Index().SetUnique(true).SetPartialFilterExpression(bson.D{{Key: "status", Value: string(snapshot.RunSuccess)}}),
 			},
@@ -91,6 +93,8 @@ func snapshotIndexModels() map[string][]mongo.IndexModel {
 	}
 }
 
+// ListPayloads returns one Aperture's durable payload projection in stable
+// symbol, interval, and opaque-ID order for exact-N counting.
 func (w *MongoWriter) ListPayloads(ctx context.Context, apertureID string) ([]snapshot.Payload, error) {
 	apertureObjectID, err := parseSnapshotID("aperture", apertureID)
 	if err != nil {
@@ -118,6 +122,8 @@ func (w *MongoWriter) ListPayloads(ctx context.Context, apertureID string) ([]sn
 	return payloads, nil
 }
 
+// DecisionComplete reports whether the Payload has a durable terminal
+// decision_event; optional adaptive and pricing children are not required.
 func (w *MongoWriter) DecisionComplete(ctx context.Context, apertureID, payloadID string) (bool, error) {
 	apertureObjectID, err := parseSnapshotID("aperture", apertureID)
 	if err != nil {
@@ -138,6 +144,7 @@ func (w *MongoWriter) DecisionComplete(ctx context.Context, apertureID, payloadI
 	return err == nil, err
 }
 
+// ActivePolicies returns policies eligible for evaluation in stable ID order.
 func (w *MongoWriter) ActivePolicies(ctx context.Context) ([]snapshot.Policy, error) {
 	cursor, err := w.database.Collection(SnapshotPoliciesCollection).Find(ctx, bson.D{
 		{Key: "status", Value: string(snapshot.PolicyActive)},
@@ -157,6 +164,7 @@ func (w *MongoWriter) ActivePolicies(ctx context.Context) ([]snapshot.Policy, er
 	return items, nil
 }
 
+// GetPolicy returns one Snapshot policy by provider-backed opaque ID.
 func (w *MongoWriter) GetPolicy(ctx context.Context, id string) (snapshot.Policy, error) {
 	objectID, err := parseSnapshotID("policy", id)
 	if err != nil {
@@ -169,6 +177,7 @@ func (w *MongoWriter) GetPolicy(ctx context.Context, id string) (snapshot.Policy
 	return policyFromDocument(document), nil
 }
 
+// ListPolicies returns an ObjectID-cursor page ordered by ascending ID.
 func (w *MongoWriter) ListPolicies(ctx context.Context, page snapshot.Page) (snapshot.PolicyPage, error) {
 	filter, err := pageFilter(page.Token)
 	if err != nil {
@@ -194,6 +203,7 @@ func (w *MongoWriter) ListPolicies(ctx context.Context, page snapshot.Page) (sna
 	return snapshot.PolicyPage{Items: items}, nil
 }
 
+// CreatePolicy persists a policy with a newly allocated provider identity.
 func (w *MongoWriter) CreatePolicy(ctx context.Context, policy snapshot.Policy) (snapshot.Policy, error) {
 	document := policyToDocument(policy)
 	document.ID = bson.NewObjectID()
@@ -203,6 +213,7 @@ func (w *MongoWriter) CreatePolicy(ctx context.Context, policy snapshot.Policy) 
 	return policyFromDocument(document), nil
 }
 
+// UpdatePolicy replaces one existing policy document.
 func (w *MongoWriter) UpdatePolicy(ctx context.Context, policy snapshot.Policy) (snapshot.Policy, error) {
 	document, err := policyDocumentWithID(policy)
 	if err != nil {
@@ -218,6 +229,7 @@ func (w *MongoWriter) UpdatePolicy(ctx context.Context, policy snapshot.Policy) 
 	return policyFromDocument(document), nil
 }
 
+// GetSnapshot returns one checkpoint by provider-backed opaque ID.
 func (w *MongoWriter) GetSnapshot(ctx context.Context, id string) (snapshot.Snapshot, error) {
 	objectID, err := parseSnapshotID("snapshot", id)
 	if err != nil {
@@ -230,6 +242,7 @@ func (w *MongoWriter) GetSnapshot(ctx context.Context, id string) (snapshot.Snap
 	return snapshotFromDocument(document), nil
 }
 
+// ListSnapshots returns an ObjectID-cursor page matching optional filters.
 func (w *MongoWriter) ListSnapshots(ctx context.Context, filter snapshot.SnapshotFilter) (snapshot.SnapshotPage, error) {
 	query, err := snapshotListFilter(filter)
 	if err != nil {
@@ -255,6 +268,8 @@ func (w *MongoWriter) ListSnapshots(ctx context.Context, filter snapshot.Snapsho
 	return snapshot.SnapshotPage{Items: items}, nil
 }
 
+// SnapshotExists checks the checkpoint idempotency key without loading the
+// checkpoint body.
 func (w *MongoWriter) SnapshotExists(ctx context.Context, item snapshot.Snapshot) (bool, error) {
 	filter, err := snapshotCheckpointFilter(item)
 	if err != nil {
@@ -267,6 +282,8 @@ func (w *MongoWriter) SnapshotExists(ctx context.Context, item snapshot.Snapshot
 	return err == nil, err
 }
 
+// CreateSnapshot idempotently inserts or returns the checkpoint identified by
+// Aperture, policy, symbol, and trigger Payload.
 func (w *MongoWriter) CreateSnapshot(ctx context.Context, item snapshot.Snapshot) (snapshot.Snapshot, error) {
 	filter, err := snapshotCheckpointFilter(item)
 	if err != nil {
@@ -288,6 +305,7 @@ func (w *MongoWriter) CreateSnapshot(ctx context.Context, item snapshot.Snapshot
 	return snapshotFromDocument(document), nil
 }
 
+// StartRun appends a STARTED checkpoint-attempt audit record.
 func (w *MongoWriter) StartRun(ctx context.Context, run snapshot.Run) (snapshot.Run, error) {
 	document, err := runDocumentWithID(run)
 	if err != nil {
@@ -300,6 +318,8 @@ func (w *MongoWriter) StartRun(ctx context.Context, run snapshot.Run) (snapshot.
 	return runFromDocument(document), nil
 }
 
+// FinishRun transitions a STARTED attempt exactly once. A competing SUCCESS
+// is converted into an ERROR audit record rather than claiming the checkpoint.
 func (w *MongoWriter) FinishRun(ctx context.Context, runID string, status snapshot.RunStatus, snapshotID string, errorInfo *snapshot.RunErrorInfo) error {
 	runObjectID, err := parseSnapshotID("run", runID)
 	if err != nil {
@@ -341,6 +361,7 @@ func (w *MongoWriter) FinishRun(ctx context.Context, runID string, status snapsh
 	return err
 }
 
+// ListRuns returns an ObjectID-cursor page matching optional audit filters.
 func (w *MongoWriter) ListRuns(ctx context.Context, filter snapshot.RunFilter) (snapshot.RunPage, error) {
 	query, err := runListFilter(filter)
 	if err != nil {

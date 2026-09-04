@@ -1,3 +1,5 @@
+// Command quantram-ingest-client is a diagnostic gRPC client for inspecting
+// feed, ingestion, model, health, and gap-fill endpoints.
 package main
 
 import (

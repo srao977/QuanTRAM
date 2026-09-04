@@ -1,3 +1,4 @@
+// Package config loads and validates QuanTRAM process configuration.
 package config
 
 import (
@@ -8,20 +9,25 @@ import (
 	"time"
 )
 
+// ModelMode selects whether the adaptive model host is active.
 type ModelMode string
 
+// Model modes select disabled or adaptive inference.
 const (
 	ModelOff      ModelMode = "off"
 	ModelAdaptive ModelMode = "adaptive"
 )
 
+// PricingMode selects whether the pricing engine is active.
 type PricingMode string
 
+// Pricing modes select disabled or matrix-exponential projection.
 const (
 	PricingOff  PricingMode = "off"
 	PricingExpm PricingMode = "expm"
 )
 
+// Runtime defaults and limits define the supported server operating envelope.
 const (
 	DefaultGRPCPort      = "50051"
 	DefaultSource        = "alpaca"
@@ -48,6 +54,7 @@ const (
 	DefaultMongoQueue    = 1024
 )
 
+// Config contains validated runtime settings assembled from the environment.
 type Config struct {
 	GRPCPort      string
 	Source        string
@@ -67,6 +74,7 @@ type Config struct {
 	MongoQueue    int
 }
 
+// Load reads environment configuration, applies defaults, and validates startup invariants.
 func Load() (Config, error) {
 	source := strings.ToLower(environmentOrDefault("QUANTRAM_SOURCE", DefaultSource))
 	feed := strings.ToLower(environmentOrDefault("QUANTRAM_FEED", DefaultFeed))
@@ -129,6 +137,7 @@ func Load() (Config, error) {
 	return cfg, nil
 }
 
+// ParseModelMode normalizes and validates a model mode value.
 func ParseModelMode(value string) (ModelMode, error) {
 	switch strings.ToLower(strings.TrimSpace(value)) {
 	case "", string(ModelOff):
@@ -140,6 +149,7 @@ func ParseModelMode(value string) (ModelMode, error) {
 	}
 }
 
+// ParsePricingMode normalizes and validates a pricing mode value.
 func ParsePricingMode(value string) (PricingMode, error) {
 	switch strings.ToLower(strings.TrimSpace(value)) {
 	case "", string(PricingOff):
@@ -151,6 +161,7 @@ func ParsePricingMode(value string) (PricingMode, error) {
 	}
 }
 
+// ValidatePricingRequiresAdaptive enforces the shared adaptive/pricing runtime dependency.
 func ValidatePricingRequiresAdaptive(pricing PricingMode, model ModelMode) error {
 	if pricing == PricingExpm && model != ModelAdaptive {
 		return fmt.Errorf("QUANTRAM_PRICING=expm requires QUANTRAM_MODEL=adaptive")
@@ -158,6 +169,7 @@ func ValidatePricingRequiresAdaptive(pricing PricingMode, model ModelMode) error
 	return nil
 }
 
+// ParseModelDeadline parses and bounds the per-bar model deadline.
 func ParseModelDeadline(value string) (time.Duration, error) {
 	deadline, err := time.ParseDuration(strings.TrimSpace(value))
 	if err != nil {

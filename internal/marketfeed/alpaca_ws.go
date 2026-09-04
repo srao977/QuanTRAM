@@ -14,6 +14,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// AlpacaStream maintains a reconnecting Alpaca WebSocket bar subscription.
+// Its mutex protects health observed concurrently with the active session.
 type AlpacaStream struct {
 	url         string
 	feed        string
@@ -24,6 +26,7 @@ type AlpacaStream struct {
 	health domain.FeedHealth
 }
 
+// NewAlpacaStream constructs a disconnected stream for the selected feed.
 func NewAlpacaStream(url, feed string, credentials Credentials) *AlpacaStream {
 	return &AlpacaStream{
 		url:         url,
@@ -37,6 +40,7 @@ func NewAlpacaStream(url, feed string, credentials Credentials) *AlpacaStream {
 	}
 }
 
+// Health returns a copy of the current connection and subscription health.
 func (s *AlpacaStream) Health() domain.FeedHealth {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -45,6 +49,7 @@ func (s *AlpacaStream) Health() domain.FeedHealth {
 	return health
 }
 
+// Run reconnects sessions with bounded exponential backoff until cancellation.
 func (s *AlpacaStream) Run(ctx context.Context, symbols []string, out chan<- domain.Bar) error {
 	if len(symbols) > config.MaxSymbolsBasicPlan {
 		return fmt.Errorf("symbol cap exceeded: %d > %d", len(symbols), config.MaxSymbolsBasicPlan)
@@ -80,6 +85,8 @@ func (s *AlpacaStream) Run(ctx context.Context, symbols []string, out chan<- dom
 }
 
 func (s *AlpacaStream) session(ctx context.Context, symbols []string, out chan<- domain.Bar) error {
+	// A session owns the connection. The read goroutine is the sole data-frame
+	// reader while this goroutine owns heartbeat writes and lifecycle decisions.
 	conn, _, err := s.dialer.DialContext(ctx, s.url, http.Header{})
 	if err != nil {
 		return fmt.Errorf("dial alpaca stream: %w", err)
@@ -230,6 +237,7 @@ func (s *AlpacaStream) readLoop(ctx context.Context, conn *websocket.Conn, out c
 		if err != nil {
 			continue
 		}
+		// Messages in one provider frame share the frame receipt timestamp.
 		receipt := time.Now().UTC()
 		for _, message := range messages {
 			control, _ := decodeControl(message)

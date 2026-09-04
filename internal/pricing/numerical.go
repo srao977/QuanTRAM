@@ -1,7 +1,11 @@
 package pricing
 
+// This file assembles fitted dynamics and projected cover data for policy use.
+
 import "math"
 
+// numericalRow is the internal numerical contract between fitting, projection,
+// emission policy, and cockpit interpretation.
 type numericalRow struct {
 	Index                                int
 	ObservationIndex                     int
@@ -25,6 +29,8 @@ type numericalRow struct {
 	ExitDimension                        string
 }
 
+// buildNumericalRow derives local stability diagnostics from the F4 companion
+// matrix. Failed or unstable covers preserve the input state as the projection.
 func buildNumericalRow(obs Observation, index, globalActive int, fit *f4Fit, cover coverResult, p, p1, p2 float64) numericalRow {
 	companion := []float64{
 		0, 1, 0,

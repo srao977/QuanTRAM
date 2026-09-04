@@ -12,6 +12,7 @@ import (
 	"quantram/internal/domain"
 )
 
+// AlpacaREST retrieves paginated historical bars from Alpaca's data API.
 type AlpacaREST struct {
 	baseURL     string
 	feed        string
@@ -19,6 +20,7 @@ type AlpacaREST struct {
 	client      *http.Client
 }
 
+// NewAlpacaREST constructs a historical source with a bounded HTTP timeout.
 func NewAlpacaREST(baseURL, feed string, credentials Credentials) *AlpacaREST {
 	if feed == "test" {
 		feed = "iex"
@@ -31,6 +33,7 @@ func NewAlpacaREST(baseURL, feed string, credentials Credentials) *AlpacaREST {
 	}
 }
 
+// Bars retrieves all pages for a request and marks normalized bars as backfilled.
 func (a *AlpacaREST) Bars(ctx context.Context, request BarRangeRequest) ([]domain.Bar, error) {
 	if request.Symbol == "" {
 		return nil, fmt.Errorf("symbol is required")

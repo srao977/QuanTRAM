@@ -1,5 +1,9 @@
 package adaptive
 
+// This file maintains the adaptive price reference and normalization scale.
+
+// updateReferenceAndScale exponentially smooths price and absolute reference
+// error while preserving the configured minimum scale.
 func updateReferenceAndScale(price, prevReference, prevScale float64, cfg ReferenceConfig) (float64, float64) {
 	ref := prevReference + cfg.Alpha*(price-prevReference)
 	absErr := abs(price - ref)

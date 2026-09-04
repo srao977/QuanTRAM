@@ -1,5 +1,7 @@
 package pricing
 
+// This file owns the causal pricing history and transactional step pipeline.
+
 import (
 	"crypto/sha256"
 	"encoding/hex"
@@ -29,6 +31,7 @@ func newHistory(limit int) history {
 	return history{limit: limit}
 }
 
+// clone isolates all history slices for transactional evaluation.
 func (h history) clone() history {
 	cp := history{limit: h.limit}
 	cp.timestamps = append([]string(nil), h.timestamps...)
@@ -44,6 +47,8 @@ func (h history) clone() history {
 	return cp
 }
 
+// append adds a pending observation and evicts the oldest row at the configured
+// limit; derivative slots begin non-finite until their causal windows are ready.
 func (h *history) append(obs Observation) {
 	h.timestamps = append(h.timestamps, obs.Timestamp)
 	h.minutes = append(h.minutes, obs.Minutes)
@@ -84,6 +89,7 @@ type Engine struct {
 	entity        string
 }
 
+// NewEngine creates a validated pricing pipeline with empty causal history.
 func NewEngine(entity string) (*Engine, error) {
 	cfg := DefaultConfig(entity)
 	if err := cfg.Validate(); err != nil {
@@ -102,10 +108,13 @@ func NewEngine(entity string) (*Engine, error) {
 	return e, nil
 }
 
+// Received returns the number of bars committed to pricing history.
 func (e *Engine) Received() int { return e.received }
 
+// WarmupBars returns the accepted-bar count before the first possible emission.
 func (e *Engine) WarmupBars() int { return e.cfg.WarmupBars() }
 
+// StateHash returns a compact identity of committed history and policy state.
 func (e *Engine) StateHash() string {
 	last := 0.0
 	if n := len(e.hist.closes); n > 0 {
@@ -140,6 +149,7 @@ func (e *Engine) adopt(src *Engine) {
 	e.received = src.received
 }
 
+// Step prepares one bar and commits every accepted warmup or emission result.
 func (e *Engine) Step(bar domain.Bar) domain.PriceEvent {
 	event, working, commit := e.PrepareStep(bar)
 	if commit {
@@ -148,6 +158,8 @@ func (e *Engine) Step(bar domain.Bar) domain.PriceEvent {
 	return event
 }
 
+// PrepareStep evaluates on a clone and leaves committed state unchanged until
+// the caller passes the returned working engine to Commit.
 func (e *Engine) PrepareStep(bar domain.Bar) (domain.PriceEvent, *Engine, bool) {
 	working := e.clone()
 	event, commit := working.apply(bar)
@@ -157,6 +169,7 @@ func (e *Engine) PrepareStep(bar domain.Bar) (domain.PriceEvent, *Engine, bool) 
 	return event, working, true
 }
 
+// Commit atomically adopts a successfully prepared pricing state.
 func (e *Engine) Commit(working *Engine) {
 	if working != nil {
 		e.adopt(working)
@@ -230,7 +243,8 @@ func (e *Engine) apply(bar domain.Bar) (domain.PriceEvent, bool) {
 		return e.warmup(obs, started, domain.PricingStatusF4Unavailable, domain.PricingSkipF4Unavailable, globalActive), true
 	}
 
-	// Active-row observation for numerical/engine uses the *active* bar, not the newest pending.
+	// The newest bar closes the causal window; projection belongs to the prior
+	// active row, so its timestamp and market values must drive the emission.
 	activeObs := Observation{
 		Entity:    obs.Entity,
 		Timestamp: next.timestamps[active],

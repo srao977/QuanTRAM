@@ -1,5 +1,9 @@
 package adaptive
 
+// This file adapts observation and projection memory horizons.
+
+// adaptHalfLife compounds reinforcement and contradiction multipliers, applies
+// the adverse-perturbation reset policy, and enforces the configured horizon.
 func adaptHalfLife(current, persistence, strength, uncertainty float64, perturbationClass string, cfg HalfLifeConfig) float64 {
 	reinforceGain := cfg.ReinforcementMultiplierBounds.Clamp(1.0 + (persistence * strength * 0.2))
 	contradictLoss := cfg.ContradictionMultiplierBounds.Clamp(1.0 - (uncertainty * 0.35))

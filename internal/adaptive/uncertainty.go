@@ -1,5 +1,9 @@
 package adaptive
 
+// This file aggregates evidence degradation into bounded uncertainty.
+
+// computeUncertainty combines innovation, incoherence, unknown perturbation,
+// degraded input quality, and instability through a bounded sigmoid.
 func computeUncertainty(
 	innovationMag, coherence, unknownPerturbation, dataQualityDegradation, instability float64,
 	cfg UncertaintyConfig,

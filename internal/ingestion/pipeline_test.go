@@ -22,6 +22,7 @@ type barRecorder struct {
 	bars []domain.Bar
 }
 
+// barRecorder exposes capture ordering without introducing persistence behavior.
 func (r *barRecorder) CaptureBar(bar domain.Bar) bool {
 	r.bars = append(r.bars, bar)
 	return true

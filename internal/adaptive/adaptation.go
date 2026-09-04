@@ -1,5 +1,9 @@
 package adaptive
 
+// This file applies bounded parameter learning after each D01 observation.
+
+// updateParameters scales each base learning rate by confidence and
+// perturbation, then reports both effective movement and bound contacts.
 func updateParameters(params map[string]float64, uncertainty, strength, perturbationMultiplier float64, cfg AdaptationConfig) (updated map[string]float64, magnitudes map[string]float64, boundHits int) {
 	updated = make(map[string]float64, len(params))
 	magnitudes = make(map[string]float64, len(params))

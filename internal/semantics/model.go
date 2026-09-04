@@ -1,5 +1,8 @@
+// Package semantics defines, validates, and serves the canonical QuanTRAM
+// semantic contract independently of its authoring and transport adapters.
 package semantics
 
+// ContractVersion is the semantic contract version embedded in this binary.
 const ContractVersion = "1.0"
 
 var allowedTypes = map[string]struct{}{
@@ -21,6 +24,8 @@ var allowedPersistence = map[string]struct{}{
 	"PERSIST": {}, "RENDER_ONLY": {},
 }
 
+// Contract identifies one published semantic dictionary and its persistence
+// policy.
 type Contract struct {
 	Name              string `json:"name"`
 	Version           string `json:"version"`
@@ -29,6 +34,7 @@ type Contract struct {
 	PersistencePolicy string `json:"persistence_policy"`
 }
 
+// Source records implementation and test evidence for a semantic term.
 type Source struct {
 	GoFile           string `json:"go_file"`
 	GoSymbol         string `json:"go_symbol"`
@@ -36,6 +42,7 @@ type Source struct {
 	TestReference    string `json:"test_reference"`
 }
 
+// UI contains presentation text published with a semantic term.
 type UI struct {
 	Tooltip              string `json:"tooltip"`
 	PopoverTitle         string `json:"popover_title"`
@@ -43,6 +50,8 @@ type UI struct {
 	ShowScientificDetail bool   `json:"show_scientific_detail"`
 }
 
+// Term is one canonical concept, including its exclusions, relationships,
+// lifecycle classification, and source evidence.
 type Term struct {
 	ID                   string   `json:"id"`
 	Term                 string   `json:"term"`
@@ -64,16 +73,19 @@ type Term struct {
 	PersistencePolicy    string   `json:"persistence_policy"`
 }
 
+// Document is a complete semantic contract and its ordered terms.
 type Document struct {
 	SemanticContract Contract `json:"semantic_contract"`
 	Terms            []Term   `json:"terms"`
 }
 
+// Dictionary is an immutable validated Document with ID lookup indexing.
 type Dictionary struct {
 	doc  Document
 	byID map[string]Term
 }
 
+// Document returns the validated semantic document.
 func (d *Dictionary) Document() Document {
 	if d == nil {
 		return Document{}
@@ -81,6 +93,7 @@ func (d *Dictionary) Document() Document {
 	return d.doc
 }
 
+// Version returns the loaded contract version.
 func (d *Dictionary) Version() string {
 	if d == nil {
 		return ""
@@ -88,6 +101,7 @@ func (d *Dictionary) Version() string {
 	return d.doc.SemanticContract.Version
 }
 
+// Contract returns the loaded contract metadata.
 func (d *Dictionary) Contract() Contract {
 	if d == nil {
 		return Contract{}
@@ -95,6 +109,7 @@ func (d *Dictionary) Contract() Contract {
 	return d.doc.SemanticContract
 }
 
+// TermCount returns the number of loaded canonical and presentation terms.
 func (d *Dictionary) TermCount() int {
 	if d == nil {
 		return 0
@@ -102,6 +117,7 @@ func (d *Dictionary) TermCount() int {
 	return len(d.doc.Terms)
 }
 
+// Term looks up a term by canonical semantic ID.
 func (d *Dictionary) Term(id string) (Term, bool) {
 	if d == nil {
 		return Term{}, false
@@ -110,6 +126,8 @@ func (d *Dictionary) Term(id string) (Term, bool) {
 	return t, ok
 }
 
+// List returns terms matching optional exact component and type filters while
+// preserving document order.
 func (d *Dictionary) List(component, typ string) []Term {
 	if d == nil {
 		return nil

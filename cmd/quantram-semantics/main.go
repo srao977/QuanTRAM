@@ -1,3 +1,5 @@
+// Command quantram-semantics validates, builds, and audits the canonical
+// semantic contract and its repository references.
 package main
 
 import (
@@ -18,6 +20,8 @@ func main() {
 	}
 }
 
+// run dispatches one tooling operation. Validation checks both the compiled
+// catalog and the selected JSON artifact before reporting success.
 func run(args []string) error {
 	cmd := args[0]
 	rest := args[1:]

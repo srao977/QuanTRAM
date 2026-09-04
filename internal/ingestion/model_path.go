@@ -21,6 +21,7 @@ type FinalizedBarConsumer interface {
 
 var _ FinalizedBarConsumer = (*Pipeline)(nil)
 
+// ModelPathStatus reports whether ordered model delivery can safely continue.
 type ModelPathStatus struct {
 	Discontinuous bool
 	Reason        domain.SkipReason
@@ -28,6 +29,8 @@ type ModelPathStatus struct {
 	HasLast       bool
 }
 
+// SubscribeModelBars registers a loss-intolerant subscriber for model-eligible bars.
+// Overflow latches a per-symbol discontinuity instead of replacing queued history.
 func (p *Pipeline) SubscribeModelBars(buffer int) (uint64, <-chan domain.Bar) {
 	if buffer <= 0 {
 		buffer = config.ConsumerQueue
@@ -69,6 +72,8 @@ func (p *Pipeline) fanoutModel(bar domain.Bar) {
 		log.Printf("model path skip symbol=%s reason=unaligned current=%s", bar.Symbol, bar.IntervalStart.UTC().Format(time.RFC3339))
 		return
 	}
+	// Hold the registry lock across non-blocking sends so unsubscribe cannot close
+	// a model channel while it is being considered for delivery.
 	for id, ch := range p.modelSubs {
 		select {
 		case ch <- bar:
@@ -81,6 +86,8 @@ func (p *Pipeline) fanoutModel(bar domain.Bar) {
 	p.modelLast[bar.Symbol] = bar.IntervalStart
 }
 
+// HasEligibleBetween reports whether the retained window proves an eligible bar
+// strictly inside the requested interval.
 func (p *Pipeline) HasEligibleBetween(symbol string, from, to time.Time) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -96,6 +103,7 @@ func (p *Pipeline) hasEligibleBetweenLocked(symbol string, from, to time.Time) b
 	return false
 }
 
+// ModelPathStatus returns a synchronized snapshot of one symbol's delivery state.
 func (p *Pipeline) ModelPathStatus(symbol string) ModelPathStatus {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -111,6 +119,7 @@ func (p *Pipeline) ModelPathStatus(symbol string) ModelPathStatus {
 	return status
 }
 
+// ResetModelPath clears ordered-delivery history for an explicit cold restart.
 func (p *Pipeline) ResetModelPath(symbol string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -118,6 +127,7 @@ func (p *Pipeline) ResetModelPath(symbol string) {
 	delete(p.modelLast, symbol)
 }
 
+// ReadinessFor applies per-symbol model-path continuity to pipeline readiness.
 func (p *Pipeline) ReadinessFor(symbol string) domain.Readiness {
 	ready := p.Readiness()
 	status := p.ModelPathStatus(symbol)

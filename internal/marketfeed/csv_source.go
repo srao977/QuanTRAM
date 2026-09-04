@@ -15,6 +15,8 @@ import (
 
 var csvHeader = []string{"timestamp", "open", "high", "low", "close", "volume"}
 
+// CSVSource replays canonical one-minute CSV rows as a live bar source.
+// Its mutex protects the health snapshot read concurrently by ingestion.
 type CSVSource struct {
 	path   string
 	symbol string
@@ -23,6 +25,7 @@ type CSVSource struct {
 	health domain.FeedHealth
 }
 
+// NewCSVSource constructs a replay source for one default symbol.
 func NewCSVSource(path, symbol string) *CSVSource {
 	return &CSVSource{
 		path:   path,
@@ -35,12 +38,15 @@ func NewCSVSource(path, symbol string) *CSVSource {
 	}
 }
 
+// Health returns the source's current replay health snapshot.
 func (c *CSVSource) Health() domain.FeedHealth {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.health
 }
 
+// Run emits CSV rows in file order until EOF or cancellation.
+// When symbols is non-empty, its first value overrides the default symbol.
 func (c *CSVSource) Run(ctx context.Context, symbols []string, out chan<- domain.Bar) error {
 	c.setState(domain.FeedHealthy, "")
 	file, err := os.Open(c.path)

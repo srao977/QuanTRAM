@@ -18,6 +18,8 @@ import (
 	"quantram/internal/domain"
 )
 
+// MongoConfig identifies the MongoDB database and version metadata stamped on
+// the process Aperture.
 type MongoConfig struct {
 	URI                     string
 	Database                string
@@ -26,6 +28,7 @@ type MongoConfig struct {
 	SchemaVersion           string
 }
 
+// MongoWriter persists lineage-bound runtime and Snapshot records in MongoDB.
 type MongoWriter struct {
 	client     *mongo.Client
 	database   *mongo.Database
@@ -52,6 +55,8 @@ type mongoApertureRepository struct {
 	collection *mongo.Collection
 }
 
+// OpenMongo connects and verifies MongoDB, creates required indexes, and opens
+// a new process Aperture before returning a writer.
 func OpenMongo(ctx context.Context, cfg MongoConfig) (*MongoWriter, error) {
 	if cfg.URI == "" {
 		return nil, fmt.Errorf("MongoDB URI is required")
@@ -91,6 +96,7 @@ func OpenMongo(ctx context.Context, cfg MongoConfig) (*MongoWriter, error) {
 	return writer, nil
 }
 
+// ApertureID returns the provider-backed opaque ID for this writer's lineage.
 func (w *MongoWriter) ApertureID() string {
 	return w.apertureID.Hex()
 }
@@ -115,6 +121,7 @@ func (w *MongoWriter) ensureIndexes(ctx context.Context, database *mongo.Databas
 	return w.ensureSnapshotIndexes(ctx)
 }
 
+// WriteBar idempotently persists a Bar by Aperture and market snapshot ID.
 func (w *MongoWriter) WriteBar(ctx context.Context, bar domain.Bar) error {
 	if bar.MarketSnapshotID == "" {
 		return fmt.Errorf("bar has no market_snapshot_id")
@@ -140,6 +147,8 @@ func (w *MongoWriter) payloadID(ctx context.Context, snapshotID string) (bson.Ob
 	return payload.ID, nil
 }
 
+// WriteDecision upserts the terminal decision and optional adaptive outputs on
+// the DecisionRecord joined to the event's Payload.
 func (w *MongoWriter) WriteDecision(ctx context.Context, event domain.DecisionEvent, outputs *adaptive.PipelineOutputs) error {
 	payloadID, err := w.payloadID(ctx, event.MarketSnapshotID)
 	if err != nil {
@@ -152,6 +161,8 @@ func (w *MongoWriter) WriteDecision(ctx context.Context, event domain.DecisionEv
 	return w.upsertDecision(ctx, payloadID, set)
 }
 
+// WritePrice upserts a pricing event on the DecisionRecord joined to its
+// Payload; it does not imply that a terminal decision is present.
 func (w *MongoWriter) WritePrice(ctx context.Context, event domain.PriceEvent) error {
 	payloadID, err := w.payloadID(ctx, event.MarketSnapshotID)
 	if err != nil {
@@ -191,6 +202,8 @@ func (w *MongoWriter) Disconnect(ctx context.Context) error {
 }
 
 func createProcessAperture(ctx context.Context, repository apertureRepository, cfg MongoConfig, at time.Time) (Aperture, error) {
+	// Sequence allocation is optimistic. A unique index arbitrates concurrent
+	// process starts, and a collision causes a fresh latest-sequence read.
 	for attempt := 0; attempt < apertureCreateAttempts; attempt++ {
 		latest, err := repository.LatestSequence(ctx)
 		if err != nil {
@@ -212,6 +225,7 @@ func createProcessAperture(ctx context.Context, repository apertureRepository, c
 	return Aperture{}, fmt.Errorf("allocate unique aperture sequence after %d attempts", apertureCreateAttempts)
 }
 
+// LatestSequence returns the greatest Aperture sequence currently persisted.
 func (r mongoApertureRepository) LatestSequence(ctx context.Context) (int64, error) {
 	var aperture Aperture
 	err := r.collection.FindOne(ctx, bson.D{}, options.FindOne().SetSort(bson.D{{Key: "sequence_num", Value: -1}})).Decode(&aperture)
@@ -221,6 +235,7 @@ func (r mongoApertureRepository) LatestSequence(ctx context.Context) (int64, err
 	return aperture.SequenceNum, err
 }
 
+// Insert persists a newly OPEN Aperture and returns its assigned identity.
 func (r mongoApertureRepository) Insert(ctx context.Context, aperture Aperture) (bson.ObjectID, error) {
 	document := bson.D{
 		{Key: "sequence_num", Value: aperture.SequenceNum}, {Key: "open", Value: aperture.Open},
@@ -240,6 +255,7 @@ func (r mongoApertureRepository) Insert(ctx context.Context, aperture Aperture) 
 	return id, nil
 }
 
+// Shut marks the identified Aperture closed at the supplied UTC instant.
 func (r mongoApertureRepository) Shut(ctx context.Context, id bson.ObjectID, at time.Time) error {
 	result, err := r.collection.UpdateOne(ctx,
 		bson.D{{Key: "_id", Value: id}, {Key: "status", Value: "OPEN"}},

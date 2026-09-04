@@ -12,10 +12,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// SetSnapshotService enables Snapshot policy, checkpoint, and audit RPCs.
 func (s *Server) SetSnapshotService(service *snapshot.Service) {
 	s.snapshots = service
 }
 
+// GetSnapshotPolicy returns one Snapshot policy by opaque ID.
 func (s *Server) GetSnapshotPolicy(ctx context.Context, request *quantramv1.GetSnapshotPolicyRequest) (*quantramv1.GetSnapshotPolicyResponse, error) {
 	service, err := s.requireSnapshotService()
 	if err != nil {
@@ -28,6 +30,7 @@ func (s *Server) GetSnapshotPolicy(ctx context.Context, request *quantramv1.GetS
 	return &quantramv1.GetSnapshotPolicyResponse{Policy: toProtoSnapshotPolicy(policy)}, nil
 }
 
+// ListSnapshotPolicies returns one provider-backed page of policies.
 func (s *Server) ListSnapshotPolicies(ctx context.Context, request *quantramv1.ListSnapshotPoliciesRequest) (*quantramv1.ListSnapshotPoliciesResponse, error) {
 	service, err := s.requireSnapshotService()
 	if err != nil {
@@ -44,6 +47,7 @@ func (s *Server) ListSnapshotPolicies(ctx context.Context, request *quantramv1.L
 	return &quantramv1.ListSnapshotPoliciesResponse{Policies: policies, NextPageToken: page.NextToken}, nil
 }
 
+// CreateSnapshotPolicy validates and creates a service-owned policy identity.
 func (s *Server) CreateSnapshotPolicy(ctx context.Context, request *quantramv1.CreateSnapshotPolicyRequest) (*quantramv1.CreateSnapshotPolicyResponse, error) {
 	service, err := s.requireSnapshotService()
 	if err != nil {
@@ -59,6 +63,7 @@ func (s *Server) CreateSnapshotPolicy(ctx context.Context, request *quantramv1.C
 	return &quantramv1.CreateSnapshotPolicyResponse{Policy: toProtoSnapshotPolicy(policy)}, nil
 }
 
+// UpdateSnapshotPolicy replaces the mutable fields of an existing policy.
 func (s *Server) UpdateSnapshotPolicy(ctx context.Context, request *quantramv1.UpdateSnapshotPolicyRequest) (*quantramv1.UpdateSnapshotPolicyResponse, error) {
 	service, err := s.requireSnapshotService()
 	if err != nil {
@@ -74,6 +79,7 @@ func (s *Server) UpdateSnapshotPolicy(ctx context.Context, request *quantramv1.U
 	return &quantramv1.UpdateSnapshotPolicyResponse{Policy: toProtoSnapshotPolicy(policy)}, nil
 }
 
+// GetSnapshot returns one checkpoint by opaque ID.
 func (s *Server) GetSnapshot(ctx context.Context, request *quantramv1.GetSnapshotRequest) (*quantramv1.GetSnapshotResponse, error) {
 	service, err := s.requireSnapshotService()
 	if err != nil {
@@ -86,6 +92,8 @@ func (s *Server) GetSnapshot(ctx context.Context, request *quantramv1.GetSnapsho
 	return &quantramv1.GetSnapshotResponse{Snapshot: toProtoSnapshot(item)}, nil
 }
 
+// ListSnapshots normalizes the optional symbol and maps provider pagination to
+// the public checkpoint representation.
 func (s *Server) ListSnapshots(ctx context.Context, request *quantramv1.ListSnapshotsRequest) (*quantramv1.ListSnapshotsResponse, error) {
 	service, err := s.requireSnapshotService()
 	if err != nil {
@@ -106,6 +114,7 @@ func (s *Server) ListSnapshots(ctx context.Context, request *quantramv1.ListSnap
 	return &quantramv1.ListSnapshotsResponse{Snapshots: items, NextPageToken: page.NextToken}, nil
 }
 
+// ListSnapshotRuns returns filtered checkpoint-attempt audit records.
 func (s *Server) ListSnapshotRuns(ctx context.Context, request *quantramv1.ListSnapshotRunsRequest) (*quantramv1.ListSnapshotRunsResponse, error) {
 	service, err := s.requireSnapshotService()
 	if err != nil {
@@ -148,6 +157,8 @@ func snapshotStatusError(err error) error {
 	}
 }
 
+// Proto UNSPECIFIED values map to invalid core values so service validation,
+// rather than transport defaults, remains authoritative for writes.
 func snapshotPolicyStatusFromProto(value quantramv1.SnapshotPolicyStatus) snapshot.PolicyStatus {
 	switch value {
 	case quantramv1.SnapshotPolicyStatus_SNAPSHOT_POLICY_STATUS_ACTIVE:

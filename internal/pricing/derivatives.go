@@ -1,8 +1,11 @@
 package pricing
 
+// This file estimates causal first and second price derivatives.
+
 import "math"
 
-// causalQuadraticAtIndex is SADE derivatives.causal_quadratic_at_index.
+// causalQuadraticAtIndex fits P(t) = a*t^2 + b*t + c over the trailing window
+// with the active sample at t=0, returning P'=b and P”=2a. Rank must be three.
 func causalQuadraticAtIndex(timesMinutes, prices []float64, index, window int) (p1, p2 float64, failures int) {
 	if index < window-1 || index < 0 || index >= len(prices) {
 		return math.NaN(), math.NaN(), 0

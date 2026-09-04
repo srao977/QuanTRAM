@@ -6,6 +6,7 @@ import "time"
 // It is not a scientific D01/D02/D04 state.
 type ContinuityClass string
 
+// Continuity classes distinguish causal, irregular, and invalid timestamp transitions.
 const (
 	ContinuityFirst      ContinuityClass = "first"
 	ContinuityNormal     ContinuityClass = "normal"

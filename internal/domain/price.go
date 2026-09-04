@@ -5,6 +5,7 @@ import "time"
 // PricingStatus matches SADE PricingPipeline step status names for equivalence.
 type PricingStatus string
 
+// Pricing statuses preserve the frozen pipeline outcome vocabulary.
 const (
 	PricingStatusUnspecified      PricingStatus = ""
 	PricingStatusWarmupDerivative PricingStatus = "WARMUP_DERIVATIVE"
@@ -17,8 +18,10 @@ const (
 	PricingStatusProjectionFailure PricingStatus = "RK45_FAILURE"
 )
 
+// PricingSkipReason classifies why a considered bar produced no price emission.
 type PricingSkipReason string
 
+// Pricing skip reasons preserve why no emission was committed.
 const (
 	PricingSkipUnspecified      PricingSkipReason = ""
 	PricingSkipWarmupDerivative PricingSkipReason = "WARMUP_DERIVATIVE"
@@ -85,6 +88,7 @@ type PriceCockpit struct {
 	ReasonCodes          []string `bson:"reason_codes"`
 }
 
+// PricingSkip is a typed non-emission from the pricing engine.
 type PricingSkip struct {
 	Reason PricingSkipReason `bson:"reason"`
 	Detail string            `bson:"detail"`
@@ -108,6 +112,7 @@ type PriceEvent struct {
 	Skip             *PricingSkip   `bson:"skip,omitempty"`
 }
 
+// IsEmission reports whether the event contains only an emission outcome.
 func (e PriceEvent) IsEmission() bool {
 	return e.Emission != nil && e.Skip == nil
 }

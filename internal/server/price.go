@@ -9,6 +9,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// StreamPriceEvents sends the latest per-symbol pricing outcomes before
+// forwarding live events, subject to optional symbol and event-count limits.
 func (s *Server) StreamPriceEvents(request *quantramv1.StreamPriceEventsRequest, stream quantramv1.ModelService_StreamPriceEventsServer) error {
 	if s.prices == nil {
 		if s.host != nil {
@@ -29,6 +31,8 @@ func (s *Server) StreamPriceEvents(request *quantramv1.StreamPriceEventsRequest,
 	id, events := s.prices.SubscribePriceEvents(config.SubscriberQueue)
 	defer s.prices.UnsubscribePriceEvents(id)
 
+	// Subscribe before reading the latest cache. Event IDs suppress the overlap
+	// created when an event is both cached and queued during this handoff.
 	var sent uint32
 	seen := make(map[string]struct{})
 	for _, ev := range s.prices.LastPriceEvents() {

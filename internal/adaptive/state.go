@@ -1,7 +1,10 @@
 package adaptive
 
+// This file defines the mutable D01 runtime state and its copy semantics.
+
 import "maps"
 
+// StateVector contains the normalized scientific state derived from observations.
 type StateVector struct {
 	Level                 float64
 	Velocity              float64
@@ -15,6 +18,7 @@ type StateVector struct {
 	DecayRelevance        float64
 }
 
+// DefaultStateVector returns the baseline state before the first observation.
 func DefaultStateVector() StateVector {
 	return StateVector{
 		Uncertainty:        0.15,
@@ -23,11 +27,13 @@ func DefaultStateVector() StateVector {
 	}
 }
 
+// HalfLifeState holds the current observation and forward memory horizons.
 type HalfLifeState struct {
 	ObservationHalfLife float64
 	ForwardHalfLife     float64
 }
 
+// RuntimeState is the complete mutable state committed by a D01 Model.
 type RuntimeState struct {
 	EntityID                 string
 	ModelTime                float64
@@ -50,6 +56,7 @@ type RuntimeState struct {
 	DataGapCount             int
 }
 
+// NewRuntimeState initializes state for an entity with baseline half-lives.
 func NewRuntimeState(entityID string, baselineHalfLife float64) RuntimeState {
 	return RuntimeState{
 		EntityID:                 entityID,
@@ -62,6 +69,8 @@ func NewRuntimeState(entityID string, baselineHalfLife float64) RuntimeState {
 	}
 }
 
+// Clone returns an independent copy of all mutable maps, pointers, and nested
+// observation data.
 func (s RuntimeState) Clone() RuntimeState {
 	out := s
 	out.ParameterState = maps.Clone(s.ParameterState)

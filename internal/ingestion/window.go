@@ -8,6 +8,8 @@ import (
 	"quantram/internal/domain"
 )
 
+// WindowStore retains a bounded, chronological bar history per symbol.
+// Its lock owns bars, deduplication keys, and newest-bar indexes as one invariant.
 type WindowStore struct {
 	mu     sync.RWMutex
 	limit  int
@@ -16,6 +18,7 @@ type WindowStore struct {
 	lastAt map[string]domain.Bar
 }
 
+// NewWindowStore creates a store with a per-symbol retention limit.
 func NewWindowStore(limit int) *WindowStore {
 	if limit <= 0 {
 		limit = config.WindowLimit
@@ -28,6 +31,8 @@ func NewWindowStore(limit int) *WindowStore {
 	}
 }
 
+// Add inserts or replaces a bar according to generation and finality precedence.
+// It returns false when the existing interval representation remains authoritative.
 func (w *WindowStore) Add(bar domain.Bar) bool {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -45,6 +50,7 @@ func (w *WindowStore) Add(bar domain.Bar) bool {
 		w.refreshLast(bar.Symbol)
 		return true
 	}
+	// Out-of-order recovery remains sorted so the last element is always newest.
 	insertAt, _ := slices.BinarySearchFunc(bars, bar, func(existing, incoming domain.Bar) int {
 		return existing.IntervalStart.Compare(incoming.IntervalStart)
 	})
@@ -60,6 +66,7 @@ func (w *WindowStore) Add(bar domain.Bar) bool {
 	return true
 }
 
+// Last returns the chronologically newest retained bar for a symbol.
 func (w *WindowStore) Last(symbol string) (domain.Bar, bool) {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
@@ -67,6 +74,7 @@ func (w *WindowStore) Last(symbol string) (domain.Bar, bool) {
 	return bar, ok
 }
 
+// Window returns a copy of the newest retained bars in chronological order.
 func (w *WindowStore) Window(symbol string, limit int) []domain.Bar {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
