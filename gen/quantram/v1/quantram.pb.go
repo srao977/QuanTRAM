@@ -655,6 +655,434 @@ func (PricingSkipReason) EnumDescriptor() ([]byte, []int) {
 	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{10}
 }
 
+type VolumeStatus int32
+
+const (
+	VolumeStatus_VOLUME_STATUS_UNSPECIFIED VolumeStatus = 0
+	// Windows are not yet due. Not an error.
+	VolumeStatus_VOLUME_STATUS_MATURING  VolumeStatus = 1
+	VolumeStatus_VOLUME_STATUS_AVAILABLE VolumeStatus = 2
+	// A due calculation is scientifically undefined. Not ENGINE_ERROR.
+	VolumeStatus_VOLUME_STATUS_INVALID      VolumeStatus = 3
+	VolumeStatus_VOLUME_STATUS_ENGINE_ERROR VolumeStatus = 4
+)
+
+// Enum value maps for VolumeStatus.
+var (
+	VolumeStatus_name = map[int32]string{
+		0: "VOLUME_STATUS_UNSPECIFIED",
+		1: "VOLUME_STATUS_MATURING",
+		2: "VOLUME_STATUS_AVAILABLE",
+		3: "VOLUME_STATUS_INVALID",
+		4: "VOLUME_STATUS_ENGINE_ERROR",
+	}
+	VolumeStatus_value = map[string]int32{
+		"VOLUME_STATUS_UNSPECIFIED":  0,
+		"VOLUME_STATUS_MATURING":     1,
+		"VOLUME_STATUS_AVAILABLE":    2,
+		"VOLUME_STATUS_INVALID":      3,
+		"VOLUME_STATUS_ENGINE_ERROR": 4,
+	}
+)
+
+func (x VolumeStatus) Enum() *VolumeStatus {
+	p := new(VolumeStatus)
+	*p = x
+	return p
+}
+
+func (x VolumeStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VolumeStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[11].Descriptor()
+}
+
+func (VolumeStatus) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[11]
+}
+
+func (x VolumeStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VolumeStatus.Descriptor instead.
+func (VolumeStatus) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{11}
+}
+
+type VolumeQuantityStatus int32
+
+const (
+	VolumeQuantityStatus_VOLUME_QUANTITY_STATUS_UNSPECIFIED  VolumeQuantityStatus = 0
+	VolumeQuantityStatus_VOLUME_QUANTITY_STATUS_INSUFFICIENT VolumeQuantityStatus = 1
+	VolumeQuantityStatus_VOLUME_QUANTITY_STATUS_AVAILABLE    VolumeQuantityStatus = 2
+	VolumeQuantityStatus_VOLUME_QUANTITY_STATUS_UNDEFINED    VolumeQuantityStatus = 3
+)
+
+// Enum value maps for VolumeQuantityStatus.
+var (
+	VolumeQuantityStatus_name = map[int32]string{
+		0: "VOLUME_QUANTITY_STATUS_UNSPECIFIED",
+		1: "VOLUME_QUANTITY_STATUS_INSUFFICIENT",
+		2: "VOLUME_QUANTITY_STATUS_AVAILABLE",
+		3: "VOLUME_QUANTITY_STATUS_UNDEFINED",
+	}
+	VolumeQuantityStatus_value = map[string]int32{
+		"VOLUME_QUANTITY_STATUS_UNSPECIFIED":  0,
+		"VOLUME_QUANTITY_STATUS_INSUFFICIENT": 1,
+		"VOLUME_QUANTITY_STATUS_AVAILABLE":    2,
+		"VOLUME_QUANTITY_STATUS_UNDEFINED":    3,
+	}
+)
+
+func (x VolumeQuantityStatus) Enum() *VolumeQuantityStatus {
+	p := new(VolumeQuantityStatus)
+	*p = x
+	return p
+}
+
+func (x VolumeQuantityStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VolumeQuantityStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[12].Descriptor()
+}
+
+func (VolumeQuantityStatus) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[12]
+}
+
+func (x VolumeQuantityStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VolumeQuantityStatus.Descriptor instead.
+func (VolumeQuantityStatus) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{12}
+}
+
+// GREEN/AMBER/RED are scientific interpretation labels, not BUY/SELL/HOLD.
+type VolumeIndicator int32
+
+const (
+	VolumeIndicator_VOLUME_INDICATOR_UNSPECIFIED VolumeIndicator = 0
+	VolumeIndicator_VOLUME_INDICATOR_GREEN       VolumeIndicator = 1
+	VolumeIndicator_VOLUME_INDICATOR_AMBER       VolumeIndicator = 2
+	VolumeIndicator_VOLUME_INDICATOR_RED         VolumeIndicator = 3
+)
+
+// Enum value maps for VolumeIndicator.
+var (
+	VolumeIndicator_name = map[int32]string{
+		0: "VOLUME_INDICATOR_UNSPECIFIED",
+		1: "VOLUME_INDICATOR_GREEN",
+		2: "VOLUME_INDICATOR_AMBER",
+		3: "VOLUME_INDICATOR_RED",
+	}
+	VolumeIndicator_value = map[string]int32{
+		"VOLUME_INDICATOR_UNSPECIFIED": 0,
+		"VOLUME_INDICATOR_GREEN":       1,
+		"VOLUME_INDICATOR_AMBER":       2,
+		"VOLUME_INDICATOR_RED":         3,
+	}
+)
+
+func (x VolumeIndicator) Enum() *VolumeIndicator {
+	p := new(VolumeIndicator)
+	*p = x
+	return p
+}
+
+func (x VolumeIndicator) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VolumeIndicator) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[13].Descriptor()
+}
+
+func (VolumeIndicator) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[13]
+}
+
+func (x VolumeIndicator) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VolumeIndicator.Descriptor instead.
+func (VolumeIndicator) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{13}
+}
+
+type VolumeTransition int32
+
+const (
+	VolumeTransition_VOLUME_TRANSITION_UNSPECIFIED     VolumeTransition = 0
+	VolumeTransition_VOLUME_TRANSITION_STABLE          VolumeTransition = 1
+	VolumeTransition_VOLUME_TRANSITION_PENDING_GREEN   VolumeTransition = 2
+	VolumeTransition_VOLUME_TRANSITION_PENDING_AMBER   VolumeTransition = 3
+	VolumeTransition_VOLUME_TRANSITION_PENDING_RED     VolumeTransition = 4
+	VolumeTransition_VOLUME_TRANSITION_CONFIRMED_GREEN VolumeTransition = 5
+	VolumeTransition_VOLUME_TRANSITION_CONFIRMED_AMBER VolumeTransition = 6
+	VolumeTransition_VOLUME_TRANSITION_CONFIRMED_RED   VolumeTransition = 7
+)
+
+// Enum value maps for VolumeTransition.
+var (
+	VolumeTransition_name = map[int32]string{
+		0: "VOLUME_TRANSITION_UNSPECIFIED",
+		1: "VOLUME_TRANSITION_STABLE",
+		2: "VOLUME_TRANSITION_PENDING_GREEN",
+		3: "VOLUME_TRANSITION_PENDING_AMBER",
+		4: "VOLUME_TRANSITION_PENDING_RED",
+		5: "VOLUME_TRANSITION_CONFIRMED_GREEN",
+		6: "VOLUME_TRANSITION_CONFIRMED_AMBER",
+		7: "VOLUME_TRANSITION_CONFIRMED_RED",
+	}
+	VolumeTransition_value = map[string]int32{
+		"VOLUME_TRANSITION_UNSPECIFIED":     0,
+		"VOLUME_TRANSITION_STABLE":          1,
+		"VOLUME_TRANSITION_PENDING_GREEN":   2,
+		"VOLUME_TRANSITION_PENDING_AMBER":   3,
+		"VOLUME_TRANSITION_PENDING_RED":     4,
+		"VOLUME_TRANSITION_CONFIRMED_GREEN": 5,
+		"VOLUME_TRANSITION_CONFIRMED_AMBER": 6,
+		"VOLUME_TRANSITION_CONFIRMED_RED":   7,
+	}
+)
+
+func (x VolumeTransition) Enum() *VolumeTransition {
+	p := new(VolumeTransition)
+	*p = x
+	return p
+}
+
+func (x VolumeTransition) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VolumeTransition) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[14].Descriptor()
+}
+
+func (VolumeTransition) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[14]
+}
+
+func (x VolumeTransition) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VolumeTransition.Descriptor instead.
+func (VolumeTransition) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{14}
+}
+
+type VolumePhase int32
+
+const (
+	VolumePhase_VOLUME_PHASE_UNSPECIFIED                      VolumePhase = 0
+	VolumePhase_VOLUME_PHASE_ACTIVITY_STATIONARY              VolumePhase = 1
+	VolumePhase_VOLUME_PHASE_ACTIVITY_INCREASING_ACCELERATING VolumePhase = 2
+	VolumePhase_VOLUME_PHASE_ACTIVITY_INCREASING_DECELERATING VolumePhase = 3
+	VolumePhase_VOLUME_PHASE_ACTIVITY_DECREASING_ACCELERATING VolumePhase = 4
+	VolumePhase_VOLUME_PHASE_ACTIVITY_DECREASING_DECELERATING VolumePhase = 5
+)
+
+// Enum value maps for VolumePhase.
+var (
+	VolumePhase_name = map[int32]string{
+		0: "VOLUME_PHASE_UNSPECIFIED",
+		1: "VOLUME_PHASE_ACTIVITY_STATIONARY",
+		2: "VOLUME_PHASE_ACTIVITY_INCREASING_ACCELERATING",
+		3: "VOLUME_PHASE_ACTIVITY_INCREASING_DECELERATING",
+		4: "VOLUME_PHASE_ACTIVITY_DECREASING_ACCELERATING",
+		5: "VOLUME_PHASE_ACTIVITY_DECREASING_DECELERATING",
+	}
+	VolumePhase_value = map[string]int32{
+		"VOLUME_PHASE_UNSPECIFIED":                      0,
+		"VOLUME_PHASE_ACTIVITY_STATIONARY":              1,
+		"VOLUME_PHASE_ACTIVITY_INCREASING_ACCELERATING": 2,
+		"VOLUME_PHASE_ACTIVITY_INCREASING_DECELERATING": 3,
+		"VOLUME_PHASE_ACTIVITY_DECREASING_ACCELERATING": 4,
+		"VOLUME_PHASE_ACTIVITY_DECREASING_DECELERATING": 5,
+	}
+)
+
+func (x VolumePhase) Enum() *VolumePhase {
+	p := new(VolumePhase)
+	*p = x
+	return p
+}
+
+func (x VolumePhase) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VolumePhase) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[15].Descriptor()
+}
+
+func (VolumePhase) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[15]
+}
+
+func (x VolumePhase) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VolumePhase.Descriptor instead.
+func (VolumePhase) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{15}
+}
+
+type VolumeConfidence int32
+
+const (
+	VolumeConfidence_VOLUME_CONFIDENCE_UNSPECIFIED VolumeConfidence = 0
+	VolumeConfidence_VOLUME_CONFIDENCE_HIGH        VolumeConfidence = 1
+)
+
+// Enum value maps for VolumeConfidence.
+var (
+	VolumeConfidence_name = map[int32]string{
+		0: "VOLUME_CONFIDENCE_UNSPECIFIED",
+		1: "VOLUME_CONFIDENCE_HIGH",
+	}
+	VolumeConfidence_value = map[string]int32{
+		"VOLUME_CONFIDENCE_UNSPECIFIED": 0,
+		"VOLUME_CONFIDENCE_HIGH":        1,
+	}
+)
+
+func (x VolumeConfidence) Enum() *VolumeConfidence {
+	p := new(VolumeConfidence)
+	*p = x
+	return p
+}
+
+func (x VolumeConfidence) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VolumeConfidence) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[16].Descriptor()
+}
+
+func (VolumeConfidence) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[16]
+}
+
+func (x VolumeConfidence) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VolumeConfidence.Descriptor instead.
+func (VolumeConfidence) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{16}
+}
+
+type VolumeDomainState int32
+
+const (
+	VolumeDomainState_VOLUME_DOMAIN_STATE_UNSPECIFIED         VolumeDomainState = 0
+	VolumeDomainState_VOLUME_DOMAIN_STATE_CAUSAL_LOCAL_VOLUME VolumeDomainState = 1
+)
+
+// Enum value maps for VolumeDomainState.
+var (
+	VolumeDomainState_name = map[int32]string{
+		0: "VOLUME_DOMAIN_STATE_UNSPECIFIED",
+		1: "VOLUME_DOMAIN_STATE_CAUSAL_LOCAL_VOLUME",
+	}
+	VolumeDomainState_value = map[string]int32{
+		"VOLUME_DOMAIN_STATE_UNSPECIFIED":         0,
+		"VOLUME_DOMAIN_STATE_CAUSAL_LOCAL_VOLUME": 1,
+	}
+)
+
+func (x VolumeDomainState) Enum() *VolumeDomainState {
+	p := new(VolumeDomainState)
+	*p = x
+	return p
+}
+
+func (x VolumeDomainState) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VolumeDomainState) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[17].Descriptor()
+}
+
+func (VolumeDomainState) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[17]
+}
+
+func (x VolumeDomainState) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VolumeDomainState.Descriptor instead.
+func (VolumeDomainState) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{17}
+}
+
+type VolumeSkipReason int32
+
+const (
+	VolumeSkipReason_VOLUME_SKIP_REASON_UNSPECIFIED  VolumeSkipReason = 0
+	VolumeSkipReason_VOLUME_SKIP_REASON_MATURING     VolumeSkipReason = 1
+	VolumeSkipReason_VOLUME_SKIP_REASON_INVALID      VolumeSkipReason = 2
+	VolumeSkipReason_VOLUME_SKIP_REASON_ENGINE_ERROR VolumeSkipReason = 3
+)
+
+// Enum value maps for VolumeSkipReason.
+var (
+	VolumeSkipReason_name = map[int32]string{
+		0: "VOLUME_SKIP_REASON_UNSPECIFIED",
+		1: "VOLUME_SKIP_REASON_MATURING",
+		2: "VOLUME_SKIP_REASON_INVALID",
+		3: "VOLUME_SKIP_REASON_ENGINE_ERROR",
+	}
+	VolumeSkipReason_value = map[string]int32{
+		"VOLUME_SKIP_REASON_UNSPECIFIED":  0,
+		"VOLUME_SKIP_REASON_MATURING":     1,
+		"VOLUME_SKIP_REASON_INVALID":      2,
+		"VOLUME_SKIP_REASON_ENGINE_ERROR": 3,
+	}
+)
+
+func (x VolumeSkipReason) Enum() *VolumeSkipReason {
+	p := new(VolumeSkipReason)
+	*p = x
+	return p
+}
+
+func (x VolumeSkipReason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VolumeSkipReason) Descriptor() protoreflect.EnumDescriptor {
+	return file_quantram_v1_quantram_proto_enumTypes[18].Descriptor()
+}
+
+func (VolumeSkipReason) Type() protoreflect.EnumType {
+	return &file_quantram_v1_quantram_proto_enumTypes[18]
+}
+
+func (x VolumeSkipReason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VolumeSkipReason.Descriptor instead.
+func (VolumeSkipReason) EnumDescriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{18}
+}
+
 type Bar struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
 	Symbol              string                 `protobuf:"bytes,1,opt,name=symbol,proto3" json:"symbol,omitempty"`
@@ -2597,6 +3025,438 @@ func (x *StreamPriceEventsRequest) GetMaxEvents() uint32 {
 	return 0
 }
 
+// One scientific scalar. Presence of value is required when status is
+// AVAILABLE so V_N = 0 is distinguishable from an unavailable V_N.
+type VolumeQuantity struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         *float64               `protobuf:"fixed64,1,opt,name=value,proto3,oneof" json:"value,omitempty"`
+	Status        VolumeQuantityStatus   `protobuf:"varint,2,opt,name=status,proto3,enum=quantram.v1.VolumeQuantityStatus" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VolumeQuantity) Reset() {
+	*x = VolumeQuantity{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeQuantity) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeQuantity) ProtoMessage() {}
+
+func (x *VolumeQuantity) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeQuantity.ProtoReflect.Descriptor instead.
+func (*VolumeQuantity) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *VolumeQuantity) GetValue() float64 {
+	if x != nil && x.Value != nil {
+		return *x.Value
+	}
+	return 0
+}
+
+func (x *VolumeQuantity) GetStatus() VolumeQuantityStatus {
+	if x != nil {
+		return x.Status
+	}
+	return VolumeQuantityStatus_VOLUME_QUANTITY_STATUS_UNSPECIFIED
+}
+
+type VolumeEmission struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	VRaw            *VolumeQuantity        `protobuf:"bytes,1,opt,name=v_raw,json=vRaw,proto3" json:"v_raw,omitempty"`
+	VN              *VolumeQuantity        `protobuf:"bytes,2,opt,name=v_n,json=vN,proto3" json:"v_n,omitempty"`
+	V1              *VolumeQuantity        `protobuf:"bytes,3,opt,name=v1,proto3" json:"v1,omitempty"`
+	V2              *VolumeQuantity        `protobuf:"bytes,4,opt,name=v2,proto3" json:"v2,omitempty"`
+	IntervalMeanVn  *VolumeQuantity        `protobuf:"bytes,5,opt,name=interval_mean_vn,json=intervalMeanVn,proto3" json:"interval_mean_vn,omitempty"`
+	PredictedNextVN *VolumeQuantity        `protobuf:"bytes,6,opt,name=predicted_next_v_n,json=predictedNextVN,proto3" json:"predicted_next_v_n,omitempty"`
+	RawColor        VolumeIndicator        `protobuf:"varint,7,opt,name=raw_color,json=rawColor,proto3,enum=quantram.v1.VolumeIndicator" json:"raw_color,omitempty"`
+	Indicator       VolumeIndicator        `protobuf:"varint,8,opt,name=indicator,proto3,enum=quantram.v1.VolumeIndicator" json:"indicator,omitempty"`
+	Transition      VolumeTransition       `protobuf:"varint,9,opt,name=transition,proto3,enum=quantram.v1.VolumeTransition" json:"transition,omitempty"`
+	Phase           VolumePhase            `protobuf:"varint,10,opt,name=phase,proto3,enum=quantram.v1.VolumePhase" json:"phase,omitempty"`
+	Confidence      VolumeConfidence       `protobuf:"varint,11,opt,name=confidence,proto3,enum=quantram.v1.VolumeConfidence" json:"confidence,omitempty"`
+	DomainState     VolumeDomainState      `protobuf:"varint,12,opt,name=domain_state,json=domainState,proto3,enum=quantram.v1.VolumeDomainState" json:"domain_state,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *VolumeEmission) Reset() {
+	*x = VolumeEmission{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeEmission) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeEmission) ProtoMessage() {}
+
+func (x *VolumeEmission) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeEmission.ProtoReflect.Descriptor instead.
+func (*VolumeEmission) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *VolumeEmission) GetVRaw() *VolumeQuantity {
+	if x != nil {
+		return x.VRaw
+	}
+	return nil
+}
+
+func (x *VolumeEmission) GetVN() *VolumeQuantity {
+	if x != nil {
+		return x.VN
+	}
+	return nil
+}
+
+func (x *VolumeEmission) GetV1() *VolumeQuantity {
+	if x != nil {
+		return x.V1
+	}
+	return nil
+}
+
+func (x *VolumeEmission) GetV2() *VolumeQuantity {
+	if x != nil {
+		return x.V2
+	}
+	return nil
+}
+
+func (x *VolumeEmission) GetIntervalMeanVn() *VolumeQuantity {
+	if x != nil {
+		return x.IntervalMeanVn
+	}
+	return nil
+}
+
+func (x *VolumeEmission) GetPredictedNextVN() *VolumeQuantity {
+	if x != nil {
+		return x.PredictedNextVN
+	}
+	return nil
+}
+
+func (x *VolumeEmission) GetRawColor() VolumeIndicator {
+	if x != nil {
+		return x.RawColor
+	}
+	return VolumeIndicator_VOLUME_INDICATOR_UNSPECIFIED
+}
+
+func (x *VolumeEmission) GetIndicator() VolumeIndicator {
+	if x != nil {
+		return x.Indicator
+	}
+	return VolumeIndicator_VOLUME_INDICATOR_UNSPECIFIED
+}
+
+func (x *VolumeEmission) GetTransition() VolumeTransition {
+	if x != nil {
+		return x.Transition
+	}
+	return VolumeTransition_VOLUME_TRANSITION_UNSPECIFIED
+}
+
+func (x *VolumeEmission) GetPhase() VolumePhase {
+	if x != nil {
+		return x.Phase
+	}
+	return VolumePhase_VOLUME_PHASE_UNSPECIFIED
+}
+
+func (x *VolumeEmission) GetConfidence() VolumeConfidence {
+	if x != nil {
+		return x.Confidence
+	}
+	return VolumeConfidence_VOLUME_CONFIDENCE_UNSPECIFIED
+}
+
+func (x *VolumeEmission) GetDomainState() VolumeDomainState {
+	if x != nil {
+		return x.DomainState
+	}
+	return VolumeDomainState_VOLUME_DOMAIN_STATE_UNSPECIFIED
+}
+
+type VolumeSkip struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Reason        VolumeSkipReason       `protobuf:"varint,1,opt,name=reason,proto3,enum=quantram.v1.VolumeSkipReason" json:"reason,omitempty"`
+	Detail        string                 `protobuf:"bytes,2,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VolumeSkip) Reset() {
+	*x = VolumeSkip{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeSkip) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeSkip) ProtoMessage() {}
+
+func (x *VolumeSkip) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeSkip.ProtoReflect.Descriptor instead.
+func (*VolumeSkip) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *VolumeSkip) GetReason() VolumeSkipReason {
+	if x != nil {
+		return x.Reason
+	}
+	return VolumeSkipReason_VOLUME_SKIP_REASON_UNSPECIFIED
+}
+
+func (x *VolumeSkip) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
+}
+
+type VolumeEvent struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	EventId             string                 `protobuf:"bytes,1,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
+	Symbol              string                 `protobuf:"bytes,2,opt,name=symbol,proto3" json:"symbol,omitempty"`
+	IntervalStartUnixMs int64                  `protobuf:"varint,3,opt,name=interval_start_unix_ms,json=intervalStartUnixMs,proto3" json:"interval_start_unix_ms,omitempty"`
+	IntervalEndUnixMs   int64                  `protobuf:"varint,4,opt,name=interval_end_unix_ms,json=intervalEndUnixMs,proto3" json:"interval_end_unix_ms,omitempty"`
+	MarketSnapshotId    string                 `protobuf:"bytes,5,opt,name=market_snapshot_id,json=marketSnapshotId,proto3" json:"market_snapshot_id,omitempty"`
+	// Provider/source provenance only. Not model, receipt, or effective time.
+	SourceTimestamp  string          `protobuf:"bytes,6,opt,name=source_timestamp,json=sourceTimestamp,proto3" json:"source_timestamp,omitempty"`
+	AcceptedSequence uint64          `protobuf:"varint,7,opt,name=accepted_sequence,json=acceptedSequence,proto3" json:"accepted_sequence,omitempty"`
+	LatencyMs        int64           `protobuf:"varint,8,opt,name=latency_ms,json=latencyMs,proto3" json:"latency_ms,omitempty"`
+	Status           VolumeStatus    `protobuf:"varint,9,opt,name=status,proto3,enum=quantram.v1.VolumeStatus" json:"status,omitempty"`
+	Emitted          bool            `protobuf:"varint,10,opt,name=emitted,proto3" json:"emitted,omitempty"`
+	Reason           string          `protobuf:"bytes,11,opt,name=reason,proto3" json:"reason,omitempty"`
+	Emission         *VolumeEmission `protobuf:"bytes,12,opt,name=emission,proto3" json:"emission,omitempty"`
+	Skip             *VolumeSkip     `protobuf:"bytes,13,opt,name=skip,proto3" json:"skip,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *VolumeEvent) Reset() {
+	*x = VolumeEvent{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VolumeEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VolumeEvent) ProtoMessage() {}
+
+func (x *VolumeEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VolumeEvent.ProtoReflect.Descriptor instead.
+func (*VolumeEvent) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *VolumeEvent) GetEventId() string {
+	if x != nil {
+		return x.EventId
+	}
+	return ""
+}
+
+func (x *VolumeEvent) GetSymbol() string {
+	if x != nil {
+		return x.Symbol
+	}
+	return ""
+}
+
+func (x *VolumeEvent) GetIntervalStartUnixMs() int64 {
+	if x != nil {
+		return x.IntervalStartUnixMs
+	}
+	return 0
+}
+
+func (x *VolumeEvent) GetIntervalEndUnixMs() int64 {
+	if x != nil {
+		return x.IntervalEndUnixMs
+	}
+	return 0
+}
+
+func (x *VolumeEvent) GetMarketSnapshotId() string {
+	if x != nil {
+		return x.MarketSnapshotId
+	}
+	return ""
+}
+
+func (x *VolumeEvent) GetSourceTimestamp() string {
+	if x != nil {
+		return x.SourceTimestamp
+	}
+	return ""
+}
+
+func (x *VolumeEvent) GetAcceptedSequence() uint64 {
+	if x != nil {
+		return x.AcceptedSequence
+	}
+	return 0
+}
+
+func (x *VolumeEvent) GetLatencyMs() int64 {
+	if x != nil {
+		return x.LatencyMs
+	}
+	return 0
+}
+
+func (x *VolumeEvent) GetStatus() VolumeStatus {
+	if x != nil {
+		return x.Status
+	}
+	return VolumeStatus_VOLUME_STATUS_UNSPECIFIED
+}
+
+func (x *VolumeEvent) GetEmitted() bool {
+	if x != nil {
+		return x.Emitted
+	}
+	return false
+}
+
+func (x *VolumeEvent) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+func (x *VolumeEvent) GetEmission() *VolumeEmission {
+	if x != nil {
+		return x.Emission
+	}
+	return nil
+}
+
+func (x *VolumeEvent) GetSkip() *VolumeSkip {
+	if x != nil {
+		return x.Skip
+	}
+	return nil
+}
+
+type StreamVolumeEventsRequest struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Symbols []string               `protobuf:"bytes,1,rep,name=symbols,proto3" json:"symbols,omitempty"`
+	// Zero means stream until the client cancels.
+	MaxEvents     uint32 `protobuf:"varint,2,opt,name=max_events,json=maxEvents,proto3" json:"max_events,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StreamVolumeEventsRequest) Reset() {
+	*x = StreamVolumeEventsRequest{}
+	mi := &file_quantram_v1_quantram_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StreamVolumeEventsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StreamVolumeEventsRequest) ProtoMessage() {}
+
+func (x *StreamVolumeEventsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_quantram_v1_quantram_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StreamVolumeEventsRequest.ProtoReflect.Descriptor instead.
+func (*StreamVolumeEventsRequest) Descriptor() ([]byte, []int) {
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *StreamVolumeEventsRequest) GetSymbols() []string {
+	if x != nil {
+		return x.Symbols
+	}
+	return nil
+}
+
+func (x *StreamVolumeEventsRequest) GetMaxEvents() uint32 {
+	if x != nil {
+		return x.MaxEvents
+	}
+	return 0
+}
+
 type GetSemanticTermRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -2606,7 +3466,7 @@ type GetSemanticTermRequest struct {
 
 func (x *GetSemanticTermRequest) Reset() {
 	*x = GetSemanticTermRequest{}
-	mi := &file_quantram_v1_quantram_proto_msgTypes[24]
+	mi := &file_quantram_v1_quantram_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2618,7 +3478,7 @@ func (x *GetSemanticTermRequest) String() string {
 func (*GetSemanticTermRequest) ProtoMessage() {}
 
 func (x *GetSemanticTermRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_quantram_v1_quantram_proto_msgTypes[24]
+	mi := &file_quantram_v1_quantram_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2631,7 +3491,7 @@ func (x *GetSemanticTermRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSemanticTermRequest.ProtoReflect.Descriptor instead.
 func (*GetSemanticTermRequest) Descriptor() ([]byte, []int) {
-	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{24}
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *GetSemanticTermRequest) GetId() string {
@@ -2651,7 +3511,7 @@ type ListSemanticTermsRequest struct {
 
 func (x *ListSemanticTermsRequest) Reset() {
 	*x = ListSemanticTermsRequest{}
-	mi := &file_quantram_v1_quantram_proto_msgTypes[25]
+	mi := &file_quantram_v1_quantram_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2663,7 +3523,7 @@ func (x *ListSemanticTermsRequest) String() string {
 func (*ListSemanticTermsRequest) ProtoMessage() {}
 
 func (x *ListSemanticTermsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_quantram_v1_quantram_proto_msgTypes[25]
+	mi := &file_quantram_v1_quantram_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2676,7 +3536,7 @@ func (x *ListSemanticTermsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSemanticTermsRequest.ProtoReflect.Descriptor instead.
 func (*ListSemanticTermsRequest) Descriptor() ([]byte, []int) {
-	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{25}
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ListSemanticTermsRequest) GetComponent() string {
@@ -2701,7 +3561,7 @@ type GetSemanticContractRequest struct {
 
 func (x *GetSemanticContractRequest) Reset() {
 	*x = GetSemanticContractRequest{}
-	mi := &file_quantram_v1_quantram_proto_msgTypes[26]
+	mi := &file_quantram_v1_quantram_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2713,7 +3573,7 @@ func (x *GetSemanticContractRequest) String() string {
 func (*GetSemanticContractRequest) ProtoMessage() {}
 
 func (x *GetSemanticContractRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_quantram_v1_quantram_proto_msgTypes[26]
+	mi := &file_quantram_v1_quantram_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2726,7 +3586,7 @@ func (x *GetSemanticContractRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSemanticContractRequest.ProtoReflect.Descriptor instead.
 func (*GetSemanticContractRequest) Descriptor() ([]byte, []int) {
-	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{26}
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{31}
 }
 
 type SemanticContractInfo struct {
@@ -2744,7 +3604,7 @@ type SemanticContractInfo struct {
 
 func (x *SemanticContractInfo) Reset() {
 	*x = SemanticContractInfo{}
-	mi := &file_quantram_v1_quantram_proto_msgTypes[27]
+	mi := &file_quantram_v1_quantram_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2756,7 +3616,7 @@ func (x *SemanticContractInfo) String() string {
 func (*SemanticContractInfo) ProtoMessage() {}
 
 func (x *SemanticContractInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_quantram_v1_quantram_proto_msgTypes[27]
+	mi := &file_quantram_v1_quantram_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2769,7 +3629,7 @@ func (x *SemanticContractInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SemanticContractInfo.ProtoReflect.Descriptor instead.
 func (*SemanticContractInfo) Descriptor() ([]byte, []int) {
-	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{27}
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *SemanticContractInfo) GetName() string {
@@ -2846,7 +3706,7 @@ type SemanticTerm struct {
 
 func (x *SemanticTerm) Reset() {
 	*x = SemanticTerm{}
-	mi := &file_quantram_v1_quantram_proto_msgTypes[28]
+	mi := &file_quantram_v1_quantram_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2858,7 +3718,7 @@ func (x *SemanticTerm) String() string {
 func (*SemanticTerm) ProtoMessage() {}
 
 func (x *SemanticTerm) ProtoReflect() protoreflect.Message {
-	mi := &file_quantram_v1_quantram_proto_msgTypes[28]
+	mi := &file_quantram_v1_quantram_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2871,7 +3731,7 @@ func (x *SemanticTerm) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SemanticTerm.ProtoReflect.Descriptor instead.
 func (*SemanticTerm) Descriptor() ([]byte, []int) {
-	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{28}
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *SemanticTerm) GetId() string {
@@ -3045,7 +3905,7 @@ type ListSemanticTermsResponse struct {
 
 func (x *ListSemanticTermsResponse) Reset() {
 	*x = ListSemanticTermsResponse{}
-	mi := &file_quantram_v1_quantram_proto_msgTypes[29]
+	mi := &file_quantram_v1_quantram_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3057,7 +3917,7 @@ func (x *ListSemanticTermsResponse) String() string {
 func (*ListSemanticTermsResponse) ProtoMessage() {}
 
 func (x *ListSemanticTermsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_quantram_v1_quantram_proto_msgTypes[29]
+	mi := &file_quantram_v1_quantram_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3070,7 +3930,7 @@ func (x *ListSemanticTermsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSemanticTermsResponse.ProtoReflect.Descriptor instead.
 func (*ListSemanticTermsResponse) Descriptor() ([]byte, []int) {
-	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{29}
+	return file_quantram_v1_quantram_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ListSemanticTermsResponse) GetContract() *SemanticContractInfo {
@@ -3269,6 +4129,52 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	"\x18StreamPriceEventsRequest\x12\x18\n" +
 	"\asymbols\x18\x01 \x03(\tR\asymbols\x12\x1d\n" +
 	"\n" +
+	"max_events\x18\x02 \x01(\rR\tmaxEvents\"p\n" +
+	"\x0eVolumeQuantity\x12\x19\n" +
+	"\x05value\x18\x01 \x01(\x01H\x00R\x05value\x88\x01\x01\x129\n" +
+	"\x06status\x18\x02 \x01(\x0e2!.quantram.v1.VolumeQuantityStatusR\x06statusB\b\n" +
+	"\x06_value\"\xc3\x05\n" +
+	"\x0eVolumeEmission\x120\n" +
+	"\x05v_raw\x18\x01 \x01(\v2\x1b.quantram.v1.VolumeQuantityR\x04vRaw\x12,\n" +
+	"\x03v_n\x18\x02 \x01(\v2\x1b.quantram.v1.VolumeQuantityR\x02vN\x12+\n" +
+	"\x02v1\x18\x03 \x01(\v2\x1b.quantram.v1.VolumeQuantityR\x02v1\x12+\n" +
+	"\x02v2\x18\x04 \x01(\v2\x1b.quantram.v1.VolumeQuantityR\x02v2\x12E\n" +
+	"\x10interval_mean_vn\x18\x05 \x01(\v2\x1b.quantram.v1.VolumeQuantityR\x0eintervalMeanVn\x12H\n" +
+	"\x12predicted_next_v_n\x18\x06 \x01(\v2\x1b.quantram.v1.VolumeQuantityR\x0fpredictedNextVN\x129\n" +
+	"\traw_color\x18\a \x01(\x0e2\x1c.quantram.v1.VolumeIndicatorR\brawColor\x12:\n" +
+	"\tindicator\x18\b \x01(\x0e2\x1c.quantram.v1.VolumeIndicatorR\tindicator\x12=\n" +
+	"\n" +
+	"transition\x18\t \x01(\x0e2\x1d.quantram.v1.VolumeTransitionR\n" +
+	"transition\x12.\n" +
+	"\x05phase\x18\n" +
+	" \x01(\x0e2\x18.quantram.v1.VolumePhaseR\x05phase\x12=\n" +
+	"\n" +
+	"confidence\x18\v \x01(\x0e2\x1d.quantram.v1.VolumeConfidenceR\n" +
+	"confidence\x12A\n" +
+	"\fdomain_state\x18\f \x01(\x0e2\x1e.quantram.v1.VolumeDomainStateR\vdomainState\"[\n" +
+	"\n" +
+	"VolumeSkip\x125\n" +
+	"\x06reason\x18\x01 \x01(\x0e2\x1d.quantram.v1.VolumeSkipReasonR\x06reason\x12\x16\n" +
+	"\x06detail\x18\x02 \x01(\tR\x06detail\"\x96\x04\n" +
+	"\vVolumeEvent\x12\x19\n" +
+	"\bevent_id\x18\x01 \x01(\tR\aeventId\x12\x16\n" +
+	"\x06symbol\x18\x02 \x01(\tR\x06symbol\x123\n" +
+	"\x16interval_start_unix_ms\x18\x03 \x01(\x03R\x13intervalStartUnixMs\x12/\n" +
+	"\x14interval_end_unix_ms\x18\x04 \x01(\x03R\x11intervalEndUnixMs\x12,\n" +
+	"\x12market_snapshot_id\x18\x05 \x01(\tR\x10marketSnapshotId\x12)\n" +
+	"\x10source_timestamp\x18\x06 \x01(\tR\x0fsourceTimestamp\x12+\n" +
+	"\x11accepted_sequence\x18\a \x01(\x04R\x10acceptedSequence\x12\x1d\n" +
+	"\n" +
+	"latency_ms\x18\b \x01(\x03R\tlatencyMs\x121\n" +
+	"\x06status\x18\t \x01(\x0e2\x19.quantram.v1.VolumeStatusR\x06status\x12\x18\n" +
+	"\aemitted\x18\n" +
+	" \x01(\bR\aemitted\x12\x16\n" +
+	"\x06reason\x18\v \x01(\tR\x06reason\x127\n" +
+	"\bemission\x18\f \x01(\v2\x1b.quantram.v1.VolumeEmissionR\bemission\x12+\n" +
+	"\x04skip\x18\r \x01(\v2\x17.quantram.v1.VolumeSkipR\x04skip\"T\n" +
+	"\x19StreamVolumeEventsRequest\x12\x18\n" +
+	"\asymbols\x18\x01 \x03(\tR\asymbols\x12\x1d\n" +
+	"\n" +
 	"max_events\x18\x02 \x01(\rR\tmaxEvents\"(\n" +
 	"\x16GetSemanticTermRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"L\n" +
@@ -3389,7 +4295,50 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	" PRICING_SKIP_REASON_ENGINE_ERROR\x10\b\x12$\n" +
 	" PRICING_SKIP_REASON_ENGINE_PANIC\x10\t\x12!\n" +
 	"\x1dPRICING_SKIP_REASON_TIME_TERM\x10\n" +
-	"2\xb3\x01\n" +
+	"*\xa1\x01\n" +
+	"\fVolumeStatus\x12\x1d\n" +
+	"\x19VOLUME_STATUS_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16VOLUME_STATUS_MATURING\x10\x01\x12\x1b\n" +
+	"\x17VOLUME_STATUS_AVAILABLE\x10\x02\x12\x19\n" +
+	"\x15VOLUME_STATUS_INVALID\x10\x03\x12\x1e\n" +
+	"\x1aVOLUME_STATUS_ENGINE_ERROR\x10\x04*\xb3\x01\n" +
+	"\x14VolumeQuantityStatus\x12&\n" +
+	"\"VOLUME_QUANTITY_STATUS_UNSPECIFIED\x10\x00\x12'\n" +
+	"#VOLUME_QUANTITY_STATUS_INSUFFICIENT\x10\x01\x12$\n" +
+	" VOLUME_QUANTITY_STATUS_AVAILABLE\x10\x02\x12$\n" +
+	" VOLUME_QUANTITY_STATUS_UNDEFINED\x10\x03*\x85\x01\n" +
+	"\x0fVolumeIndicator\x12 \n" +
+	"\x1cVOLUME_INDICATOR_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16VOLUME_INDICATOR_GREEN\x10\x01\x12\x1a\n" +
+	"\x16VOLUME_INDICATOR_AMBER\x10\x02\x12\x18\n" +
+	"\x14VOLUME_INDICATOR_RED\x10\x03*\xb3\x02\n" +
+	"\x10VolumeTransition\x12!\n" +
+	"\x1dVOLUME_TRANSITION_UNSPECIFIED\x10\x00\x12\x1c\n" +
+	"\x18VOLUME_TRANSITION_STABLE\x10\x01\x12#\n" +
+	"\x1fVOLUME_TRANSITION_PENDING_GREEN\x10\x02\x12#\n" +
+	"\x1fVOLUME_TRANSITION_PENDING_AMBER\x10\x03\x12!\n" +
+	"\x1dVOLUME_TRANSITION_PENDING_RED\x10\x04\x12%\n" +
+	"!VOLUME_TRANSITION_CONFIRMED_GREEN\x10\x05\x12%\n" +
+	"!VOLUME_TRANSITION_CONFIRMED_AMBER\x10\x06\x12#\n" +
+	"\x1fVOLUME_TRANSITION_CONFIRMED_RED\x10\a*\x9d\x02\n" +
+	"\vVolumePhase\x12\x1c\n" +
+	"\x18VOLUME_PHASE_UNSPECIFIED\x10\x00\x12$\n" +
+	" VOLUME_PHASE_ACTIVITY_STATIONARY\x10\x01\x121\n" +
+	"-VOLUME_PHASE_ACTIVITY_INCREASING_ACCELERATING\x10\x02\x121\n" +
+	"-VOLUME_PHASE_ACTIVITY_INCREASING_DECELERATING\x10\x03\x121\n" +
+	"-VOLUME_PHASE_ACTIVITY_DECREASING_ACCELERATING\x10\x04\x121\n" +
+	"-VOLUME_PHASE_ACTIVITY_DECREASING_DECELERATING\x10\x05*Q\n" +
+	"\x10VolumeConfidence\x12!\n" +
+	"\x1dVOLUME_CONFIDENCE_UNSPECIFIED\x10\x00\x12\x1a\n" +
+	"\x16VOLUME_CONFIDENCE_HIGH\x10\x01*e\n" +
+	"\x11VolumeDomainState\x12#\n" +
+	"\x1fVOLUME_DOMAIN_STATE_UNSPECIFIED\x10\x00\x12+\n" +
+	"'VOLUME_DOMAIN_STATE_CAUSAL_LOCAL_VOLUME\x10\x01*\x9c\x01\n" +
+	"\x10VolumeSkipReason\x12\"\n" +
+	"\x1eVOLUME_SKIP_REASON_UNSPECIFIED\x10\x00\x12\x1f\n" +
+	"\x1bVOLUME_SKIP_REASON_MATURING\x10\x01\x12\x1e\n" +
+	"\x1aVOLUME_SKIP_REASON_INVALID\x10\x02\x12#\n" +
+	"\x1fVOLUME_SKIP_REASON_ENGINE_ERROR\x10\x032\xb3\x01\n" +
 	"\x11MarketFeedService\x12K\n" +
 	"\rGetFeedHealth\x12!.quantram.v1.GetFeedHealthRequest\x1a\x17.quantram.v1.FeedHealth\x12Q\n" +
 	"\x0fGetActiveSource\x12#.quantram.v1.GetActiveSourceRequest\x1a\x19.quantram.v1.ActiveSource2\xf0\x01\n" +
@@ -3400,10 +4349,11 @@ const file_quantram_v1_quantram_proto_rawDesc = "" +
 	"\x0eTriggerGapFill\x12\".quantram.v1.TriggerGapFillRequest\x1a\x1a.quantram.v1.GapFillResult2\xaa\x01\n" +
 	"\x11OperationsService\x12E\n" +
 	"\tGetHealth\x12\x1d.quantram.v1.GetHealthRequest\x1a\x19.quantram.v1.HealthReport\x12N\n" +
-	"\fGetReadiness\x12 .quantram.v1.GetReadinessRequest\x1a\x1c.quantram.v1.ReadinessReport2\xbb\x01\n" +
+	"\fGetReadiness\x12 .quantram.v1.GetReadinessRequest\x1a\x1c.quantram.v1.ReadinessReport2\x95\x02\n" +
 	"\fModelService\x12T\n" +
 	"\x0fStreamDecisions\x12#.quantram.v1.StreamDecisionsRequest\x1a\x1a.quantram.v1.DecisionEvent0\x01\x12U\n" +
-	"\x11StreamPriceEvents\x12%.quantram.v1.StreamPriceEventsRequest\x1a\x17.quantram.v1.PriceEvent0\x012\x9b\x02\n" +
+	"\x11StreamPriceEvents\x12%.quantram.v1.StreamPriceEventsRequest\x1a\x17.quantram.v1.PriceEvent0\x01\x12X\n" +
+	"\x12StreamVolumeEvents\x12&.quantram.v1.StreamVolumeEventsRequest\x1a\x18.quantram.v1.VolumeEvent0\x012\x9b\x02\n" +
 	"\x0fSemanticService\x12I\n" +
 	"\aGetTerm\x12#.quantram.v1.GetSemanticTermRequest\x1a\x19.quantram.v1.SemanticTerm\x12Z\n" +
 	"\tListTerms\x12%.quantram.v1.ListSemanticTermsRequest\x1a&.quantram.v1.ListSemanticTermsResponse\x12a\n" +
@@ -3421,8 +4371,8 @@ func file_quantram_v1_quantram_proto_rawDescGZIP() []byte {
 	return file_quantram_v1_quantram_proto_rawDescData
 }
 
-var file_quantram_v1_quantram_proto_enumTypes = make([]protoimpl.EnumInfo, 11)
-var file_quantram_v1_quantram_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_quantram_v1_quantram_proto_enumTypes = make([]protoimpl.EnumInfo, 19)
+var file_quantram_v1_quantram_proto_msgTypes = make([]protoimpl.MessageInfo, 35)
 var file_quantram_v1_quantram_proto_goTypes = []any{
 	(InstrumentType)(0),                // 0: quantram.v1.InstrumentType
 	(QualityStatus)(0),                 // 1: quantram.v1.QualityStatus
@@ -3435,90 +4385,122 @@ var file_quantram_v1_quantram_proto_goTypes = []any{
 	(SkipReason)(0),                    // 8: quantram.v1.SkipReason
 	(PricingStatus)(0),                 // 9: quantram.v1.PricingStatus
 	(PricingSkipReason)(0),             // 10: quantram.v1.PricingSkipReason
-	(*Bar)(nil),                        // 11: quantram.v1.Bar
-	(*GetFeedHealthRequest)(nil),       // 12: quantram.v1.GetFeedHealthRequest
-	(*FeedHealth)(nil),                 // 13: quantram.v1.FeedHealth
-	(*GetActiveSourceRequest)(nil),     // 14: quantram.v1.GetActiveSourceRequest
-	(*ActiveSource)(nil),               // 15: quantram.v1.ActiveSource
-	(*StreamBarsRequest)(nil),          // 16: quantram.v1.StreamBarsRequest
-	(*GetBarWindowRequest)(nil),        // 17: quantram.v1.GetBarWindowRequest
-	(*BarWindow)(nil),                  // 18: quantram.v1.BarWindow
-	(*TriggerGapFillRequest)(nil),      // 19: quantram.v1.TriggerGapFillRequest
-	(*GapFillResult)(nil),              // 20: quantram.v1.GapFillResult
-	(*GetHealthRequest)(nil),           // 21: quantram.v1.GetHealthRequest
-	(*ComponentHealth)(nil),            // 22: quantram.v1.ComponentHealth
-	(*HealthReport)(nil),               // 23: quantram.v1.HealthReport
-	(*GetReadinessRequest)(nil),        // 24: quantram.v1.GetReadinessRequest
-	(*ReadinessReport)(nil),            // 25: quantram.v1.ReadinessReport
-	(*Decision)(nil),                   // 26: quantram.v1.Decision
-	(*Skip)(nil),                       // 27: quantram.v1.Skip
-	(*DecisionEvent)(nil),              // 28: quantram.v1.DecisionEvent
-	(*StreamDecisionsRequest)(nil),     // 29: quantram.v1.StreamDecisionsRequest
-	(*PriceEmission)(nil),              // 30: quantram.v1.PriceEmission
-	(*PriceCockpit)(nil),               // 31: quantram.v1.PriceCockpit
-	(*PricingSkip)(nil),                // 32: quantram.v1.PricingSkip
-	(*PriceEvent)(nil),                 // 33: quantram.v1.PriceEvent
-	(*StreamPriceEventsRequest)(nil),   // 34: quantram.v1.StreamPriceEventsRequest
-	(*GetSemanticTermRequest)(nil),     // 35: quantram.v1.GetSemanticTermRequest
-	(*ListSemanticTermsRequest)(nil),   // 36: quantram.v1.ListSemanticTermsRequest
-	(*GetSemanticContractRequest)(nil), // 37: quantram.v1.GetSemanticContractRequest
-	(*SemanticContractInfo)(nil),       // 38: quantram.v1.SemanticContractInfo
-	(*SemanticTerm)(nil),               // 39: quantram.v1.SemanticTerm
-	(*ListSemanticTermsResponse)(nil),  // 40: quantram.v1.ListSemanticTermsResponse
+	(VolumeStatus)(0),                  // 11: quantram.v1.VolumeStatus
+	(VolumeQuantityStatus)(0),          // 12: quantram.v1.VolumeQuantityStatus
+	(VolumeIndicator)(0),               // 13: quantram.v1.VolumeIndicator
+	(VolumeTransition)(0),              // 14: quantram.v1.VolumeTransition
+	(VolumePhase)(0),                   // 15: quantram.v1.VolumePhase
+	(VolumeConfidence)(0),              // 16: quantram.v1.VolumeConfidence
+	(VolumeDomainState)(0),             // 17: quantram.v1.VolumeDomainState
+	(VolumeSkipReason)(0),              // 18: quantram.v1.VolumeSkipReason
+	(*Bar)(nil),                        // 19: quantram.v1.Bar
+	(*GetFeedHealthRequest)(nil),       // 20: quantram.v1.GetFeedHealthRequest
+	(*FeedHealth)(nil),                 // 21: quantram.v1.FeedHealth
+	(*GetActiveSourceRequest)(nil),     // 22: quantram.v1.GetActiveSourceRequest
+	(*ActiveSource)(nil),               // 23: quantram.v1.ActiveSource
+	(*StreamBarsRequest)(nil),          // 24: quantram.v1.StreamBarsRequest
+	(*GetBarWindowRequest)(nil),        // 25: quantram.v1.GetBarWindowRequest
+	(*BarWindow)(nil),                  // 26: quantram.v1.BarWindow
+	(*TriggerGapFillRequest)(nil),      // 27: quantram.v1.TriggerGapFillRequest
+	(*GapFillResult)(nil),              // 28: quantram.v1.GapFillResult
+	(*GetHealthRequest)(nil),           // 29: quantram.v1.GetHealthRequest
+	(*ComponentHealth)(nil),            // 30: quantram.v1.ComponentHealth
+	(*HealthReport)(nil),               // 31: quantram.v1.HealthReport
+	(*GetReadinessRequest)(nil),        // 32: quantram.v1.GetReadinessRequest
+	(*ReadinessReport)(nil),            // 33: quantram.v1.ReadinessReport
+	(*Decision)(nil),                   // 34: quantram.v1.Decision
+	(*Skip)(nil),                       // 35: quantram.v1.Skip
+	(*DecisionEvent)(nil),              // 36: quantram.v1.DecisionEvent
+	(*StreamDecisionsRequest)(nil),     // 37: quantram.v1.StreamDecisionsRequest
+	(*PriceEmission)(nil),              // 38: quantram.v1.PriceEmission
+	(*PriceCockpit)(nil),               // 39: quantram.v1.PriceCockpit
+	(*PricingSkip)(nil),                // 40: quantram.v1.PricingSkip
+	(*PriceEvent)(nil),                 // 41: quantram.v1.PriceEvent
+	(*StreamPriceEventsRequest)(nil),   // 42: quantram.v1.StreamPriceEventsRequest
+	(*VolumeQuantity)(nil),             // 43: quantram.v1.VolumeQuantity
+	(*VolumeEmission)(nil),             // 44: quantram.v1.VolumeEmission
+	(*VolumeSkip)(nil),                 // 45: quantram.v1.VolumeSkip
+	(*VolumeEvent)(nil),                // 46: quantram.v1.VolumeEvent
+	(*StreamVolumeEventsRequest)(nil),  // 47: quantram.v1.StreamVolumeEventsRequest
+	(*GetSemanticTermRequest)(nil),     // 48: quantram.v1.GetSemanticTermRequest
+	(*ListSemanticTermsRequest)(nil),   // 49: quantram.v1.ListSemanticTermsRequest
+	(*GetSemanticContractRequest)(nil), // 50: quantram.v1.GetSemanticContractRequest
+	(*SemanticContractInfo)(nil),       // 51: quantram.v1.SemanticContractInfo
+	(*SemanticTerm)(nil),               // 52: quantram.v1.SemanticTerm
+	(*ListSemanticTermsResponse)(nil),  // 53: quantram.v1.ListSemanticTermsResponse
 }
 var file_quantram_v1_quantram_proto_depIdxs = []int32{
 	0,  // 0: quantram.v1.Bar.instrument_type:type_name -> quantram.v1.InstrumentType
 	1,  // 1: quantram.v1.Bar.quality_status:type_name -> quantram.v1.QualityStatus
 	2,  // 2: quantram.v1.FeedHealth.state:type_name -> quantram.v1.FeedState
 	2,  // 3: quantram.v1.ActiveSource.state:type_name -> quantram.v1.FeedState
-	11, // 4: quantram.v1.BarWindow.bars:type_name -> quantram.v1.Bar
+	19, // 4: quantram.v1.BarWindow.bars:type_name -> quantram.v1.Bar
 	3,  // 5: quantram.v1.ComponentHealth.state:type_name -> quantram.v1.ComponentState
 	3,  // 6: quantram.v1.HealthReport.state:type_name -> quantram.v1.ComponentState
-	22, // 7: quantram.v1.HealthReport.components:type_name -> quantram.v1.ComponentHealth
+	30, // 7: quantram.v1.HealthReport.components:type_name -> quantram.v1.ComponentHealth
 	4,  // 8: quantram.v1.Decision.side:type_name -> quantram.v1.Side
 	5,  // 9: quantram.v1.Decision.path_direction:type_name -> quantram.v1.PathDirection
 	7,  // 10: quantram.v1.Decision.model_status:type_name -> quantram.v1.ModelStatus
 	6,  // 11: quantram.v1.Decision.emitter_position_state:type_name -> quantram.v1.EmitterPosition
 	8,  // 12: quantram.v1.Skip.reason:type_name -> quantram.v1.SkipReason
 	7,  // 13: quantram.v1.Skip.model_status:type_name -> quantram.v1.ModelStatus
-	26, // 14: quantram.v1.DecisionEvent.decision:type_name -> quantram.v1.Decision
-	27, // 15: quantram.v1.DecisionEvent.skip:type_name -> quantram.v1.Skip
+	34, // 14: quantram.v1.DecisionEvent.decision:type_name -> quantram.v1.Decision
+	35, // 15: quantram.v1.DecisionEvent.skip:type_name -> quantram.v1.Skip
 	10, // 16: quantram.v1.PricingSkip.reason:type_name -> quantram.v1.PricingSkipReason
 	9,  // 17: quantram.v1.PriceEvent.status:type_name -> quantram.v1.PricingStatus
-	30, // 18: quantram.v1.PriceEvent.emission:type_name -> quantram.v1.PriceEmission
-	32, // 19: quantram.v1.PriceEvent.skip:type_name -> quantram.v1.PricingSkip
-	31, // 20: quantram.v1.PriceEvent.cockpit:type_name -> quantram.v1.PriceCockpit
-	38, // 21: quantram.v1.ListSemanticTermsResponse.contract:type_name -> quantram.v1.SemanticContractInfo
-	39, // 22: quantram.v1.ListSemanticTermsResponse.terms:type_name -> quantram.v1.SemanticTerm
-	12, // 23: quantram.v1.MarketFeedService.GetFeedHealth:input_type -> quantram.v1.GetFeedHealthRequest
-	14, // 24: quantram.v1.MarketFeedService.GetActiveSource:input_type -> quantram.v1.GetActiveSourceRequest
-	16, // 25: quantram.v1.IngestionService.StreamBars:input_type -> quantram.v1.StreamBarsRequest
-	17, // 26: quantram.v1.IngestionService.GetBarWindow:input_type -> quantram.v1.GetBarWindowRequest
-	19, // 27: quantram.v1.IngestionService.TriggerGapFill:input_type -> quantram.v1.TriggerGapFillRequest
-	21, // 28: quantram.v1.OperationsService.GetHealth:input_type -> quantram.v1.GetHealthRequest
-	24, // 29: quantram.v1.OperationsService.GetReadiness:input_type -> quantram.v1.GetReadinessRequest
-	29, // 30: quantram.v1.ModelService.StreamDecisions:input_type -> quantram.v1.StreamDecisionsRequest
-	34, // 31: quantram.v1.ModelService.StreamPriceEvents:input_type -> quantram.v1.StreamPriceEventsRequest
-	35, // 32: quantram.v1.SemanticService.GetTerm:input_type -> quantram.v1.GetSemanticTermRequest
-	36, // 33: quantram.v1.SemanticService.ListTerms:input_type -> quantram.v1.ListSemanticTermsRequest
-	37, // 34: quantram.v1.SemanticService.GetSemanticContract:input_type -> quantram.v1.GetSemanticContractRequest
-	13, // 35: quantram.v1.MarketFeedService.GetFeedHealth:output_type -> quantram.v1.FeedHealth
-	15, // 36: quantram.v1.MarketFeedService.GetActiveSource:output_type -> quantram.v1.ActiveSource
-	11, // 37: quantram.v1.IngestionService.StreamBars:output_type -> quantram.v1.Bar
-	18, // 38: quantram.v1.IngestionService.GetBarWindow:output_type -> quantram.v1.BarWindow
-	20, // 39: quantram.v1.IngestionService.TriggerGapFill:output_type -> quantram.v1.GapFillResult
-	23, // 40: quantram.v1.OperationsService.GetHealth:output_type -> quantram.v1.HealthReport
-	25, // 41: quantram.v1.OperationsService.GetReadiness:output_type -> quantram.v1.ReadinessReport
-	28, // 42: quantram.v1.ModelService.StreamDecisions:output_type -> quantram.v1.DecisionEvent
-	33, // 43: quantram.v1.ModelService.StreamPriceEvents:output_type -> quantram.v1.PriceEvent
-	39, // 44: quantram.v1.SemanticService.GetTerm:output_type -> quantram.v1.SemanticTerm
-	40, // 45: quantram.v1.SemanticService.ListTerms:output_type -> quantram.v1.ListSemanticTermsResponse
-	38, // 46: quantram.v1.SemanticService.GetSemanticContract:output_type -> quantram.v1.SemanticContractInfo
-	35, // [35:47] is the sub-list for method output_type
-	23, // [23:35] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	38, // 18: quantram.v1.PriceEvent.emission:type_name -> quantram.v1.PriceEmission
+	40, // 19: quantram.v1.PriceEvent.skip:type_name -> quantram.v1.PricingSkip
+	39, // 20: quantram.v1.PriceEvent.cockpit:type_name -> quantram.v1.PriceCockpit
+	12, // 21: quantram.v1.VolumeQuantity.status:type_name -> quantram.v1.VolumeQuantityStatus
+	43, // 22: quantram.v1.VolumeEmission.v_raw:type_name -> quantram.v1.VolumeQuantity
+	43, // 23: quantram.v1.VolumeEmission.v_n:type_name -> quantram.v1.VolumeQuantity
+	43, // 24: quantram.v1.VolumeEmission.v1:type_name -> quantram.v1.VolumeQuantity
+	43, // 25: quantram.v1.VolumeEmission.v2:type_name -> quantram.v1.VolumeQuantity
+	43, // 26: quantram.v1.VolumeEmission.interval_mean_vn:type_name -> quantram.v1.VolumeQuantity
+	43, // 27: quantram.v1.VolumeEmission.predicted_next_v_n:type_name -> quantram.v1.VolumeQuantity
+	13, // 28: quantram.v1.VolumeEmission.raw_color:type_name -> quantram.v1.VolumeIndicator
+	13, // 29: quantram.v1.VolumeEmission.indicator:type_name -> quantram.v1.VolumeIndicator
+	14, // 30: quantram.v1.VolumeEmission.transition:type_name -> quantram.v1.VolumeTransition
+	15, // 31: quantram.v1.VolumeEmission.phase:type_name -> quantram.v1.VolumePhase
+	16, // 32: quantram.v1.VolumeEmission.confidence:type_name -> quantram.v1.VolumeConfidence
+	17, // 33: quantram.v1.VolumeEmission.domain_state:type_name -> quantram.v1.VolumeDomainState
+	18, // 34: quantram.v1.VolumeSkip.reason:type_name -> quantram.v1.VolumeSkipReason
+	11, // 35: quantram.v1.VolumeEvent.status:type_name -> quantram.v1.VolumeStatus
+	44, // 36: quantram.v1.VolumeEvent.emission:type_name -> quantram.v1.VolumeEmission
+	45, // 37: quantram.v1.VolumeEvent.skip:type_name -> quantram.v1.VolumeSkip
+	51, // 38: quantram.v1.ListSemanticTermsResponse.contract:type_name -> quantram.v1.SemanticContractInfo
+	52, // 39: quantram.v1.ListSemanticTermsResponse.terms:type_name -> quantram.v1.SemanticTerm
+	20, // 40: quantram.v1.MarketFeedService.GetFeedHealth:input_type -> quantram.v1.GetFeedHealthRequest
+	22, // 41: quantram.v1.MarketFeedService.GetActiveSource:input_type -> quantram.v1.GetActiveSourceRequest
+	24, // 42: quantram.v1.IngestionService.StreamBars:input_type -> quantram.v1.StreamBarsRequest
+	25, // 43: quantram.v1.IngestionService.GetBarWindow:input_type -> quantram.v1.GetBarWindowRequest
+	27, // 44: quantram.v1.IngestionService.TriggerGapFill:input_type -> quantram.v1.TriggerGapFillRequest
+	29, // 45: quantram.v1.OperationsService.GetHealth:input_type -> quantram.v1.GetHealthRequest
+	32, // 46: quantram.v1.OperationsService.GetReadiness:input_type -> quantram.v1.GetReadinessRequest
+	37, // 47: quantram.v1.ModelService.StreamDecisions:input_type -> quantram.v1.StreamDecisionsRequest
+	42, // 48: quantram.v1.ModelService.StreamPriceEvents:input_type -> quantram.v1.StreamPriceEventsRequest
+	47, // 49: quantram.v1.ModelService.StreamVolumeEvents:input_type -> quantram.v1.StreamVolumeEventsRequest
+	48, // 50: quantram.v1.SemanticService.GetTerm:input_type -> quantram.v1.GetSemanticTermRequest
+	49, // 51: quantram.v1.SemanticService.ListTerms:input_type -> quantram.v1.ListSemanticTermsRequest
+	50, // 52: quantram.v1.SemanticService.GetSemanticContract:input_type -> quantram.v1.GetSemanticContractRequest
+	21, // 53: quantram.v1.MarketFeedService.GetFeedHealth:output_type -> quantram.v1.FeedHealth
+	23, // 54: quantram.v1.MarketFeedService.GetActiveSource:output_type -> quantram.v1.ActiveSource
+	19, // 55: quantram.v1.IngestionService.StreamBars:output_type -> quantram.v1.Bar
+	26, // 56: quantram.v1.IngestionService.GetBarWindow:output_type -> quantram.v1.BarWindow
+	28, // 57: quantram.v1.IngestionService.TriggerGapFill:output_type -> quantram.v1.GapFillResult
+	31, // 58: quantram.v1.OperationsService.GetHealth:output_type -> quantram.v1.HealthReport
+	33, // 59: quantram.v1.OperationsService.GetReadiness:output_type -> quantram.v1.ReadinessReport
+	36, // 60: quantram.v1.ModelService.StreamDecisions:output_type -> quantram.v1.DecisionEvent
+	41, // 61: quantram.v1.ModelService.StreamPriceEvents:output_type -> quantram.v1.PriceEvent
+	46, // 62: quantram.v1.ModelService.StreamVolumeEvents:output_type -> quantram.v1.VolumeEvent
+	52, // 63: quantram.v1.SemanticService.GetTerm:output_type -> quantram.v1.SemanticTerm
+	53, // 64: quantram.v1.SemanticService.ListTerms:output_type -> quantram.v1.ListSemanticTermsResponse
+	51, // 65: quantram.v1.SemanticService.GetSemanticContract:output_type -> quantram.v1.SemanticContractInfo
+	53, // [53:66] is the sub-list for method output_type
+	40, // [40:53] is the sub-list for method input_type
+	40, // [40:40] is the sub-list for extension type_name
+	40, // [40:40] is the sub-list for extension extendee
+	0,  // [0:40] is the sub-list for field type_name
 }
 
 func init() { file_quantram_v1_quantram_proto_init() }
@@ -3530,13 +4512,14 @@ func file_quantram_v1_quantram_proto_init() {
 		(*DecisionEvent_Decision)(nil),
 		(*DecisionEvent_Skip)(nil),
 	}
+	file_quantram_v1_quantram_proto_msgTypes[24].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_quantram_v1_quantram_proto_rawDesc), len(file_quantram_v1_quantram_proto_rawDesc)),
-			NumEnums:      11,
-			NumMessages:   30,
+			NumEnums:      19,
+			NumMessages:   35,
 			NumExtensions: 0,
 			NumServices:   5,
 		},

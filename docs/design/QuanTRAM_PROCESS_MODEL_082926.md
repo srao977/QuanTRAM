@@ -1,8 +1,8 @@
 # QuanTRAM Process Model
 
 **Date:** August 29, 2026  
-**Last updated:** September 4, 2026
-**Status:** Process decomposition and service-contract proposal. P-01–P-04 are in-process (P-04 Go PriceEngine/EXPM landed 2 Sep, default `QUANTRAM_PRICING=off`).  
+**Last updated:** September 5, 2026
+**Status:** Process decomposition and service-contract proposal. P-01–P-04 are in-process (P-04 Go PriceEngine/EXPM landed 2 Sep, default `QUANTRAM_PRICING=off`). P-04V Volume Engine is an approved scientific sibling (design only; implementation not authorized).  
 **Parent Architecture:** [QuanTRAM System Specification](QuanTRAM_hi-level_design_082826.md)  
 **Derived Artifact Specification:** [E2E QuanTRAM Artifacts](E2E_QuanTRAM_ARTIFACTS.md)  
 **Open Design Gaps:** [QuanTRAM Decision Integrity and Design Gap Analysis](QuanTRAM_DECISION_INTEGRITY_GAP_ANALYSIS_082826.md)
@@ -10,7 +10,8 @@
 **Increment 1 (P-01 / P-02):** [QuanTRAM Ingestion Increment 1](QuanTRAM_INGESTION_INCREMENT_1_083026.md)  
 **Increment 1 continuation (P-02 quality):** [P-02 Data Quality](QuanTRAM_INGESTION_P02_DATA_QUALITY_083126.md)  
 **P-03 (landed):** [Adaptive Model Host](QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md) · [Implementation](QuanTRAM_P03_IMPLEMENTATION_083126.md)  
-**P-04 (landed, default off):** [Price Engine](QuanTRAM_P04_PRICE_ENGINE_090226.md) · [Implementation](QuanTRAM_P04_IMPLEMENTATION_090226.md)
+**P-04 (landed, default off):** [Price Engine](QuanTRAM_P04_PRICE_ENGINE_090226.md) · [Implementation](QuanTRAM_P04_IMPLEMENTATION_090226.md)  
+**P-04V (design approved):** [Volume Engine](QuanTRAM_VOLUME_ENGINE_090526.md)
 
 ## 1. Purpose and Authority
 
@@ -22,7 +23,7 @@ The parent architecture remains authoritative for system intent and end-to-end b
 - required versus optional runtime paths
 - east-west and northbound service surfaces
 - local paper-trading topology and later Azure scale-out
-- how adaptive (P-03, Go) and PriceEngine (P-04, Go EXPM) join the live path; Python is an offline oracle, not a sidecar
+- how adaptive (P-03, Go), PriceEngine (P-04, Go EXPM), and Volume Engine (P-04V, design-approved sibling) join the scientific path; Python is an offline oracle, not a sidecar
 
 Process names here do not force one container per process on day one. A process is a **logical runtime unit** with a contract, a scale axis, and a failure domain. A binary or container may host one or more processes until an independent-scaling or isolation need is demonstrated.
 
@@ -53,14 +54,14 @@ The answer used throughout this document: **gRPC defines service contracts; a du
 3. **Ticks do not cross unary gRPC.** Trade and quote ingress stays inside the feed and ingestion processes. Downstream consumers see **finalized bars** and snapshots, not raw tick RPCs.
 4. **Decisions are request-response.** Model evaluation, risk evaluation, and order submit are unary (or short client-stream) RPCs so deadlines, idempotency keys, and rejection reasons stay explicit.
 5. **Execution facts are events.** Broker acknowledgments, fills, cancels, and rejects are append-only stream records. Ledger and benchmark are independent consumers.
-6. **Python is an offline scientific oracle, not the control plane.** Adaptive and PriceEngine run in Go. Frozen SADE (and SADE RK45) stay outside the live path. Go owns identifiers, quality gating, risk, routing, and recording.
+6. **Python is an offline scientific oracle, not the control plane.** Adaptive and PriceEngine run in Go. P-04V Volume Engine, when implemented, is also a Go scientific process. Frozen SADE (and SADE RK45) stay outside the live path. Go owns identifiers, quality gating, risk, routing, and recording.
 7. **Contracts outlive topology.** Local single-binary, local multi-process, and Azure AKS must implement the same proto and event envelopes.
 8. **Fail closed on the live path.** Unknown data quality, expired decisions, non-tradable indices, and kill switches produce auditable rejects. Observation may continue when submission must stop.
 9. **Open integrity gaps remain open.** This model names the processes that will enforce DI/RV/OP decisions; it does not close those gaps.
 
 ## 4. Process Inventory
 
-Processes are numbered `P-01` through `P-10`. `C-01` is a client, not a core server.
+Processes are numbered `P-01` through `P-10`, plus inserted scientific sibling **P-04V**. `C-01` is a client, not a core server. P-05 through P-10 are **not** renumbered.
 
 | ID | Process | Architecture box | Path | Scale axis | Initial language |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -68,6 +69,7 @@ Processes are numbered `P-01` through `P-10`. `C-01` is a client, not a core ser
 | P-02 | Ingestion and Data Quality | Circuit breaker, failover, OHLCV aggregator, REST gap-filler | Required data | Symbol shard | Go |
 | P-03 | Adaptive Model Host | Adaptive Model Engine (Go orchestration) | Required decision | Symbol shard | Go |
 | P-04 | Price Engine | PriceEngine on analytic EXPM trajectories | Required decision | Symbol shard | Go |
+| P-04V | Volume Engine | Volume feature mathematics and Volume interpretation mathematics | Required decision / scientific input | Symbol shard / per-entity owned VolumeState | Go |
 | P-05 | OMS and Risk | OMS and Risk Guardrails | Required decision | Account (single writer) | Go |
 | P-06 | Execution | Execution Router, Live Broker Adapter | Required execution | Account / venue connection | Go |
 | P-07 | Live Execution Event Stream | Live Execution Events sink | Required recording | Partition by account or order | Log (not a domain RPC) |
@@ -76,7 +78,9 @@ Processes are numbered `P-01` through `P-10`. `C-01` is a client, not a core ser
 | P-10 | Benchmark Analysis | Correlation engine, telemetry store | Optional benchmark | Time range / strategy | Go |
 | C-01 | Harness Dashboard | Harness Benchmark Dashboard | Optional read | Stateless replicas | Any gRPC client |
 
-P-01 and P-02 form the **data plane**. P-03 through P-06 form the **decision and execution plane**. P-07 and P-08 form the **recording plane**. P-09 and P-10 form the **benchmark plane**.
+P-01 and P-02 form the **data plane**. P-03, P-04, P-04V, P-05, and P-06 form the **decision and execution plane**. P-07 and P-08 form the **recording plane**. P-09 and P-10 form the **benchmark plane**.
+
+P-04V is one Volume Engine. It is **not** a child of P-04, **not** a Volume Policy service or layer, and **not** a replacement for P-04. Approved sequence: P-01, P-02, P-03, P-04, **P-04V**, P-05, P-06, P-07, P-08, P-09, P-10, C-01.
 
 ### 4.1 Two meanings of “paper”
 
@@ -91,7 +95,7 @@ Local testing therefore runs a **real execution path** against Alpaca paper. It 
 
 ## 5. Logical Process Map
 
-This is the parent diagram restated as processes and contracts. Solid arrows are the required path. Dashed arrows are optional benchmark work.
+This is the parent diagram restated as processes and contracts. Solid arrows are the required path except as noted. Dashed arrows are optional benchmark work, except the P-04V → P-05 arrow, which is a provisional undesigned join sketch only.
 
 ```mermaid
 flowchart TD
@@ -109,6 +113,7 @@ flowchart TD
     subgraph DECISION["Decision plane"]
         P03["P-03 Adaptive Model Host"]
         P04["P-04 Price Engine (Go EXPM)"]
+        P04V["P-04V Volume Engine"]
         P05["P-05 OMS and Risk"]
     end
 
@@ -130,10 +135,12 @@ flowchart TD
     ALP --> P01
     DB -.-> P01
     P01 -->|"normalized market events"| P02
-    P02 -->|"finalized Bar stream"| P03
-    P03 -->|"accepted eligible bar"| P04
+    P02 -->|"accepted eligible Bar"| P03
+    P02 -->|"accepted eligible Bar"| P04
+    P02 -->|"accepted eligible Bar"| P04V
     P03 -->|"DecisionEvent (not orders)"| P05
     P04 -->|"PriceEvent (not orders)"| P05
+    P04V -.->|"Volume Output (not orders)"| P05
     P05 -->|"approved OrderIntent"| P06
     P06 --> BROKER
     P06 -->|"ExecutionEvent"| P07
@@ -144,7 +151,48 @@ flowchart TD
     P10 --> C01
 ```
 
-P-03 and P-04 are collocated Go siblings on the accepted eligible bar. They do not call each other over gRPC. Adaptive BUY/SELL/HOLD is not an input to PriceEngine. GREEN/AMBER/RED is not an input to Adaptive. How (or whether) P-05 later joins the two events is undesigned and outside P-04. The arrows into P-05 are a provisional topology sketch only.
+### 5.1 Scientific sibling consume (authoritative)
+
+P-03, P-04, and P-04V are scientific siblings. They consume the **same accepted eligible canonical Bar** produced through the existing P-01 / P-02 ingress path. This is **not** `P-03 → P-04 → P-04V`. P-04V does **not** consume Price Output.
+
+```text
+                         P-01 MARKET FEED
+                                |
+                                v
+                    P-02 INGESTION / DATA QUALITY
+                                |
+                      Accepted Eligible Bar
+                                |
+              +-----------------+-----------------+
+              |                 |                 |
+              v                 v                 v
+       P-03 ADAPTIVE        P-04 PRICE       P-04V VOLUME
+       MODEL HOST           ENGINE           ENGINE
+              |                 |                 |
+           CONSUME           CONSUME           CONSUME
+              |                 |                 |
+              v                 v                 v
+       Adaptive State       Price State       Volume State
+              |                 |                 |
+              v                 v                 v
+       Adaptive Math        Price Math        Volume Math
+              |                 |                 |
+              v                 v                 v
+            EMIT              EMIT              EMIT
+              |                 |                 |
+              v                 v                 v
+       Adaptive Output      Price Output      Volume Output
+```
+
+They do not call each other over gRPC. Adaptive BUY/SELL/HOLD is not an input to PriceEngine or P-04V. Price GREEN/AMBER/RED is not an input to Adaptive or P-04V. Volume Output is not an input to Adaptive or Price. There is no P/V fusion in this process model.
+
+P-04V does **not** create another market subscription, provider connection, independent market-data path, or `SubscribeModelBars` mailbox solely for Volume.
+
+Today’s collocated host may invoke P-04 after P-03 accepts a bar. That is in-process fan-out on the same observation, not a scientific chain. P-04V, when implemented, joins that same accepted-bar fan-out.
+
+Raw `Bar.Volume` is already used by P-03 D01 `updateVolumeInfluence` and will also be used by P-04V as `V_RAW`. Those paths share only the originating observation. They are not scientifically dependent.
+
+How (or whether) P-05 later joins Adaptive, Price, and Volume outputs is undesigned. The arrows into P-05 are a provisional topology sketch only. They do **not** authorize a Decision Neural Network, P/V fusion, or P-04V emitting BUY/SELL/HOLD or orders. P-05 through P-10 are unchanged as processes.
 
 ## 6. Process Catalog
 
@@ -194,11 +242,11 @@ Each process lists what it owns, what it consumes and produces, how it fails, ho
 
 **Owns:** Subscription to the P-02 model-consumer path (`SubscribeModelBars`), per-symbol adaptive scientific state (D01 → D02 → D04 → emitter), `DecisionEvent` identifiers, model-deadline watchdog, decision provenance.
 
-**Consumes:** Finalized, model-eligible bars from P-02. Does **not** consume PriceEngine output and does not call a Python worker.
+**Consumes:** Finalized, model-eligible bars from P-02 — the same accepted eligible Bar supplied to P-04 and P-04V. Does **not** consume PriceEngine output or Volume Output and does not call a Python worker.
 
-**Produces:** Versioned `DecisionEvent` (`oneof` decision | skip). HOLD is a decision. Never sends orders. After a bar is accepted, the same host may invoke P-04.
+**Produces:** Versioned `DecisionEvent` (`oneof` decision | skip). HOLD is a decision. Never sends orders. After a bar is accepted, the same host may invoke collocated P-04 (and later P-04V) on that same observation. That is sibling fan-out, not a scientific chain.
 
-**Does not own:** Risk limits, broker calls, F4/EXPM/PriceEngine mathematics (P-04).
+**Does not own:** Risk limits, broker calls, F4/EXPM/PriceEngine mathematics (P-04), Volume mathematics (P-04V).
 
 **Failure domain:** Inference timeout or stale/discontinuous bars produce **no new DecisionEvent reuse** (OP-05). P-03 stays up and reports model-host health separately from feed health.
 
@@ -214,11 +262,11 @@ Each process lists what it owns, what it consumes and produces, how it fails, ho
 
 **Owns:** Bounded per-symbol pricing history (default 31 rows), causal quadratic derivatives, F4 ridge fit, analytic EXPM cover (`time_term == false`), numerical assembly, `EmissionPolicy` / `PriceEngine`, optional cockpit, `PriceEvent` identifiers.
 
-**Consumes:** The **same accepted eligible bar** the P-03 worker just accepted (OHLCV + `IntervalStart`). Not `Decision.side`. Not the lossy observe stream. Not a `PredictRequest` window RPC.
+**Consumes:** The **same accepted eligible bar** supplied to P-03 and P-04V (OHLCV + `IntervalStart`). Not `Decision.side`. Not Volume Output. Not the lossy observe stream. Not a `PredictRequest` window RPC.
 
 **Produces:** `PriceEvent` (`oneof` PriceEmission | pricing skip). Colors GREEN/AMBER/RED/INVALID; trajectory phase and confidence. **Does not** produce BUY/SELL/HOLD and must not call Alpaca.
 
-**Does not own:** Adaptive emitter state, risk, tradability, or broker semantics.
+**Does not own:** Adaptive emitter state, VolumeState, risk, tradability, or broker semantics.
 
 **Failure domain:** A pricing panic or timeout is contained in the symbol worker. Host marks pricing unhealthy and emits a typed skip; do not reset adaptive state because pricing failed unless the shared transactional prepare explicitly rolls both back (see P-04 implementation Phase H). Restart of pricing must not require P-02 restart.
 
@@ -230,11 +278,49 @@ Each process lists what it owns, what it consumes and produces, how it fails, ho
 
 **Oracle:** SADE `solve_cover_rk45_reference` stays outside QuanTRAM. Go production is EXPM only (`gonum` v0.17.0 `Dense.Exp`).
 
+### 6.4V P-04V Volume Engine
+
+**Status:** Design approved 5 Sep 2026. Implementation is **not** authorized by this process-model insertion. Detailed scientific definitions, invariants, lifecycle, maturation, frozen mathematics, and APTF equivalence authority live in [Volume Engine](QuanTRAM_VOLUME_ENGINE_090526.md). This catalog does not duplicate those formulas.
+
+**Owns:** Bounded per-entity causal scientific working state: `VolumeState`, conceptually including Volume Feature State and Volume Interpretation State. Exact Go structs are not frozen here. `VolumeState` is **not** Snapshot, Persistence, MongoDB, a database, historical storage, or replay storage.
+
+**Consumes:** The **same accepted eligible canonical Bar** produced through P-01 / P-02 and already supplied to P-03 and P-04. Uses `Bar.Volume` as `V_RAW`. Does **not** consume Adaptive Output or Price Output. Does **not** create another market subscription, provider connection, independent market-data path, or `SubscribeModelBars` mailbox solely for Volume.
+
+**Produces:** Independent Volume Output from Volume Feature Mathematics plus Volume Interpretation Mathematics inside **one** engine:
+
+```text
+accepted Bar.Volume
+        ->
+bounded causal VolumeState
+        ->
+validated Volume feature mathematics
+        ->
+validated Volume interpretation mathematics
+        ->
+Volume Output
+```
+
+Does **not** emit BUY/SELL/HOLD, an order, OMS/Risk action, or a trade. Does **not** perform P/V fusion.
+
+**Does not own:** Adaptive influence (P-03 D01 `updateVolumeInfluence` remains P-03), PriceEngine mathematics, risk, tradability, broker semantics, Snapshot, Persistence, or a separate Volume Policy process. There is no QuanTRAM Volume Policy service, layer, or process.
+
+**Failure domain:** When implemented, a Volume failure must be contained in the symbol worker and must not reset Adaptive or Price scientific state unless a later implementation design explicitly defines a shared transactional prepare. Restart of Volume must not require P-02 restart. Persistence must not delay or control realtime Volume science.
+
+**Scale:** Same symbol shard / per-entity owned `VolumeState` as the other scientific siblings. Collocated Go when implemented.
+
+**Proto:** No Volume message, enum, RPC, or field number is authorized here. Do not invent `VolumeEvent` in this increment.
+
+**StageTransition:** V1.1 remains frozen. Future P-04V StageTransition publication is deferred, outside P-04V V1, and non-blocking.
+
+**Local Phase 0:** Not started. Not packed into `quantram-server` by this change.
+
+**Raw-volume dual use:** P-03 already uses raw volume through D01 `updateVolumeInfluence`. P-04V uses raw volume as `V_RAW` for dedicated Volume mathematics. The paths share only the originating observation.
+
 ### 6.5 P-05 OMS and Risk
 
 **Owns:** Risk policy version, limit evaluation, pending-exposure reservation, kill switches, last-moment data-age and tradability checks, machine-readable reject/resize reasons.
 
-**Consumes:** `DecisionEvent` from P-03 and, when P-04 is live, `PriceEvent`. Portfolio, cash, and working-order state from P-08 (and local reservation memory); current spread/snapshot age from P-02 or a snapshot reference on the decision. P-05 is **not** started in the P-04 increment.
+**Consumes:** `DecisionEvent` from P-03 and, when P-04 is live, `PriceEvent`. How (or whether) P-05 later consumes Volume Output is undesigned; this insertion does not add a join, fusion, or decision-network architecture. Portfolio, cash, and working-order state from P-08 (and local reservation memory); current spread/snapshot age from P-02 or a snapshot reference on the decision. P-05 is **not** started in the P-04 increment. P-04V does not feed orders or execution.
 
 **Produces:** `RiskDecision`: approved, resized, or rejected `OrderIntent` with `decision_id` preserved. Approved intents are the only inputs P-06 may submit.
 
@@ -345,6 +431,7 @@ sequenceDiagram
     participant P02 as P-02 Ingestion
     participant P03 as P-03 Model Host
     participant P04 as P-04 Price Engine
+    participant P04V as P-04V Volume Engine
     participant P05 as P-05 Risk
     participant P06 as P-06 Execution
     participant AlpacaP as Alpaca paper API
@@ -354,14 +441,17 @@ sequenceDiagram
     AlpacaMD->>P01: trades/quotes
     P01->>P02: MarketEvent
     P02->>P02: aggregate and finalize Bar
-    P02->>P03: Bar + quality
+    P02->>P03: accepted eligible Bar
+    P02->>P04: accepted eligible Bar
+    P02->>P04V: accepted eligible Bar
+    Note over P04V: P-04V design-approved; not on the live path yet
     alt quality or deadline fails
         P03-->>P03: skip, record reason
     else eligible
         P03->>P03: AdaptiveEngine DecisionEvent
-        P03->>P04: accepted bar (OHLCV)
-        P04-->>P03: PriceEvent
-        Note over P05: P-05 not implemented; both events stop here today
+        P04->>P04: PriceEvent
+        Note over P03,P04,P04V: Same observation; scientific siblings; no P/V fusion
+        Note over P05: P-05 not implemented; Adaptive/Price stop here today
         P03->>P05: DecisionEvent + PriceEvent (later)
         P05->>P08: read positions/reservations
         alt rejected or resized to flat
@@ -377,6 +467,8 @@ sequenceDiagram
 ```
 
 Identifier chain on a successful order: `market_snapshot_id` → `signal_id` → `decision_id` → `order_id` → `broker_order_id` → `event_id`. Optional `benchmark_id` is assigned in P-06 only when P-09 is selected.
+
+P-04V is shown as a sibling consumer of the same accepted eligible Bar. It is **not** on the Phase 0 live venue path, does not emit orders, and does not change P-05–P-10. Today's collocated host may still invoke P-04 after accept; that remains in-process fan-out on the same observation.
 
 ### 7.2 Feed interrupt and inference quarantine
 
@@ -396,7 +488,8 @@ SADE Unit Run 001 (adaptive) and Pricing Unit Run 001 are the numerical authorit
 | Time | `source_timestamp` → `IntervalStart` | `Bar.IntervalStart` |
 | Adaptive | `internal/adaptive` Step | Same engine in the host |
 | Pricing | `internal/pricing` Step on the same bars | Same engine after accept |
-| Output | DecisionEvent + PriceEvent | Same domain events; proto fan-out later |
+| Volume | Approved P-04V mathematics; not implemented | Same accepted bars when authorized; no proto yet |
+| Output | DecisionEvent + PriceEvent | Same domain events; proto fan-out later. Volume Output later |
 | Risk / broker | Absent | P-05 then P-06 (not this increment) |
 | Provenance | File name and row range | `market_snapshot_id`, versions, quality |
 
@@ -426,7 +519,7 @@ Three planes, three transports.
 
 ### 8.1 Collocated transport rule
 
-While P-01, P-02, P-03, P-04, P-05, P-06, and P-08 share a process, they **call Go interfaces**, not loopback gRPC. Generated proto types stay at the process edge. This matches the artifact specification and keeps the local hot path off the serialization tax.
+While P-01, P-02, P-03, P-04, P-04V (when implemented), P-05, P-06, and P-08 share a process, they **call Go interfaces**, not loopback gRPC. Generated proto types stay at the process edge. This matches the artifact specification and keeps the local hot path off the serialization tax.
 
 When a process is split out, the same interface is satisfied by a gRPC adapter. That is the move from “one binary” to “microservice” without redesigning the domain.
 
@@ -443,6 +536,7 @@ A future split of P-04 into its own binary would use a Go adapter over the same 
 | Alpaca WS → P-01 | Provider-limited. If local queues fill, drop quotes before trades and mark quality degraded. Never block the socket read until memory is exhausted. |
 | P-02 → P-03 | P-03 consumes finalized bars only. If inference lags, skip the bar and record a deadline miss; do not let an unbounded queue replay stale bars as if they were live. |
 | P-03 → P-04 | In-process call on the same accepted bar. No second mailbox. Timeout/skip per P-04 implementation Phase H (prepare both, commit both or neither). |
+| Host → P-04V | Same accepted eligible Bar; no second subscription or Volume mailbox. Prepare/commit details are not authorized in this increment. |
 | P-05 | In-process, account-serialized. No queue of unreserved intents. |
 | P-06 → venue | Broker rate limits. Excess intents reject with `RATE_LIMIT`. |
 | P-06 → P-07 | Publish with timeout. Failure degrades submit capability. |
@@ -563,7 +657,7 @@ Realtime load is dominated by **market events**, not orders. Design for that spl
 | :--- | :--- | :--- | :--- |
 | Ticks (trades/quotes) | High, bursty | P-01, P-02 | Symbol shards; keep in the data plane |
 | Finalized bars | Interval × symbols | P-02 → P-03 | Stream or bus; shard with symbols |
-| Inference | Bars that pass quality gates | P-03, P-04 | Replicas / GPU later |
+| Inference | Bars that pass quality gates | P-03, P-04, P-04V (when implemented) | Replicas / GPU later |
 | Risk + submit | Sparse | P-05, P-06 | Single writer per account |
 | Execution events | Per order lifecycle | P-07, P-08 | Partitioned log |
 | Benchmark | Subset of orders | P-09, P-10 | Independent consumer lag |
@@ -575,7 +669,7 @@ Split a collocated process into its own service when one of these is true:
 | Trigger | First split |
 | :--- | :--- |
 | Ingestion CPU or memory grows with universe size | P-01+P-02 out of the decision binary |
-| Python inference latency or RAM contends with Go | withdrawn: no Python sidecar; split P-03/P-04 binaries only if Go CPU contends |
+| Python inference latency or RAM contends with Go | withdrawn: no Python sidecar; split P-03/P-04/P-04V binaries only if Go CPU contends |
 | Risk evaluation blocks on ledger reads | cache account state in P-05; keep P-08 as source of truth |
 | Dashboard or replay queries slow ledger writes | read replica or separate query API in front of P-08 |
 | Benchmark backlog | scale P-10 only |
@@ -599,6 +693,7 @@ If the combined adaptive+pricing step exceeds its deadline, skip and leave commi
 ### 10.4 State that prevents naive scale-out
 
 - Open bars and rolling windows: sticky to a P-02 shard.
+- Adaptive, Price, and Volume scientific working state: sticky to the symbol shard that owns that entity.
 - Account exposure and kill switches: sticky to one P-05 writer.
 - Broker session: sticky to one P-06.
 - Ledger projections: single active consumer per partition.
@@ -612,6 +707,7 @@ Goal: exercise the required path with live market data and non-live money.
 ```text
 localhost
   quantram-server            P-01 P-02 P-03 P-04 + Operations
+                             (P-04V design-approved, not implemented)
                              (P-05 P-06 P-08 compiled later, not started)
        |
   optional NATS or Postgres  P-07 (or core-embedded outbox)
@@ -621,7 +717,7 @@ localhost
 ```
 
 **On today:** P-01 (Alpaca), P-02, P-03 (`QUANTRAM_MODEL=adaptive`), P-04 (`QUANTRAM_PRICING=expm` opt-in; default `off`). Viewer Price Engine cards and airport boards landed 2 Sep.  
-**Off:** Python model worker, Databento, P-05–P-10, live venue. Dashboard is optional observation.
+**Off:** Python model worker, Databento, P-04V implementation, P-05–P-10, live venue. Dashboard is optional observation.
 
 **Suggested local config**
 
@@ -638,7 +734,7 @@ localhost
 **Suggested commands / packages** (aligns with the artifact tree; no Python worker):
 
 ```text
-cmd/quantram-server          collocated Go processes (P-01–P-04)
+cmd/quantram-server          collocated Go processes (P-01–P-04; P-04V not implemented)
 internal/ingestion
 internal/adaptive
 internal/pricing             P-04 (landed 2 Sep; default off)
@@ -659,7 +755,7 @@ Split only if Phase 0 proves contention:
 
 ```text
 quantram-ingest     P-01 P-02
-quantram-model      P-03 + P-04 (same binary until CPU split)
+quantram-model      P-03 + P-04 + P-04V when implemented (same binary until CPU split)
 quantram-risk       P-05
 quantram-exec       P-06
 quantram-ledger     P-08
@@ -681,6 +777,7 @@ Same processes, different hosts.
 | P-01, P-02 | AKS Deployment, HPA on CPU; or Container Apps |
 | P-03 | AKS, symbol-sharded |
 | P-04 | AKS, same shard as P-03 until CPU split; no GPU/Python pool |
+| P-04V | When implemented: AKS, same shard as P-03/P-04 until CPU split |
 | P-05, P-06 | AKS, replica 1 per account writer; pod anti-affinity later |
 | P-07 | Event Hubs or managed NATS; keep the Go ports |
 | P-08 | AKS + Azure Database for PostgreSQL |
@@ -726,7 +823,7 @@ This replaces “start coding services in diagram order” with a contract-first
 | S6 | Deferred | Databento adapter and **full circuit breaker** (failover, failback, production trip rules). Thin Alpaca reconnect in increment 1 does not count as done. | P-01, P-02 | Only after IEX E2E, the model/paper slice, and DI-01/DI-03 policy |
 | S7 | Not started | Internal paper + correlation + dashboard client | P-09, P-10, C-01 | Benchmark stop does not affect paper-venue orders |
 
-S1–S5 are the local paper-trading slice. S6–S7 are scale and measurement. S2 is adaptive-in-Go (done) plus PriceEngine-in-Go (landed 2 Sep, default off). A Python sidecar is not part of the live path.
+S1–S5 are the local paper-trading slice. S6–S7 are scale and measurement. S2 is adaptive-in-Go (done) plus PriceEngine-in-Go (landed 2 Sep, default off). P-04V Volume Engine is design-approved as a scientific sibling (5 Sep) and is **not** an implementation step in this sequence. A Python sidecar is not part of the live path.
 
 ## 14. Mapping to Existing Documents
 
@@ -735,10 +832,11 @@ S1–S5 are the local paper-trading slice. S6–S7 are scale and measurement. S2
 | Layered architecture, feed SLAs, dashboard views, parent diagram | System specification |
 | Go interfaces, packages, single proto file, acceptance criteria | E2E artifacts |
 | Unresolved correctness and production gaps | Gap analysis |
-| Runtime units, RPCs, local vs Azure topology, P-04 PriceEngine | This document |
+| Runtime units, RPCs, local vs Azure topology, P-04 PriceEngine, P-04V process identity | This document |
 | Increment 1 ingestion implementation and Alpaca/CSV evidence | [Ingestion Increment 1](QuanTRAM_INGESTION_INCREMENT_1_083026.md) |
 | P-03 adaptive host | [P-03 design](QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md) |
 | P-04 PriceEngine / EXPM | [P-04 design](QuanTRAM_P04_PRICE_ENGINE_090226.md) |
+| P-04V Volume Engine science, invariants, lifecycle, frozen mathematics, APTF equivalence | [Volume Engine](QuanTRAM_VOLUME_ENGINE_090526.md) |
 
 This document **proposes** a resolution for the artifact specification’s open item “process decomposition and independent scaling thresholds.” It does not close P0/P1 gaps. Implementation of S1 decision-quality behavior still waits on Gate A (DI-01 through DI-07) for any path treated as a production decision contract. Do not prototype a Python inference sidecar; that path is withdrawn.
 
@@ -746,10 +844,11 @@ This document **proposes** a resolution for the artifact specification’s open 
 
 | Decision | Choice |
 | :--- | :--- |
-| Process inventory | P-01 through P-10 plus C-01 |
+| Process inventory | P-01 through P-10 plus inserted sibling P-04V plus C-01. P-05–P-10 not renumbered. |
 | Local execution venue | Alpaca paper API via P-06 |
 | Internal paper engine | Separate optional process P-09 |
-| Existing Python model | **Withdrawn as live P-04.** Adaptive is P-03 Go. PriceEngine is P-04 Go EXPM. SADE Python (including RK45) is an offline oracle only. |
+| Existing Python model | **Withdrawn as live P-04.** Adaptive is P-03 Go. PriceEngine is P-04 Go EXPM. Volume Engine is P-04V (design-approved; implementation not authorized). SADE Python (including RK45) is an offline oracle only. |
+| P-04V relationship | Scientific sibling of P-03 and P-04 on the same accepted eligible Bar. Not a child of P-04. Not a Volume Policy process. No P/V fusion or Decision Neural Network in this model. |
 | Core control plane | Go gRPC |
 | Tick transport | Not public unary gRPC |
 | Proto layout | Still one `quantram.v1` file; services listed in §9 |
@@ -778,6 +877,7 @@ Do not invent silent defaults for these in code that will drive money or promoti
 
 | Date | Version | Change |
 | :--- | :--- | :--- |
+| September 5, 2026 | 0.8 | Added approved P-04V Volume Engine as a scientific sibling of P-03 Adaptive Model Host and P-04 Price Engine. P-04V consumes the same accepted eligible Bar, owns bounded per-entity VolumeState, performs validated Volume Feature and Volume Interpretation mathematics, and emits independent Volume Output. Existing P-01 through P-10 numbering preserved; P-05 through P-10 unchanged. No P/V fusion, decision-network architecture, proto, StageTransition, or production implementation authorized by this change. See [Volume Engine](QuanTRAM_VOLUME_ENGINE_090526.md). |
 | September 4, 2026 | 0.7 | Sideways StageTransition publication V1.1 (`internal/stagetransition`). P-01–P-04 publish only on meaningful StageState change. Bar-driven P-03/P-04 events carry a value copy of the accepted `domain.Bar`. Not a new pipeline stage. Snapshot/Persistence not implemented. See [Stage Transition Publication](QuanTRAM_STAGE_TRANSITION_PUBLICATION_V1_2026-09-04.md). |
 | September 2, 2026 | 0.4 | P-04 redefined as collocated Go PriceEngine (EXPM). Python `ModelInferenceService` sidecar withdrawn. Linked P-04 design/implementation. S2/S3 marked partial after P-03 live DecisionEvents. |
 | September 2, 2026 | 0.5 | P-04 Phases A–I landed: `internal/pricing`, host join, `StreamPriceEvents`, dashboard Price Engine cards/boards. Default still `QUANTRAM_PRICING=off`. Live IEX `INPUT_GAP` documented as missing adjacent minute, not end-of-data. |

@@ -332,9 +332,130 @@ message StreamPriceEventsRequest {
   uint32 max_events = 2;
 }
 
+// P-04V VolumeEngine.
+// Volume is scientifically independent of Price. G_V is a discrete observer
+// state update (predicted_next_v_n = v_n), not an ODE, RK, or EXPM path.
+// Indicator is not BUY/SELL/HOLD. Maturation is not an error.
+// Raw color is the activity classification; Indicator is confirmation-controlled.
+// Lineage identifies the initiating Bar (market_snapshot_id + interval_start).
+// Volume has no independent EffectiveTime.
+
+enum VolumeStatus {
+  VOLUME_STATUS_UNSPECIFIED = 0;
+  // Windows are not yet due. Not an error.
+  VOLUME_STATUS_MATURING = 1;
+  VOLUME_STATUS_AVAILABLE = 2;
+  // A due calculation is scientifically undefined. Not ENGINE_ERROR.
+  VOLUME_STATUS_INVALID = 3;
+  VOLUME_STATUS_ENGINE_ERROR = 4;
+}
+
+enum VolumeQuantityStatus {
+  VOLUME_QUANTITY_STATUS_UNSPECIFIED = 0;
+  VOLUME_QUANTITY_STATUS_INSUFFICIENT = 1;
+  VOLUME_QUANTITY_STATUS_AVAILABLE = 2;
+  VOLUME_QUANTITY_STATUS_UNDEFINED = 3;
+}
+
+// GREEN/AMBER/RED are scientific interpretation labels, not BUY/SELL/HOLD.
+enum VolumeIndicator {
+  VOLUME_INDICATOR_UNSPECIFIED = 0;
+  VOLUME_INDICATOR_GREEN = 1;
+  VOLUME_INDICATOR_AMBER = 2;
+  VOLUME_INDICATOR_RED = 3;
+}
+
+enum VolumeTransition {
+  VOLUME_TRANSITION_UNSPECIFIED = 0;
+  VOLUME_TRANSITION_STABLE = 1;
+  VOLUME_TRANSITION_PENDING_GREEN = 2;
+  VOLUME_TRANSITION_PENDING_AMBER = 3;
+  VOLUME_TRANSITION_PENDING_RED = 4;
+  VOLUME_TRANSITION_CONFIRMED_GREEN = 5;
+  VOLUME_TRANSITION_CONFIRMED_AMBER = 6;
+  VOLUME_TRANSITION_CONFIRMED_RED = 7;
+}
+
+enum VolumePhase {
+  VOLUME_PHASE_UNSPECIFIED = 0;
+  VOLUME_PHASE_ACTIVITY_STATIONARY = 1;
+  VOLUME_PHASE_ACTIVITY_INCREASING_ACCELERATING = 2;
+  VOLUME_PHASE_ACTIVITY_INCREASING_DECELERATING = 3;
+  VOLUME_PHASE_ACTIVITY_DECREASING_ACCELERATING = 4;
+  VOLUME_PHASE_ACTIVITY_DECREASING_DECELERATING = 5;
+}
+
+enum VolumeConfidence {
+  VOLUME_CONFIDENCE_UNSPECIFIED = 0;
+  VOLUME_CONFIDENCE_HIGH = 1;
+}
+
+enum VolumeDomainState {
+  VOLUME_DOMAIN_STATE_UNSPECIFIED = 0;
+  VOLUME_DOMAIN_STATE_CAUSAL_LOCAL_VOLUME = 1;
+}
+
+enum VolumeSkipReason {
+  VOLUME_SKIP_REASON_UNSPECIFIED = 0;
+  VOLUME_SKIP_REASON_MATURING = 1;
+  VOLUME_SKIP_REASON_INVALID = 2;
+  VOLUME_SKIP_REASON_ENGINE_ERROR = 3;
+}
+
+// One scientific scalar. Presence of value is required when status is
+// AVAILABLE so V_N = 0 is distinguishable from an unavailable V_N.
+message VolumeQuantity {
+  optional double value = 1;
+  VolumeQuantityStatus status = 2;
+}
+
+message VolumeEmission {
+  VolumeQuantity v_raw = 1;
+  VolumeQuantity v_n = 2;
+  VolumeQuantity v1 = 3;
+  VolumeQuantity v2 = 4;
+  VolumeQuantity interval_mean_vn = 5;
+  VolumeQuantity predicted_next_v_n = 6;
+  VolumeIndicator raw_color = 7;
+  VolumeIndicator indicator = 8;
+  VolumeTransition transition = 9;
+  VolumePhase phase = 10;
+  VolumeConfidence confidence = 11;
+  VolumeDomainState domain_state = 12;
+}
+
+message VolumeSkip {
+  VolumeSkipReason reason = 1;
+  string detail = 2;
+}
+
+message VolumeEvent {
+  string event_id = 1;
+  string symbol = 2;
+  int64 interval_start_unix_ms = 3;
+  int64 interval_end_unix_ms = 4;
+  string market_snapshot_id = 5;
+  // Provider/source provenance only. Not model, receipt, or effective time.
+  string source_timestamp = 6;
+  uint64 accepted_sequence = 7;
+  int64 latency_ms = 8;
+  VolumeStatus status = 9;
+  bool emitted = 10;
+  string reason = 11;
+  VolumeEmission emission = 12;
+  VolumeSkip skip = 13;
+}
+
+message StreamVolumeEventsRequest {
+  repeated string symbols = 1;
+  // Zero means stream until the client cancels.
+  uint32 max_events = 2;
+}
+
 service ModelService {
   rpc StreamDecisions(StreamDecisionsRequest) returns (stream DecisionEvent);
   rpc StreamPriceEvents(StreamPriceEventsRequest) returns (stream PriceEvent);
+  rpc StreamVolumeEvents(StreamVolumeEventsRequest) returns (stream VolumeEvent);
 }
 
 // SemanticService is read-only. It explains vocabulary; it does not drive science.

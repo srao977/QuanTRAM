@@ -1,0 +1,65 @@
+{
+  "phase": "F",
+  "date": "2026-09-05",
+  "aptf_commit": "ae0dacb2e02c5b80c82f6662d1a3c6863f4b989a",
+  "aptf_artifact_root": "pre08242026_docs (relocated from APTF repo root; hash authority)",
+  "originals": {
+    "APTF_TEST_009V_VOLUME_SELECTION_V0_1.json": {
+      "sha256": "4dbc78a1e213715577a9b68eca8cae186137fcaa2959afeb9d6bac308f430dd9",
+      "bytes": 9718988,
+      "records": 101221
+    },
+    "APTF_TEST_009V_PRICE_VOLUME_OBSERVATIONS_V0_1.csv": {
+      "sha256": "71432eb6e19aa65df5a8fadbef120c519f89e88a16dbbb2f6d6a6f9237122fa9",
+      "bytes": 28247146,
+      "records": 101221
+    },
+    "APTF_TEST_010_VOLUME_ENGINE_EMISSIONS_V0_1.csv": {
+      "sha256": "0d9134f3a1996d83dd43257264ddd6a43b5e02215b61c94ec034c3e1ee152d3c",
+      "bytes": 42812387,
+      "records": 101205
+    },
+    "APTF_TEST_014C_SPY_V_EMISSION_POLICY_V0_1.json": {
+      "sha256": "f719134f241b00888099e237c02f237a2db4b59f02b25ea5498c51006991bcd8",
+      "bytes": 1485
+    },
+    "APTF_TEST_014C_SPY_V_ENGINE_EMISSIONS_V0_1.csv": {
+      "sha256": "ecd946532e32a8c5167aab72e8c56d3d3389ab00705a75d4cb91cf3031fd451e",
+      "bytes": 16384270,
+      "records": 55199
+    },
+    "APTF_TEST_014C_SUMMARY_V0_1.json": {
+      "sha256": "100f0b4807831f6eebd2e44fe8ab7b2c9597113916243b635b75d819fe80044b",
+      "bytes": 4160
+    }
+  },
+  "vendored": {
+    "APTF_TEST_014C_SPY_V_EMISSION_POLICY_V0_1.json": {
+      "kind": "exact_full_copy",
+      "sha256": "f719134f241b00888099e237c02f237a2db4b59f02b25ea5498c51006991bcd8"
+    },
+    "level1_source_prefix.csv": {
+      "kind": "deterministic_subset",
+      "source": "APTF_TEST_009V_PRICE_VOLUME_OBSERVATIONS_V0_1.csv",
+      "source_sha256": "71432eb6e19aa65df5a8fadbef120c519f89e88a16dbbb2f6d6a6f9237122fa9",
+      "rule": "first 80 source rows; columns source_observation_index,timestamp,V_RAW",
+      "sha256": "a041cd823e3371c76c3be9d21f039f60a883a796f0790c90faa7259ed89b14a3"
+    },
+    "level1_010_prefix.csv": {
+      "kind": "deterministic_subset",
+      "source": "APTF_TEST_010_VOLUME_ENGINE_EMISSIONS_V0_1.csv",
+      "source_sha256": "0d9134f3a1996d83dd43257264ddd6a43b5e02215b61c94ec034c3e1ee152d3c",
+      "rule": "010 rows with observation_index<=80; selected feature columns",
+      "sha256": "5537bd3923ab40305d469fa9b3f2d0f8e629dc998ff08857f05f76f488f60319"
+    },
+    "level1_014c_first_session.csv": {
+      "kind": "deterministic_subset",
+      "source": "APTF_TEST_014C_SPY_V_ENGINE_EMISSIONS_V0_1.csv",
+      "source_sha256": "ecd946532e32a8c5167aab72e8c56d3d3389ab00705a75d4cb91cf3031fd451e",
+      "rule": "first historical session key 2023-03-30:PREMARKET (82 rows) until date:session changes",
+      "sha256": "7cd38ab82d3116dd1a6c73e248c2cd1a294feae23c56fafbb7f1afc930c29e58"
+    }
+  },
+  "full_corpus": "go test ./internal/volume -run TestFFull with QUANTRAM_P04V_FROZEN_DIR pointing at hash-verified APTF pre08242026_docs (or sibling ../APTF/pre08242026_docs). Not vendored (86MB+). Production Engine does not read these files.",
+  "phase_f_note": "Feature/derivative Engine replay matches frozen 010. Production confirmColor keeps last confirmed color; frozen APTF observe writes cockpit into state.color. Indicator mismatch is documented, not patched."
+}

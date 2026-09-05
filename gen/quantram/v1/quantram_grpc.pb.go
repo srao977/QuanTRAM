@@ -481,8 +481,9 @@ var OperationsService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	ModelService_StreamDecisions_FullMethodName   = "/quantram.v1.ModelService/StreamDecisions"
-	ModelService_StreamPriceEvents_FullMethodName = "/quantram.v1.ModelService/StreamPriceEvents"
+	ModelService_StreamDecisions_FullMethodName    = "/quantram.v1.ModelService/StreamDecisions"
+	ModelService_StreamPriceEvents_FullMethodName  = "/quantram.v1.ModelService/StreamPriceEvents"
+	ModelService_StreamVolumeEvents_FullMethodName = "/quantram.v1.ModelService/StreamVolumeEvents"
 )
 
 // ModelServiceClient is the client API for ModelService service.
@@ -491,6 +492,7 @@ const (
 type ModelServiceClient interface {
 	StreamDecisions(ctx context.Context, in *StreamDecisionsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DecisionEvent], error)
 	StreamPriceEvents(ctx context.Context, in *StreamPriceEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[PriceEvent], error)
+	StreamVolumeEvents(ctx context.Context, in *StreamVolumeEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[VolumeEvent], error)
 }
 
 type modelServiceClient struct {
@@ -539,12 +541,32 @@ func (c *modelServiceClient) StreamPriceEvents(ctx context.Context, in *StreamPr
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ModelService_StreamPriceEventsClient = grpc.ServerStreamingClient[PriceEvent]
 
+func (c *modelServiceClient) StreamVolumeEvents(ctx context.Context, in *StreamVolumeEventsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[VolumeEvent], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &ModelService_ServiceDesc.Streams[2], ModelService_StreamVolumeEvents_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[StreamVolumeEventsRequest, VolumeEvent]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ModelService_StreamVolumeEventsClient = grpc.ServerStreamingClient[VolumeEvent]
+
 // ModelServiceServer is the server API for ModelService service.
 // All implementations must embed UnimplementedModelServiceServer
 // for forward compatibility.
 type ModelServiceServer interface {
 	StreamDecisions(*StreamDecisionsRequest, grpc.ServerStreamingServer[DecisionEvent]) error
 	StreamPriceEvents(*StreamPriceEventsRequest, grpc.ServerStreamingServer[PriceEvent]) error
+	StreamVolumeEvents(*StreamVolumeEventsRequest, grpc.ServerStreamingServer[VolumeEvent]) error
 	mustEmbedUnimplementedModelServiceServer()
 }
 
@@ -560,6 +582,9 @@ func (UnimplementedModelServiceServer) StreamDecisions(*StreamDecisionsRequest, 
 }
 func (UnimplementedModelServiceServer) StreamPriceEvents(*StreamPriceEventsRequest, grpc.ServerStreamingServer[PriceEvent]) error {
 	return status.Error(codes.Unimplemented, "method StreamPriceEvents not implemented")
+}
+func (UnimplementedModelServiceServer) StreamVolumeEvents(*StreamVolumeEventsRequest, grpc.ServerStreamingServer[VolumeEvent]) error {
+	return status.Error(codes.Unimplemented, "method StreamVolumeEvents not implemented")
 }
 func (UnimplementedModelServiceServer) mustEmbedUnimplementedModelServiceServer() {}
 func (UnimplementedModelServiceServer) testEmbeddedByValue()                      {}
@@ -604,6 +629,17 @@ func _ModelService_StreamPriceEvents_Handler(srv interface{}, stream grpc.Server
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ModelService_StreamPriceEventsServer = grpc.ServerStreamingServer[PriceEvent]
 
+func _ModelService_StreamVolumeEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(StreamVolumeEventsRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ModelServiceServer).StreamVolumeEvents(m, &grpc.GenericServerStream[StreamVolumeEventsRequest, VolumeEvent]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type ModelService_StreamVolumeEventsServer = grpc.ServerStreamingServer[VolumeEvent]
+
 // ModelService_ServiceDesc is the grpc.ServiceDesc for ModelService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -620,6 +656,11 @@ var ModelService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "StreamPriceEvents",
 			Handler:       _ModelService_StreamPriceEvents_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "StreamVolumeEvents",
+			Handler:       _ModelService_StreamVolumeEvents_Handler,
 			ServerStreams: true,
 		},
 	},

@@ -1,0 +1,28 @@
+{
+  "AMBER_semantics": "normalized trading activity near baseline or pending a confirmed state change",
+  "GREEN_semantics": "normalized trading activity state above the causal baseline band",
+  "RED_semantics": "normalized trading activity state below the causal baseline band",
+  "RK45": false,
+  "V1_definition": "current derivative of causal quadratic over 3 normalized-Volume observations",
+  "V2_definition": "current second derivative of causal quadratic over 3 normalized-Volume observations",
+  "V_definition": "V_N = raw Volume / trailing 15-observation raw-Volume median",
+  "color_is_price_direction": false,
+  "created_from_partition": "TEST_014_DEVELOPMENT_ONLY",
+  "description": "15-row mean V_N, +/-10% baseline band, two-observation confirmation",
+  "parameters": {
+    "confirmation_observations": 2,
+    "epsilon": 1e-12,
+    "lower_threshold": 0.9,
+    "policy_id": "V_INTERVAL_B10_C2",
+    "state_source": "INTERVAL_MEAN_V_N",
+    "upper_threshold": 1.1
+  },
+  "policy_id": "V_EMISSION_V0_1",
+  "price_inputs_used": false,
+  "projected_V1_V2": "UNSUPPORTED_NOT_FABRICATED",
+  "selected_candidate": "V_INTERVAL_B10_C2",
+  "selection_rule": "minimum development changes/session subject to >=7.5% GREEN and RED occupancy, <=50% AMBER occupancy, and median interval >=3 minutes",
+  "status": "FROZEN_BEFORE_VALIDATION",
+  "trajectory_model": "G_V discrete point persistence: projected_V(t+1)=V_N(t)",
+  "validation_outcomes_read": false
+}
