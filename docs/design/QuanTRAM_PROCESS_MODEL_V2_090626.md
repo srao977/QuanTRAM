@@ -3,7 +3,7 @@
 **Version:** V2  
 **Date:** September 6, 2026  
 **Derived from:** [Process Model V1](QuanTRAM_PROCESS_MODEL_V1_082926.md) (29 Aug 2026; last V1 update 5 Sep 2026)  
-**Status:** Process decomposition and service-contract proposal. P-01–P-04 are in-process (P-04 Go PriceEngine/EXPM landed 2 Sep, default `QUANTRAM_PRICING=off`). P-04V Volume Engine is an implemented scientific sibling, validated through ModelHost Phase G (6 Sep 2026).  
+**Status:** Process decomposition and service-contract proposal. P-01–P-04 are in-process (P-04 Go PriceEngine/EXPM landed 2 Sep, default `QUANTRAM_PRICING=off`). P-04V Volume Engine is an implemented sibling model-processing process, validated through ModelHost Phase G (6 Sep 2026).  
 **Parent Architecture:** [QuanTRAM System Specification](QuanTRAM_hi-level_design_082826.md)  
 **Derived Artifact Specification:** [E2E QuanTRAM Artifacts](E2E_QuanTRAM_ARTIFACTS.md)  
 **Open Design Gaps:** [QuanTRAM Decision Integrity and Design Gap Analysis](QuanTRAM_DECISION_INTEGRITY_GAP_ANALYSIS_082826.md)
@@ -26,11 +26,11 @@ The parent architecture remains authoritative for system intent and end-to-end b
 - required versus optional runtime paths
 - east-west and northbound service surfaces
 - local paper-trading topology and later Azure scale-out
-- how adaptive (P-03, Go), PriceEngine (P-04, Go EXPM), and Volume Engine (P-04V, implemented sibling) join the scientific path; Python is an offline oracle, not a sidecar
+- how Adaptive (P-03, Go), Price Engine (P-04, Go EXPM), and Volume Engine (P-04V, implemented sibling process) join the model-processing path; Python is an offline oracle, not a sidecar
 
-Process names here do not force one container per process on day one. A process is a **logical runtime unit** with a contract, a scale axis, and a failure domain. A binary or container may host one or more processes until an independent-scaling or isolation need is demonstrated.
+Process names here do not force one container per process on day one. A process is a **logical runtime unit** with a contract, a scale axis, and a failure domain. A binary or container may host one or more processes until an independent-scaling or isolation need is demonstrated. Canonical terms used throughout this document are defined in [§17 QuanTRAM Terminology and Systems Dictionary](#17-quantram-terminology-and-systems-dictionary).
 
-QuanTRAM v1 is limited to U.S. stocks, ETFs, and published market indices. Indices remain analytics-only and must never become broker orders.
+QuanTRAM v1 is limited to U.S. stocks, ETFs, and published market indices. Indices remain analytics-only and must never become broker orders. A stock, ETF, or index may be modeled as an **Entity**; a **Symbol** may identify that Entity in current contracts, but Symbol is not the architectural definition of Entity or Entity Key.
 
 ## 2. Why Processes Before Proto
 
@@ -57,14 +57,33 @@ The answer used throughout this document: **gRPC defines service contracts; a du
 3. **Ticks do not cross unary gRPC.** Trade and quote ingress stays inside the feed and ingestion processes. Downstream consumers see **finalized bars** and snapshots, not raw tick RPCs.
 4. **Decisions are request-response.** Model evaluation, risk evaluation, and order submit are unary (or short client-stream) RPCs so deadlines, idempotency keys, and rejection reasons stay explicit.
 5. **Execution facts are events.** Broker acknowledgments, fills, cancels, and rejects are append-only stream records. Ledger and benchmark are independent consumers.
-6. **Python is an offline scientific oracle, not the control plane.** Adaptive and PriceEngine run in Go. P-04V Volume Engine is also a Go scientific process. Frozen SADE (and SADE RK45) stay outside the live path. Go owns identifiers, quality gating, risk, routing, and recording.
+6. **Python is an offline scientific oracle, not the control plane.** Adaptive and Price Engine run in Go. P-04V Volume Engine is also a Go process. Frozen SADE (and SADE RK45) stay outside the live path. Go owns identifiers, quality gating, risk, routing, and recording.
 7. **Contracts outlive topology.** Local single-binary, local multi-process, and Azure AKS must implement the same proto and event envelopes.
 8. **Fail closed on the live path.** Unknown data quality, expired decisions, non-tradable indices, and kill switches produce auditable rejects. Observation may continue when submission must stop.
 9. **Open integrity gaps remain open.** This model names the processes that will enforce DI/RV/OP decisions; it does not close those gaps.
 
+### 3.1 Terminology hierarchy
+
+These concepts are distinct. Do not treat them as synonyms.
+
+| Concept | Role |
+| :--- | :--- |
+| **Entity** | The distinct thing for which QuanTRAM maintains causal model processing and process state. |
+| **Entity Key** | The stable runtime identity used to associate an Observation with that Entity. |
+| **Entity-Key Worker** | The current runtime worker that provides ordered execution context for that Entity Key. |
+| **Process** | A logical runtime unit (for example P-03, P-04, P-04V) with responsibility, inputs, outputs, owned state where applicable, failure domain, scale axis, and contract. |
+| **Process State** | Authoritative retained information owned by a Process for an Entity. |
+| **State Update** | Successful advancement of owned Process State after processing an Observation. |
+| **Process Output** | Information produced by a Process as the result of processing. |
+| **Output Publication** | Making that Process Output available to its defined subscribers or contract surface. |
+
+A Process and a Worker are not the same concept. Current collocated implementation may execute several sibling processes inside one Entity-Key Worker. Sequential execution inside that worker does not create a process-dependency chain.
+
+The exact generalized representation of Entity Key is **not** defined by this Process Model. Current V1 implementation may use Bar symbol/instrument identity as the practical routing key for stocks, ETFs, and indices. That is an implementation realization of Entity Key, not the architectural definition of Entity or Entity Key.
+
 ## 4. Process Inventory
 
-Processes are numbered `P-01` through `P-10`, plus inserted scientific sibling **P-04V**. `C-01` is a client, not a core server. P-05 through P-10 are **not** renumbered.
+Processes are numbered `P-01` through `P-10`, plus inserted sibling process **P-04V**. `C-01` is a client, not a core server. P-05 through P-10 are **not** renumbered.
 
 | ID | Process | Architecture box | Path | Scale axis | Initial language |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -72,7 +91,7 @@ Processes are numbered `P-01` through `P-10`, plus inserted scientific sibling *
 | P-02 | Ingestion and Data Quality | Circuit breaker, failover, OHLCV aggregator, REST gap-filler | Required data | Symbol shard | Go |
 | P-03 | Adaptive Model Host | Adaptive Model Engine (Go orchestration) | Required decision | Symbol shard | Go |
 | P-04 | Price Engine | PriceEngine on analytic EXPM trajectories | Required decision | Symbol shard | Go |
-| P-04V | Volume Engine | Volume feature mathematics and Volume interpretation mathematics | Required decision / scientific input | Symbol shard / per-entity owned VolumeState | Go |
+| P-04V | Volume Engine | Volume feature mathematics and Volume interpretation mathematics | Required model-processing | Symbol shard / per-entity owned VolumeState | Go |
 | P-05 | OMS and Risk | OMS and Risk Guardrails | Required decision | Account (single writer) | Go |
 | P-06 | Execution | Execution Router, Live Broker Adapter | Required execution | Account / venue connection | Go |
 | P-07 | Live Execution Event Stream | Live Execution Events sink | Required recording | Partition by account or order | Log (not a domain RPC) |
@@ -138,9 +157,9 @@ flowchart TD
     ALP --> P01
     DB -.-> P01
     P01 -->|"normalized market events"| P02
-    P02 -->|"accepted eligible Bar"| P03
-    P02 -->|"accepted eligible Bar"| P04
-    P02 -->|"accepted eligible Bar"| P04V
+    P02 -->|"model-published eligible Bar"| P03
+    P02 -->|"model-published eligible Bar"| P04
+    P02 -->|"model-published eligible Bar"| P04V
     P03 -->|"DecisionEvent (not orders)"| P05
     P04 -->|"PriceEvent (not orders)"| P05
     P04V -.->|"VolumeEvent (not orders; P-05 join NOT YET DESIGNED)"| P05
@@ -154,9 +173,9 @@ flowchart TD
     P10 --> C01
 ```
 
-### 5.1 Scientific sibling consume (authoritative)
+### 5.1 Sibling process consumption (authoritative)
 
-P-03, P-04, and P-04V are scientific siblings. They consume the **same accepted eligible canonical Bar** produced through the existing P-01 / P-02 ingress path. This is **not** `P-03 → P-04 → P-04V`. P-04V does **not** consume Price Output.
+P-03, P-04, and P-04V are sibling model-processing processes. They are each offered the **same model-published eligible canonical Bar** from P-02 (`Pipeline.fanoutModel`). This is **not** `P-03 → P-04 → P-04V`. P-04V does **not** consume Price Output.
 
 ```text
                          P-01 MARKET FEED
@@ -164,7 +183,7 @@ P-03, P-04, and P-04V are scientific siblings. They consume the **same accepted 
                                 v
                     P-02 INGESTION / DATA QUALITY
                                 |
-                      Accepted Eligible Bar
+                      Model-Published Eligible Bar
                                 |
               +-----------------+-----------------+
               |                 |                 |
@@ -191,11 +210,11 @@ They do not call each other over gRPC. Adaptive BUY/SELL/HOLD is not an input to
 
 P-04V does **not** create another market subscription, provider connection, independent market-data path, or `SubscribeModelBars` mailbox solely for Volume.
 
-Today’s collocated host invokes P-04 after P-03 on a published bar. That is in-process fan-out on the same observation, not a scientific chain. Phase G joins P-04V to that same `Pipeline.fanoutModel` → one `SubscribeModelBars` → keyed-worker path, after common Host gates. Volume processing and commit are independent of Adaptive+Price `commitA && commitP`. Sequential execution inside the worker is **not** a scientific dependency.
+Today’s collocated Host invokes P-04 after P-03 on a model-published Bar. That is in-process fan-out on the same Observation, not a process-dependency chain. Phase G joins P-04V to that same `Pipeline.fanoutModel` → one `SubscribeModelBars` → Entity-Key Worker path, after common Host gates. P-04V performs its Independent State Update relative to the P-03/P-04 Joint State-Update Transaction (`commitA && commitP` is the implementation identifier for that pair). Sequential execution inside the Entity-Key Worker is **not** a Process Dependency.
 
-Raw `Bar.Volume` is already used by P-03 D01 `updateVolumeInfluence` and is also used by P-04V as `V_RAW`. Those paths share only the originating observation. They are not scientifically dependent.
+Raw `Bar.Volume` is already used by P-03 D01 `updateVolumeInfluence` and is also used by P-04V as `V_RAW`. Those paths share only the originating observation. They are not process-dependent.
 
-How (or whether) P-05 later joins Adaptive, Price, and Volume outputs is **NOT YET DESIGNED**. The arrows into P-05 are a provisional topology sketch only. They do **not** authorize a Decision Neural Network, P/V fusion, combiner, or P-04V emitting BUY/SELL/HOLD or orders. P-05 through P-10 are unchanged as processes.
+P-05 combination of P-03, P-04, and P-04V outputs is **NOT YET DESIGNED**. The arrows into P-05 are a provisional topology sketch only. They do **not** authorize a Decision Neural Network, P/V fusion, combiner, or P-04V emitting BUY/SELL/HOLD or orders. P-05 through P-10 are unchanged as processes.
 
 ## 6. Process Catalog
 
@@ -243,17 +262,17 @@ Each process lists what it owns, what it consumes and produces, how it fails, ho
 
 ### 6.3 P-03 Adaptive Model Host
 
-**Owns:** Subscription to the P-02 model-consumer path (`SubscribeModelBars`), per-symbol adaptive scientific state (D01 → D02 → D04 → emitter), `DecisionEvent` identifiers, model-deadline watchdog, decision provenance.
+**Owns:** Subscription to the P-02 model-consumer path (`SubscribeModelBars`), per-entity adaptive Process State (D01 → D02 → D04 → emitter; currently symbol-routed), `DecisionEvent` identifiers, model-deadline watchdog, decision provenance.
 
-**Consumes:** Finalized, model-eligible bars from P-02 — the same accepted eligible Bar supplied to P-04 and P-04V. Does **not** consume PriceEngine output or Volume Output and does not call a Python worker.
+**Consumes:** Finalized, model-eligible bars from P-02 — the same model-published eligible Bar supplied to P-04 and P-04V. Does **not** consume PriceEngine output or Volume Output and does not call a Python worker.
 
-**Produces:** Versioned `DecisionEvent` (`oneof` decision | skip). HOLD is a decision. Never sends orders. After a bar is accepted, the same host invokes collocated P-04 and P-04V on that same observation. That is sibling fan-out, not a scientific chain.
+**Produces:** Versioned `DecisionEvent` (`oneof` decision | skip). HOLD is a decision. Never sends orders. After Model Publication, the same host offers that Bar to collocated P-04 and P-04V. That is sibling fan-out, not a process-dependency chain.
 
 **Does not own:** Risk limits, broker calls, F4/EXPM/PriceEngine mathematics (P-04), Volume mathematics (P-04V).
 
 **Failure domain:** Inference timeout or stale/discontinuous bars produce **no new DecisionEvent reuse** (OP-05). P-03 stays up and reports model-host health separately from feed health.
 
-**Scale:** Horizontal by symbol shard. One keyed worker per symbol; no concurrent `Step`.
+**Scale:** Horizontal by entity/symbol shard (currently symbol-routed). One Entity-Key Worker per Entity Key; no concurrent `Step`. Current V1 routing uses Bar symbol/instrument identity.
 
 **Proto:** `ModelService` — `StreamDecisions` (live). `Evaluate` / `GetModelInfo` remain later. `ModelInferenceService` is **not** used for adaptive.
 
@@ -263,17 +282,17 @@ Each process lists what it owns, what it consumes and produces, how it fails, ho
 
 ### 6.4 P-04 Price Engine
 
-**Owns:** Bounded per-symbol pricing history (default 31 rows), causal quadratic derivatives, F4 ridge fit, analytic EXPM cover (`time_term == false`), numerical assembly, `EmissionPolicy` / `PriceEngine`, optional cockpit, `PriceEvent` identifiers.
+**Owns:** Bounded per-entity pricing history (currently symbol-routed; default 31 rows), causal quadratic derivatives, F4 ridge fit, analytic EXPM cover (`time_term == false`), numerical assembly, `EmissionPolicy` / `PriceEngine`, optional cockpit, `PriceEvent` identifiers.
 
-**Consumes:** The **same accepted eligible bar** supplied to P-03 and P-04V (OHLCV + `IntervalStart`). Not `Decision.side`. Not Volume Output. Not the lossy observe stream. Not a `PredictRequest` window RPC.
+**Consumes:** The **same model-published eligible bar** supplied to P-03 and P-04V (OHLCV + `IntervalStart`). Not `Decision.side`. Not Volume Output. Not the lossy observe stream. Not a `PredictRequest` window RPC.
 
 **Produces:** `PriceEvent` (`oneof` PriceEmission | pricing skip). Colors GREEN/AMBER/RED/INVALID; trajectory phase and confidence. **Does not** produce BUY/SELL/HOLD and must not call Alpaca.
 
 **Does not own:** Adaptive emitter state, VolumeState, risk, tradability, or broker semantics.
 
-**Failure domain:** A pricing panic or timeout is contained in the symbol worker. Host marks pricing unhealthy and emits a typed skip; do not reset adaptive state because pricing failed unless the shared transactional prepare explicitly rolls both back (see P-04 implementation Phase H). Restart of pricing must not require P-02 restart.
+**Failure domain:** A pricing panic or timeout is contained in the Entity-Key Worker. Host marks pricing unhealthy and emits a typed skip; do not reset adaptive state because pricing failed unless the Joint State-Update Transaction rolls both back (see P-04 implementation Phase H). Restart of pricing must not require P-02 restart.
 
-**Scale:** Same symbol shard / keyed worker as P-03. Collocated Go. Replicas are not a Python pool.
+**Scale:** Same entity/symbol shard / Entity-Key Worker as P-03 (currently symbol-routed). Collocated Go. Replicas are not a Python pool.
 
 **Proto:** `ModelService.StreamPriceEvents` fans out `PriceEvent` the way `StreamDecisions` fans out `DecisionEvent`. Off → `FailedPrecondition`; unavailable → `Unavailable`. Last-per-symbol catch-up, no durable history. Do **not** implement `ModelInferenceService`.
 
@@ -285,14 +304,14 @@ Each process lists what it owns, what it consumes and produces, how it fails, ho
 
 **Status:** Implemented and validated through ModelHost Phase G (6 Sep 2026). Detailed scientific definitions, invariants, lifecycle, maturation, frozen mathematics, and APTF equivalence authority live in [Volume Engine](QuanTRAM_VOLUME_ENGINE_090526.md). Coding chronology lives in [P-04V implementation](../implementations/QuanTRAM_P04V_VOLUME_ENGINE_IMPLEMENTATION_090526.md). This catalog does not duplicate those formulas.
 
-**Owns:** One `volume.Engine` per keyed symbol worker. Bounded per-entity `VolumeState` (Volume Feature State + Volume Interpretation State). `VolumeState` is **not** Snapshot, Persistence, MongoDB, a database, historical storage, or replay storage.
+**Owns:** One `volume.Engine` per Entity-Key Worker. Bounded per-entity `VolumeState` (Volume Feature State + Volume Interpretation State). `VolumeState` is **not** Snapshot, Persistence, MongoDB, a database, historical storage, or replay storage.
 
-**Consumes:** The **same model-published eligible canonical Bar** already delivered through `Pipeline.fanoutModel` → one `SubscribeModelBars` → Host keyed worker, after common Host gates. Uses `Bar.Volume` as `V_RAW`. Does **not** consume Adaptive Output or Price Output. Does **not** create another market subscription, provider connection, independent market-data path, Volume mailbox, or Volume-only scientific worker goroutine.
+**Consumes:** The **same model-published eligible canonical Bar** already delivered through `Pipeline.fanoutModel` → one `SubscribeModelBars` → Host Entity-Key Worker, after common Host gates. Uses `Bar.Volume` as `V_RAW`. Does **not** consume Adaptive Output or Price Output. Does **not** create another market subscription, provider connection, independent market-data path, Volume mailbox, or Volume-only worker goroutine.
 
 **Produces:** Independent `VolumeEvent` from Volume Feature Mathematics plus Volume Interpretation Mathematics inside **one** engine:
 
 ```text
-accepted Bar.Volume
+model-published Bar.Volume
         ->
 bounded causal VolumeState
         ->
@@ -309,11 +328,11 @@ Does **not** emit BUY/SELL/HOLD, an order, OMS/Risk action, or a trade. Does **n
 
 **Does not own:** Adaptive influence (P-03 D01 `updateVolumeInfluence` remains P-03), PriceEngine mathematics, risk, tradability, broker semantics, Snapshot, Persistence, or a separate Volume Policy process. There is no QuanTRAM Volume Policy service, layer, or process.
 
-**Failure domain:** Volume prepare/panic is isolated in the symbol worker (`volDisc`). Volume commit is **independent** of Adaptive+Price `commitA && commitP`. Volume failure must not roll back Adaptive or Price. Adaptive/Price failure must not roll back a successful Volume commit. Restart of Volume must not require P-02 restart. Persistence must not delay or control realtime Volume science.
+**Failure domain:** Volume Process Failure / panic is isolated in the Entity-Key Worker (`volDisc`). P-04V performs an Independent State Update relative to the P-03/P-04 Joint State-Update Transaction (`commitA && commitP`). On P-04V Process Success, `VolumeState` advances and `VolumeEvent` is published. On P-04V Process Failure, the Bar is a Branch-local Discard for P-04V: `VolumeState` does not advance, the Discontinuity is explicit, and P-03/P-04 processing of the same Bar is unaffected. P-03/P-04 failure must not roll back a successful P-04V State Update. Restart of Volume must not require P-02 restart. Persistence must not delay or control realtime Volume processing.
 
-**Scale:** Same symbol shard / per-entity owned `VolumeState` as the other scientific siblings. Collocated Go.
+**Scale:** Same entity/symbol shard (currently symbol-routed), with per-entity owned `VolumeState`, as the other sibling processes. Collocated Go.
 
-**Proto:** `ModelService.StreamVolumeEvents` streams Host-produced `VolumeEvent`. No dedicated Volume microservice. Unavailable quantities are absent on the wire; available zero is present. No independent Volume EffectiveTime. Slow or cancelled RPC clients must not block science.
+**Proto:** `ModelService.StreamVolumeEvents` is Output Publication of Host-produced `VolumeEvent`. No dedicated Volume microservice. Unavailable quantities are absent on the wire; available zero is present. No independent Volume EffectiveTime. Slow or cancelled RPC clients must not block model processing.
 
 **StageTransition:** V1.1 remains frozen. P-04V StageTransition publication is deferred, outside P-04V V1, and non-blocking.
 
@@ -325,7 +344,7 @@ Does **not** emit BUY/SELL/HOLD, an order, OMS/Risk action, or a trade. Does **n
 
 **Owns:** Risk policy version, limit evaluation, pending-exposure reservation, kill switches, last-moment data-age and tradability checks, machine-readable reject/resize reasons.
 
-**Consumes:** `DecisionEvent` from P-03 and, when P-04 is live, `PriceEvent`. How (or whether) P-05 later consumes `VolumeEvent` is **NOT YET DESIGNED**; this model does not add a join, fusion, aggregator, voting engine, or decision-network architecture. Portfolio, cash, and working-order state from P-08 (and local reservation memory); current spread/snapshot age from P-02 or a snapshot reference on the decision. P-05 is **not** started in the P-04 increment. P-04V does not feed orders or execution.
+**Consumes:** `DecisionEvent` from P-03 and, when P-04 is live, `PriceEvent`. P-05 combination of P-03, P-04, and P-04V outputs is **NOT YET DESIGNED**; this model does not add a join, fusion, aggregator, voting engine, or decision-network architecture. Portfolio, cash, and working-order state from P-08 (and local reservation memory); current spread/snapshot age from P-02 or a snapshot reference on the decision. P-05 is **not** started in the P-04 increment. P-04V does not feed orders or execution.
 
 **Produces:** `RiskDecision`: approved, resized, or rejected `OrderIntent` with `decision_id` preserved. Approved intents are the only inputs P-06 may submit.
 
@@ -446,16 +465,16 @@ sequenceDiagram
     AlpacaMD->>P01: trades/quotes
     P01->>P02: MarketEvent
     P02->>P02: aggregate and finalize Bar
-    P02->>P03: accepted eligible Bar
-    P02->>P04: accepted eligible Bar
-    P02->>P04V: accepted eligible Bar
+    P02->>P03: model-published eligible Bar
+    P02->>P04: model-published eligible Bar
+    P02->>P04V: model-published eligible Bar
     Note over P04V: Phase G VolumeEvent; no orders; P-05 join NOT YET DESIGNED
     alt quality or deadline fails
         P03-->>P03: skip, record reason
     else eligible
         P03->>P03: AdaptiveEngine DecisionEvent
         P04->>P04: PriceEvent
-        Note over P03,P04,P04V: Same observation; scientific siblings; no P/V fusion
+        Note over P03,P04,P04V: Same model-published Bar; sibling processes; no P/V fusion
         Note over P05: P-05 not implemented; Adaptive/Price stop here today
         P03->>P05: DecisionEvent + PriceEvent (later)
         P05->>P08: read positions/reservations
@@ -473,7 +492,7 @@ sequenceDiagram
 
 Identifier chain on a successful order: `market_snapshot_id` → `signal_id` → `decision_id` → `order_id` → `broker_order_id` → `event_id`. Optional `benchmark_id` is assigned in P-06 only when P-09 is selected.
 
-P-04V is a sibling consumer of the same accepted eligible Bar and is on the Phase G scientific path (`VolumeEvent` via `StreamVolumeEvents`). It is **not** on the Phase 0 live venue path, does not emit orders, and does not change P-05–P-10. Today's collocated host still invokes P-04 after accept; Volume is offered after common gates independently of that Adaptive+Price commit. That remains in-process fan-out on the same observation.
+P-04V is a sibling process offered the same model-published eligible Bar. Output Publication is `VolumeEvent` via `StreamVolumeEvents`. It is **not** on the Phase 0 live venue path, does not emit orders, and does not change P-05–P-10. Today's collocated host still invokes P-04 after Model Publication; Volume is offered after common gates independently of the P-03/P-04 joint state-update transaction. That remains in-process fan-out on the same observation.
 
 ### 7.2 Feed interrupt and inference quarantine
 
@@ -492,13 +511,13 @@ SADE Unit Run 001 (adaptive) and Pricing Unit Run 001 are the numerical authorit
 | Bar source | Checked-in CSV OHLCV | P-02 model-eligible finalized bars |
 | Time | `source_timestamp` → `IntervalStart` | `Bar.IntervalStart` |
 | Adaptive | `internal/adaptive` Step | Same engine in the host |
-| Pricing | `internal/pricing` Step on the same bars | Same engine after accept |
+| Pricing | `internal/pricing` Step on the same bars | Same engine after Model Publication |
 | Volume | Implemented P-04V discrete `G_V` (`internal/volume`) | Same model-published bars after common Host gates |
 | Output | DecisionEvent + PriceEvent + VolumeEvent | Same domain events; `StreamDecisions` / `StreamPriceEvents` / `StreamVolumeEvents` |
 | Risk / broker | Absent | P-05 then P-06 (not this increment) |
 | Provenance | File name and row range | `market_snapshot_id`, versions, quality |
 
-Promotion rule (MV-01, still open): a live scientific outcome is not trusted until replay of stored accepted bars reproduces offline scores. Persist enough input to replay without reading mutable current bars. This is **not** a `PredictRequest` body.
+Promotion rule (MV-01, still open): a live model-processing output is not trusted until replay of stored model-published bars reproduces offline scores. Persist enough input to replay without reading mutable current bars. This is **not** a `PredictRequest` body.
 
 ### 7.4 Optional benchmark path
 
@@ -530,7 +549,7 @@ When a process is split out, the same interface is satisfied by a gRPC adapter. 
 
 ### 8.2 P-04 is collocated Go (supersedes Python sidecar)
 
-The August 29 rule that P-04 is always an out-of-process Python worker is **withdrawn**. Adaptive inference is in-process P-03. PriceEngine is in-process P-04 in the same keyed symbol worker. There is no Phase 0 `Predict` RPC.
+The August 29 rule that P-04 is always an out-of-process Python worker is **withdrawn**. Adaptive inference is in-process P-03. PriceEngine is in-process P-04 in the same Entity-Key Worker. There is no Phase 0 `Predict` RPC.
 
 A future split of P-04 into its own binary would use a Go adapter over the same domain `PriceEvent` contract, not `ModelInferenceService`.
 
@@ -540,8 +559,8 @@ A future split of P-04 into its own binary would use a Go adapter over the same 
 | :--- | :--- |
 | Alpaca WS → P-01 | Provider-limited. If local queues fill, drop quotes before trades and mark quality degraded. Never block the socket read until memory is exhausted. |
 | P-02 → P-03 | P-03 consumes finalized bars only. If inference lags, skip the bar and record a deadline miss; do not let an unbounded queue replay stale bars as if they were live. |
-| P-03 → P-04 | In-process call on the same accepted bar. No second mailbox. Timeout/skip per P-04 implementation Phase H (prepare both, commit both or neither). |
-| Host → P-04V | Same published eligible Bar after common gates; no second subscription or Volume mailbox. Independent Volume prepare/commit. RPC subscribers must not block science. |
+| P-03 → P-04 | In-process call on the same model-published bar. No second mailbox. Timeout/skip per P-04 implementation Phase H (joint P-03/P-04 state-update transaction: both process states advance together or neither advances). |
+| Host → P-04V | Same published eligible Bar after common gates; no second subscription or Volume mailbox. Independent P-04V state update. RPC subscribers must not block model processing. |
 | P-05 | In-process, account-serialized. No queue of unreserved intents. |
 | P-06 → venue | Broker rate limits. Excess intents reject with `RATE_LIMIT`. |
 | P-06 → P-07 | Publish with timeout. Failure degrades submit capability. |
@@ -689,17 +708,17 @@ OP-05 is still open. Until it is closed, use these as engineering targets, not p
 | :--- | :--- | :--- |
 | Tick apply inside P-02 | 2 ms p99 | 2 ms p99 |
 | Bar finalize to P-03 start | 5 ms | 20 ms |
-| P-03 + P-04 Step (adaptive + EXPM) | inside 200 ms host deadline | 200 ms deadline |
+| Entity-Key Worker model-processing step (P-03 + P-04 + P-04V) | inside 200 ms host deadline | 200 ms deadline |
 | P-05 Evaluate | 10 ms | 10 ms |
 | P-06 submit call start | 10 ms local | 10 ms local |
 | Venue RTT | Alpaca-bound | Alpaca-bound |
 
-If the combined adaptive+pricing step exceeds its deadline, skip and leave committed scientific state unchanged. Prefer no order over a late order (when P-05 exists).
+If the Entity-Key Worker model-processing step encounters a deadline failure, the affected process transaction does not advance its state. P-03 and P-04 retain their Joint State-Update Transaction: both process states advance together or neither advances. P-04V updates VolumeState independently; a successful P-04V State Update is not rolled back by a subsequent P-03/P-04 failure, and a P-04V failure does not prevent P-03/P-04 from completing their joint state update. Sequential execution does not create Process Dependency or a three-process atomic transaction. Prefer no order over a late order (when P-05 exists).
 
 ### 10.4 State that prevents naive scale-out
 
 - Open bars and rolling windows: sticky to a P-02 shard.
-- Adaptive, Price, and Volume scientific working state: sticky to the symbol shard that owns that entity.
+- Adaptive, Price, and Volume Process State: sticky to the entity/symbol shard that owns that Entity (currently symbol-routed).
 - Account exposure and kill switches: sticky to one P-05 writer.
 - Broker session: sticky to one P-06.
 - Ledger projections: single active consumer per partition.
@@ -830,7 +849,7 @@ This replaces “start coding services in diagram order” with a contract-first
 | S6 | Deferred | Databento adapter and **full circuit breaker** (failover, failback, production trip rules). Thin Alpaca reconnect in increment 1 does not count as done. | P-01, P-02 | Only after IEX E2E, the model/paper slice, and DI-01/DI-03 policy |
 | S7 | Not started | Internal paper + correlation + dashboard client | P-09, P-10, C-01 | Benchmark stop does not affect paper-venue orders |
 
-S1–S5 are the local paper-trading slice. S6–S7 are scale and measurement. S2 is adaptive-in-Go (done) plus PriceEngine-in-Go (landed 2 Sep, default off). P-04V Volume Engine is implemented as a scientific sibling (Phase G, 6 Sep) on the same Host path; it is **not** a new S-step and does not change S4–S7. A Python sidecar is not part of the live path.
+S1–S5 are the local paper-trading slice. S6–S7 are scale and measurement. S2 is adaptive-in-Go (done) plus PriceEngine-in-Go (landed 2 Sep, default off). P-04V Volume Engine is implemented as a sibling model-processing process (Phase G, 6 Sep) on the same Host path; it is **not** a new S-step and does not change S4–S7. A Python sidecar is not part of the live path.
 
 ## 14. Mapping to Existing Documents
 
@@ -856,7 +875,7 @@ This document **proposes** a resolution for the artifact specification’s open 
 | Local execution venue | Alpaca paper API via P-06 |
 | Internal paper engine | Separate optional process P-09 |
 | Existing Python model | **Withdrawn as live P-04.** Adaptive is P-03 Go. PriceEngine is P-04 Go EXPM. Volume Engine is P-04V (implemented; discrete `G_V`; no RK45/EXPM). SADE Python (including RK45) is an offline oracle only. |
-| P-04V relationship | Scientific sibling of P-03 and P-04 on the same model-published eligible Bar. Independent Volume commit. Not a child of P-04. Not a Volume Policy process. No P/V fusion or Decision Neural Network in this model. P-05 join of `VolumeEvent` is **NOT YET DESIGNED**. |
+| P-04V relationship | Sibling model-processing process of P-03 and P-04 on the same model-published eligible Bar. Independent P-04V state update. Not a child of P-04. Not a Volume Policy process. No P/V fusion or Decision Neural Network in this model. P-05 combination of P-03, P-04, and P-04V outputs is **NOT YET DESIGNED**. |
 | Core control plane | Go gRPC |
 | Tick transport | Not public unary gRPC |
 | Proto layout | Still one `quantram.v1` file; services listed in §9 |
@@ -881,11 +900,152 @@ Do not invent silent defaults for these in code that will drive money or promoti
 - Authn/z for operator RPCs
 - Paper-fill methodology (BV-01)
 
-## 17. Change Log
+## 17. QuanTRAM Terminology and Systems Dictionary
+
+This dictionary defines the canonical meaning of terms used by the QuanTRAM Process Model. Where a term has a broader meaning in software, control systems, quantitative finance, or process engineering, the definition below states the meaning intended within QuanTRAM.
+
+These terms are not synonyms. In particular: Entity is not Symbol; Entity Key is not Entity; an Entity-Key Worker is not a Process; Model Publication is not Common Host Gates; Common Host Gates are not Process Opportunity; Model Publication is not Output Publication; Process Opportunity is not Process Success; Process State is not Stage State; and a State Update is not necessarily a Stage Transition.
+
+### 17.1 Architecture versus current implementation
+
+**Architectural requirement.** Observations for one Entity are processed in Causal Order against independently owned per-entity Process State. Once a model-published Bar passes the applicable Common Host Gates, every enabled sibling model-processing process is offered an independent Process Opportunity for that same Bar. P-03 and P-04 retain a Joint State-Update Transaction. P-04V performs an Independent State Update. P-05 combination of P-03, P-04, and P-04V outputs is **NOT YET DESIGNED**.
+
+Current model-processing sequence for P-03 / P-04 / P-04V (not a universal state machine for every QuanTRAM process):
+
+```text
+P-02 Model Publication
+        |
+        v
+Host receives model-published Bar
+        |
+        v
+Common Host Gates
+        |
+        v
+independent Process Opportunity
+   +----+----+----+
+   |         |    |
+   v         v    v
+ P-03      P-04  P-04V
+```
+
+Model Publication ≠ Common Host Gates ≠ Process Opportunity ≠ Process Success ≠ State Update ≠ Output Publication. Publishing a Bar does not guarantee successful process execution. One sibling’s Process Failure does not remove another sibling’s Process Opportunity.
+
+**Current Go implementation.** The Host associates a model-published Bar with an Entity-Key Worker using current Bar identity/routing information (today, Bar symbol/instrument identity). That worker executes collocated P-03 / P-04 / P-04V processing for the Entity. Sequential execution inside the worker does not create Process Dependency.
+
+The architecture does **not** require Entity-Key Worker to remain the implementation mechanism forever. If a future implementation preserves Entity identity, Causal Order, state ownership, process contracts, and failure semantics, it may use a different runtime mechanism without changing this Process Model’s fundamental semantics. Because Entity-Key Worker is the current implementation mechanism, the term is valid in V2 when that implementation behavior is being described.
+
+This Process Model does **not** invent a generalized composite Entity Key schema. Current V1 routing of stocks, ETFs, and indices by symbol is an implementation realization of Entity Key, not the architectural definition of Entity or Entity Key.
+
+Conceptual relationship (not a process-dependency chain; P-03 / P-04 / P-04V are siblings with distinct Process State and distinct Process Output):
+
+```text
+Entity
+  |
+  | identified for processing by
+  v
+Entity Key
+  |
+  | associated with
+  v
+Entity-Key Worker
+  |
+  +----------------+----------------+
+  |                |                |
+  v                v                v
+P-03 Adaptive    P-04 Price      P-04V Volume
+  |                |                |
+  v                v                v
+Adaptive          Price            Volume
+Process State     Process State    Process State
+  |                |                |
+  v                v                v
+DecisionEvent     PriceEvent       VolumeEvent
+  |                |                |
+  v                v                v
+Output            Output           Output
+Publication       Publication      Publication
+```
+
+### 17.2 Dictionary
+
+| Term | Canonical QuanTRAM Meaning | Important Distinction / Not the Same As |
+| :--- | :--- | :--- |
+| **Entity** | The distinct thing for which QuanTRAM maintains causal model processing and Process State. In QuanTRAM V1, an Entity may represent a supported instrument class: a U.S. stock, an ETF, or a published market index. Indices remain analytics-only Entities and must never become broker orders. | **Not** Symbol. **Not** Instrument as a market-domain object. **Not** the Entity-Key Worker. A Symbol may identify or help identify an Entity; the concepts are not identical. Entity is not defined as “stock.” |
+| **Entity Key** | The stable runtime identity used to associate an Observation with the Entity whose ordered processing and owned Process State are affected. It exists for routing, process-state ownership, Causal Order, per-entity isolation, and locating the correct Entity-Key Worker. The exact generalized representation is **not** defined by this Process Model. | **Not** the Entity itself. **Not** the architectural definition of Symbol. Current V1 implementation may use Bar symbol/instrument identity as the practical routing key; that is an implementation realization, not a new composite key schema. |
+| **Entity-Key Worker** | The current runtime worker associated with one Entity Key. It provides the ordered execution context in which Observations for that Entity are processed against that Entity’s owned Process State. A function or Process does not intrinsically require a key; this name describes this worker type because the worker is associated with an Entity Key. | **Not** the Entity. **Not** the Entity Key. **Not** a QuanTRAM Process. **Not** Process State. **Not** a model. **Not** a market-data provider. **Not** a Shard itself. Collocation of sibling processes inside one Entity-Key Worker is **not** Process Dependency. |
+| **Instrument** | A market-data / trading-domain object identified by the market and reference-data contracts (`InstrumentType`: `STOCK`, `ETF`, `INDEX` in V1). | **Not** Entity. In current V1, supported market instruments can serve as modeled Entities, but Entity is the process-model concept and Instrument is the market-domain concept. An index may be an Entity for analytics even though it is non-tradable. |
+| **Symbol** | The market/instrument identifier carried in current market-data contracts and used by the current implementation for routing and grouping. For QuanTRAM V1 it is currently sufficient for much of the runtime routing of stocks, ETFs, and indices. | **Not** synonymous with Entity. **Not** the general architectural definition of Entity Key. Do not broaden V1 scope to FX, futures, crypto, or options. |
+| **Observation** | Information accepted by QuanTRAM as describing an Entity at a particular causal position or interval. QuanTRAM already uses observation as a scientific/data concept. This Process Model does not introduce “Observer” as a runtime component. | **Not** synonymous with a raw provider payload. **Not** necessarily a Bar, except where the context specifically refers to the Bar representation used on the current model-processing path. Historical APTF “observer” terminology is provenance only. |
+| **Market Event** | A provider-tagged ingress record produced by P-01 (`MarketEvent`) carrying source timestamp, local receipt timestamp, instrument classification, and tradability metadata. It is a candidate observation at the feed boundary. | **Not** a Bar. **Not** Process State. **Not** a DecisionEvent, PriceEvent, or VolumeEvent. P-01 does not emit canonical bars. |
+| **Bar** | The canonical interval-based market-data representation currently used to carry eligible Observations through the QuanTRAM model-processing path. It contains entity/instrument identity, interval/time information, OHLCV, and provenance/quality information according to the current contract. A Bar is data. | **Not** an Entity. **Not** Process State. **Not** a worker. **Not** a Decision. **Not** a Process Output merely because it exists in P-02. |
+| **Model-Eligible Bar** | A finalized Bar that has passed the applicable quality/continuity policy for model-processing. Eligibility is a property of the Observation relative to that policy. | **Not** automatically Model Publication. A Bar may be windowed in P-02 without being published onto the model-consumer path. |
+| **P-02 Window Accept** | The Bar has entered or replaced an item in P-02’s bounded ingestion/window state. | **Not** Model Publication. **Not** Process Success for P-03 / P-04 / P-04V. **Not** Output Publication from those processes. |
+| **Model Publication** | P-02 successfully publishes an eligible Bar onto the model-consumer path. Current implementation boundary: `Pipeline.fanoutModel`. The resulting Bar may be called a model-published Bar or model-published eligible Bar. Model Publication delivers the Bar to the Host; it does not by itself constitute Common Host Gates, Process Opportunity, Process Success, State Update, or Output Publication. | **Not** P-02 Window Accept. **Not** Common Host Gates. **Not** Process Opportunity. **Not** Output Publication. **Not** State Update. **Not** StageTransition publication. |
+| **Process** | A logical runtime unit with responsibility, inputs, outputs, owned state where applicable, failure domain, scale axis, and contract. Examples: P-03 Adaptive Model Host, P-04 Price Engine, P-04V Volume Engine. Process names do not force one container per process. | **Not** a Worker. **Not** a Service. **Not** an Engine in the generic sense. A named Engine may participate within a Process. Multiple processes may be collocated in one binary. |
+| **Process Opportunity** | For current P-03 / P-04 / P-04V model processing: an enabled Process is offered the applicable model-published Bar after Host receipt/routing and the applicable Common Host Gates, and therefore has the opportunity to perform its deterministic processing for that Observation. Once a model-published Bar passes the applicable Common Host Gates, every enabled sibling model-processing process is offered an independent Process Opportunity for that same Bar. | **Not** Model Publication. **Not** Common Host Gates. **Not** Process Success. A process may receive an opportunity and then succeed, fail, skip according to explicit process semantics, or produce a discontinuity/failure record. |
+| **Process Success** | The Process successfully completes its deterministic processing for the offered Observation according to its invariants. For current P-03 / P-04 / P-04V model processing, success may follow Process Opportunity and, where the process owns state, may permit a State Update; where the process emits an event, success may lead to Output Publication according to that process contract. Not every process necessarily owns mutable state. | **Not** Process Opportunity. **Not** Model Publication. **Not** Output Publication by itself. **Not** an order. |
+| **Process Failure** | The Process cannot successfully complete the required deterministic processing for the offered Observation. Failure is local to the relevant process/transaction unless explicitly defined otherwise. One sibling’s Process Failure does not remove another sibling’s Process Opportunity and does not undo Model Publication. | **Not** upstream data deletion. **Not** failed Model Publication. The model-published Bar still existed. Sibling processes do not lose their Process Opportunity merely because one process failed. |
+| **Sibling Process** | Processes independently offered the same model-published Bar, after the applicable Common Host Gates, rather than forming a producer-consumer chain with each other. Current sibling model-processing processes: P-03, P-04, P-04V. Each owns distinct Process State and produces a distinct Process Output. | Physical sequential execution inside one Entity-Key Worker does **not** convert them into Process Dependencies. This is **not** `P-03 → P-04 → P-04V`. One sibling’s failure does not remove another sibling’s Process Opportunity. |
+| **Process Dependency** | A relationship in which one Process requires another process’s output or successful completion as its input or precondition. | Shared worker placement is **not** Process Dependency. Sequential execution is **not** Process Dependency. Current P-03 / P-04 / P-04V sibling relationship is not a dependency chain. |
+| **Process State** | The authoritative retained information owned by a Process for an Entity and used when processing subsequent Observations. Examples include Adaptive state, Price state, and `VolumeState`. “State” is context-sensitive in QuanTRAM documentation and should normally be qualified. | **Not** a Bar. **Not** a database record. **Not** Snapshot. **Not** Persistence. **Not** a StageTransitionEvent. **Not** Process Output. **Not** Stage State. |
+| **Candidate State / Next State** | Temporary state derived while evaluating an Observation but not yet adopted as the process’s current authoritative Process State. This is a semantic definition, not a requirement that every process expose an explicit candidate-state object in code. | **Not** current Process State until a State Update succeeds. **Not** Snapshot. |
+| **State Update** | The successful advancement of owned Process State from its prior state to the next state derived from an Observation. Conceptually, and as explanation only: `S_t + B_(t+1)` → successful process evaluation → `S_(t+1)`. Preferred over ambiguous production use of “commit” or “scientific commit.” Implementation identifiers such as `commitA`, `commitP`, and `Commit()` are provenance only. | **Not** necessarily a State Transition in the categorical/Stage sense. A Process State Update may occur on an Observation without a Stage State Transition. **Not** Model Publication. **Not** Output Publication. |
+| **Joint State-Update Transaction** | Current P-03/P-04 both-or-neither semantics: both Adaptive and Price process states advance together, or neither advances. Implementation identifier: `commitA && commitP`. | P-04V is **not** part of this joint transaction. Sequential execution does not create a three-process atomic transaction. |
+| **Independent State Update** | P-04V may successfully advance `VolumeState` independently of whether the P-03/P-04 Joint State-Update Transaction subsequently succeeds. Likewise, P-04V failure does not roll back or prohibit a successful P-03/P-04 joint state update. | **Not** a Joint State-Update Transaction. **Not** a Process Dependency. |
+| **State Transition** | A meaningful change from one defined state/value to another. General concept only. | **Not** necessarily a synonym of State Update. A State Update may advance complex Process State even when no externally meaningful categorical Stage State changes. **Not** automatically a Stage Transition. |
+| **Stage** | A named StageTransition identity (`StageID`) under the existing StageTransition V1.1 contract. Stages are sideways/publication identities, not additional pipeline processes. | **Not** a QuanTRAM Process ID. **Not** a new P-number. Do not treat Stage as a substitute for Process State. |
+| **Stage State** | The externally interpretable state representation maintained or published by the StageTransition mechanism for a particular StageID/EntityID, according to the existing StageTransition contract. | **Not** full internal Process State. A Process State Update may occur without a Stage State change. |
+| **Stage Transition** | A meaningful change in Stage State that causes StageTransition publication under the existing StageTransition V1.1 contract. Bar changed does not mean Stage changed. Stage changed implies transition publication with the causing Bar. P-04V StageTransition remains deferred. | **Not** every State Update. **Not** Model Publication. This Process Model does not redesign StageTransition V1.1. |
+| **StageTransitionEvent** | The structured publication record emitted when a Stage Transition occurs. | **Not** Process State. **Not** a DecisionEvent, PriceEvent, or VolumeEvent. **Not** Persistence. |
+| **Branch-local Discard** | A model-published Bar cannot proceed successfully through one particular process branch because that process failed. Use this term only for that local outcome. Do not replace every Process Failure with “discard.” | **Not** global data deletion. **Not** “P-02 deleted the Bar.” **Not** “Model Publication did not occur.” **Not** “sibling processes lose their opportunity.” **Not** “the Bar never existed.” Downstream continuity must not silently ignore the missing process advancement. |
+| **Causal Order** | The required ordering of Observations for one Entity such that Process State evolves according to the actual accepted/published observation sequence. QuanTRAM permits irregular or nonlinear elapsed intervals. | **Not** “every adjacent wall-clock minute.” **Not** wall-clock adjacency. **Not** interval duration. A skipped provider minute may still be a valid next Observation. |
+| **Continuity** | The property that a process’s state progression remains causally connected to the sequence of Observations it is intended to consume. Distinguish irregular elapsed time, a provider minute that is absent but not proven loss, a proven missing model-published Observation, and process-local failure/discontinuity. | **Not** wall-clock regularity. This Process Model does not redefine existing Price/Volume failure rules. |
+| **Discontinuity** | An explicit condition indicating that a Process can no longer safely assume its current state is causally continuous with the required observation sequence. The owning process’s defined lifecycle/failure semantics determine what happens after discontinuity. | **Not** every irregular time gap. **Not** an automatic reset policy invented here. `STATE_DISCONTINUOUS` is reserved for proven loss (overflow / panic / proven missing eligible), not a skipped provider minute. |
+| **Quality Gate** | A deterministic condition deciding whether an Observation is eligible for a particular downstream processing path based on data quality/continuity policy. | **Not** a Host-only concept. **Not** Process Success. This pass does not invent additional gates. |
+| **Common Host Gates** | The shared Host-level conditions applied after Host receipt of a model-published Bar and before that Bar is offered as an independent Process Opportunity to the collocated sibling processes. | **Not** Model Publication. **Not** Process Opportunity. **Not** Process Success. **Not** a second market-data path. After these gates, each enabled sibling is offered its own Process Opportunity and retains local success/failure semantics. |
+| **Process Output** | Information produced by a Process as the result of processing. Current named outputs include `DecisionEvent`, `PriceEvent`, and `VolumeEvent`. | **Not** an order. P-03 / P-04 / P-04V outputs are not orders. **Not** Process State. **Not** Model Publication. |
+| **Output Publication** | The act of making a Process Output available to its defined subscribers or contract surface. Examples: `StreamDecisions`, `StreamPriceEvents`, `StreamVolumeEvents`. | **Not** Model Publication. **Not** State Update. **Not** StageTransition publication. **Not** durable Persistence. Slow subscribers must not block model processing. |
+| **Indicator** | An interpreted, confirmation-controlled categorical output. P-04V currently uses Indicator with GREEN / AMBER / RED values. Other processes may expose categorical states, but their terminology remains governed by their current contracts until separately normalized. Historical APTF `cockpit_color` is provenance only. | **Not** BUY / SELL / HOLD. **Not** an order instruction. **Not** a RiskDecision. **Not** an execution command. This entry does not rename P-04 Price color / cockpit terminology. |
+| **Decision** | A P-03 Adaptive output in `DecisionEvent` form. HOLD is a decision. A skip is recorded separately from a decision. | **Not** a PriceEvent. **Not** a VolumeEvent. **Not** an order. Adaptive BUY/SELL/HOLD is not an input to Price or Volume. |
+| **Skip** | A typed record that an offered Observation was not successfully converted into the process’s normal output, for an explicit quality, deadline, or process-local reason. | **Not** silent deletion of the upstream Bar. **Not** Process Success. **Not** a Decision, Price emission, or Volume Indicator. |
+| **Event** | A structured record representing something that occurred or was produced at a defined boundary. Different event types have different semantics. Examples: `MarketEvent`, `DecisionEvent`, `PriceEvent`, `VolumeEvent`, `ExecutionEvent`, `StageTransitionEvent`. | **Not** all events are durable. **Not** all events are Process Outputs. **Not** Process State. |
+| **Service** | A contract surface exposed across a process boundary, currently commonly gRPC in QuanTRAM. | **Not** necessarily a Process. A Process may expose a Service. Multiple processes may initially be collocated in one binary. |
+| **Host** | A runtime role/component term. In the current QuanTRAM implementation, the Host receives model-published Bars, performs common gating/routing, associates Observations with the appropriate Entity-Key Worker, and coordinates collocated model-processing execution. P-03 Adaptive Model Host is the named QuanTRAM Process that currently owns this Host role. | Host role/component is **not** the generic definition of Process. P-03 Adaptive Model Host **is** a named QuanTRAM Process. The architecture does not require the current Host implementation mechanism forever. Do not rename P-03. |
+| **Worker** | A runtime execution mechanism. In this Process Model, the relevant worker type is the Entity-Key Worker. “Python worker” in historical text means an out-of-process sidecar, which is withdrawn from the live path. | **Not** a Process. **Not** an Entity. **Not** Entity Key. Do not use “keyed worker” as the canonical term. |
+| **Engine** | An implementation/component term for deterministic model mathematics or orchestration where the established QuanTRAM component uses that name (Adaptive Engine, Price Engine, Volume Engine, `volume.Engine`). A named Engine may participate within a Process. | **Not** an unexplained generic architectural category. Do not introduce “Scientific Engine,” “Engine Plane,” or “Engine Layer.” Engine is not Process in the generic sense. |
+| **Shard** | A partition of workload/state ownership used for scale-out. Existing examples include symbol shard and account shard. Where the architecture is entity-oriented, this document may say entity/symbol shard or entity shard (currently symbol-routed). | **Not** the Entity-Key Worker. **Not** a Process. A shard is a scale partition; a worker is the current execution mechanism inside that partition. |
+| **Failure Domain** | The architectural containment boundary within which a fault is intended to be contained before it affects other processes, entities, or system capabilities. | **Not** merely an exception handler. A local Process Failure must not be described as though the upstream Bar never existed. |
+| **Capability** | An explicitly reported runtime ability such as `observe`, `infer`, `submit`, `cancel`, `reconcile`, `benchmark`. | **Not** identical to process health. A process may remain alive while one or more capabilities are disabled. |
+| **Required Path** | Processing required for the intended execution/recording behavior of the configured runtime mode. | **Not** Optional Path. Required-path failure is fail-closed where specified. This does not imply that P-04V → P-05 combination has been designed. |
+| **Optional Path** | Processing whose failure must not delay or reject required-path work, such as benchmark/dashboard functions where specified. | **Not** a license to drop required-path facts. P-09 / P-10 / C-01 must not block P-06. |
+| **Data Plane** | P-01 and P-02: provider ingress, normalization, bar construction, quality, and Model Publication. | **Not** the Decision and Execution Plane. Ticks stay inside the data plane. |
+| **Decision and Execution Plane** | P-03, P-04, P-04V, P-05, and P-06: model processing, risk, and venue submit/cancel. P-04V emits model output and does not emit orders. | **Not** a designed P-03/P-04/P-04V combiner. P-05 output combination remains **NOT YET DESIGNED**. |
+| **Recording Plane** | P-07 and P-08: durable execution-event delivery and authoritative ledger projection. | **Not** realtime model-processing control. |
+| **Benchmark Plane** | P-09, P-10, and C-01: optional simulation, correlation, and dashboard read. | **Not** Required Path. Must not delay or reject venue submit. |
+| **Tradability** | Contract metadata stating whether an Instrument may become a broker order. V1 indices are analytics-only and must never become broker orders. | **Not** Entity identity. An index may be an Entity without being tradable. |
+| **Market Snapshot ID** | The identifier (`market_snapshot_id`) that records the market-data observation identity used for provenance and later identifier chaining. | **Not** Snapshot in the sideways Persistence sense. **Not** Process State. |
+| **Effective Time** | A time semantic used by some QuanTRAM contracts to express when a value is effective. P-04V has no independent Volume EffectiveTime. | **Not** Interval Start. **Not** Source Timestamp. Do not invent a new Volume time base. |
+| **Source Timestamp** | The provider-origin time carried on a Market Event or Observation (`source_timestamp`). Offline harness maps it to `IntervalStart`. | **Not** local receipt time. **Not** wall-clock adjacency. |
+| **Interval Start** | The start of the Bar’s market interval (`Bar.IntervalStart`). Used for causal placement of the Observation. | **Not** Interval End. **Not** proof that the next adjacent wall-clock minute must exist. |
+| **Interval End** | The end of the Bar’s market interval where the current contract carries it. Together with Interval Start it defines the observation interval, not a required next-minute adjacency. | **Not** Causal Order by itself. **Not** Discontinuity. |
+| **Snapshot** | A point-in-time extract or representation of selected system/process state for sideways/background consumption. Consistent with existing sideways architecture. | **Not** the realtime process master. **Not** Process State itself. **Not** a control input unless explicitly designed later. **Not** Persistence. Snapshot/Persistence are not implemented as a realtime control path. |
+| **Persistence** | The sideways/background responsibility of durably storing selected outputs, transitions, snapshots, or other authorized records. | **Not** realtime control. Must not control, distort, or delay realtime model processing. This Process Model does not design persistence. |
+| **Aperture** | Related operational/session-boundary term used in other QuanTRAM documents around runtime observation and persistence scope. Not expanded by this Process Model. | **Not** the realtime processing master. **Not** defined here as a new architectural layer. |
+| **Reset** | An explicit reinitialization of per-entity process working state. Current implementation identifier: `Host.ResetSymbol`, which rebuilds Adaptive, Price, and Volume for the routed Entity. There is no automatic session, source, infer, or elapsed-gap Volume reset. | **Not** Discontinuity by itself. **Not** a skipped provider minute. This Process Model does not invent additional reset policy. |
+| **Warm-up / Maturation** | Process-owned lifecycle condition in which owned Process State has not yet satisfied the process’s defined readiness rules for emitting its mature output. Detailed Volume maturation rules live in the Volume Engine documents, not in this catalog. | **Not** Process Failure. **Not** Discontinuity. **Not** a skip caused by Host deadline alone. |
+| **Deadline** | An explicit time bound on a processing step. The Entity-Key Worker model-processing step (P-03 + P-04 + P-04V) uses the existing 200 ms host deadline. OP-05 remains open; these are engineering targets, not production SLOs. | Deadline failure does **not** mean a three-process rollback. The affected process transaction does not advance its state; P-04V independence is preserved. Prefer no order over a late order (when P-05 exists). |
+| **Idempotency / Idempotency Key** | A caller-supplied identity that makes a request-response mutation safe to retry without creating a second intended effect. Used on decision, risk, and order-submit RPCs. | **Not** Causal Order. **Not** `accepted_sequence`. **Not** Market Snapshot ID. |
+| **Durable Event Log** | The append-only multi-consumer recording transport for high-volume facts, currently specified for execution events (P-07). Local candidates include NATS JetStream or an embedded outbox plus Postgres. | **Not** all Events. Model Output Publication (`StreamDecisions` / `StreamPriceEvents` / `StreamVolumeEvents`) is not implied to be a durable log. **Not** Process State. |
+
+## 18. Change Log
 
 | Date | Version | Change |
 | :--- | :--- | :--- |
-| September 6, 2026 | V2 | Reconciled P-04V Volume Engine with validated implementation through Phase G; updated Volume process relationships, runtime/event representation (`VolumeEvent`, `StreamVolumeEvents`), configuration (no `QUANTRAM_VOLUME`), and independent commit. Overall master diagram kept as one diagram. All other process IDs, names, responsibilities, and architecture preserved. P-05 scientific-output combination remains **NOT YET DESIGNED**. |
+| September 6, 2026 | V2 | Final terminology precision pass: corrected §17.1 conceptual sibling-state/output diagram; explicitly distinguished Model Publication, Common Host Gates, and Process Opportunity; clarified Indicator scope without prematurely renaming P-04; aligned P-04/P-04V entity-versus-symbol wording; clarified Host role versus P-03 process identity; no architecture, process IDs, responsibilities, science, contracts, latency values, capability matrix, or runtime behavior changed. |
+| September 6, 2026 | V2 | Final terminology, ontology, diagram-label, and systems-dictionary reconciliation. Established Entity / Entity Key / Entity-Key Worker / Process / Process State / State Update / Process Output / Output Publication as distinct concepts; added §17 dictionary; corrected §10.3 Entity-Key Worker deadline and independent P-04V state-update wording. No process IDs, names, responsibilities, science, contracts, latency values, capability matrix, or runtime behavior changed. P-05 combination of P-03, P-04, and P-04V outputs remains **NOT YET DESIGNED**. |
+| September 6, 2026 | V2 | Reconciled P-04V Volume Engine with validated implementation through Phase G; updated Volume process relationships, runtime/event representation (`VolumeEvent`, `StreamVolumeEvents`), configuration (no `QUANTRAM_VOLUME`), and independent P-04V state update. Overall master diagram kept as one diagram. All other process IDs, names, responsibilities, and architecture preserved. P-05 combination of P-03, P-04, and P-04V outputs remains **NOT YET DESIGNED**. |
+| September 6, 2026 | V2 | Normalized current production terminology to deterministic process/pipeline language; replaced ambiguous "scientific" runtime terminology with process, process opportunity, state update, process failure, branch-local discard, and output-publication terminology where applicable; reconciled related diagram labels and §10.3 Entity-Key Worker latency wording. No process IDs, responsibilities, science, contracts, latency values, or runtime behavior changed. |
 | September 5, 2026 | 0.8 | Added approved P-04V Volume Engine as a scientific sibling of P-03 Adaptive Model Host and P-04 Price Engine. P-04V consumes the same accepted eligible Bar, owns bounded per-entity VolumeState, performs validated Volume Feature and Volume Interpretation mathematics, and emits independent Volume Output. Existing P-01 through P-10 numbering preserved; P-05 through P-10 unchanged. No P/V fusion, decision-network architecture, proto, StageTransition, or production implementation authorized by this change. See [Volume Engine](QuanTRAM_VOLUME_ENGINE_090526.md). |
 | September 4, 2026 | 0.7 | Sideways StageTransition publication V1.1 (`internal/stagetransition`). P-01–P-04 publish only on meaningful StageState change. Bar-driven P-03/P-04 events carry a value copy of the accepted `domain.Bar`. Not a new pipeline stage. Snapshot/Persistence not implemented. See [Stage Transition Publication](QuanTRAM_STAGE_TRANSITION_PUBLICATION_V1_2026-09-04.md). |
 | September 2, 2026 | 0.4 | P-04 redefined as collocated Go PriceEngine (EXPM). Python `ModelInferenceService` sidecar withdrawn. Linked P-04 design/implementation. S2/S3 marked partial after P-03 live DecisionEvents. |
