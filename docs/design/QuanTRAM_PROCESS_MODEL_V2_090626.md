@@ -468,14 +468,14 @@ sequenceDiagram
     P02->>P03: model-published eligible Bar
     P02->>P04: model-published eligible Bar
     P02->>P04V: model-published eligible Bar
-    Note over P04V: Phase G VolumeEvent; no orders; P-05 join NOT YET DESIGNED
+    Note right of P04V: Phase G VolumeEvent, no orders, P-05 join NOT YET DESIGNED
     alt quality or deadline fails
         P03-->>P03: skip, record reason
     else eligible
         P03->>P03: AdaptiveEngine DecisionEvent
         P04->>P04: PriceEvent
-        Note over P03,P04,P04V: Same model-published Bar; sibling processes; no P/V fusion
-        Note over P05: P-05 not implemented; Adaptive/Price stop here today
+      Note over P03,P04V: Same model-published Bar, sibling processes, no P/V fusion
+      Note right of P05: P-05 not implemented, Adaptive/Price stop here today
         P03->>P05: DecisionEvent + PriceEvent (later)
         P05->>P08: read positions/reservations
         alt rejected or resized to flat
