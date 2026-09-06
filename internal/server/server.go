@@ -24,6 +24,7 @@ type Server struct {
 	host      modelHealth
 	events    modelEvents
 	prices    priceEvents
+	volumes   volumeEvents
 	semantics *semantics.Dictionary
 }
 
@@ -48,6 +49,13 @@ type priceEvents interface {
 	PricingEnabled() bool
 }
 
+type volumeEvents interface {
+	SubscribeVolumeEvents(buffer int) (uint64, <-chan domain.VolumeEvent)
+	UnsubscribeVolumeEvents(id uint64)
+	LastVolumeEvents() []domain.VolumeEvent
+	VolumeEnabled() bool
+}
+
 func New(pipeline *ingestion.Pipeline, host modelHealth) *Server {
 	s := &Server{pipeline: pipeline, host: host}
 	if ev, ok := host.(modelEvents); ok {
@@ -55,6 +63,9 @@ func New(pipeline *ingestion.Pipeline, host modelHealth) *Server {
 	}
 	if px, ok := host.(priceEvents); ok && px.PricingEnabled() {
 		s.prices = px
+	}
+	if vol, ok := host.(volumeEvents); ok && vol.VolumeEnabled() {
+		s.volumes = vol
 	}
 	return s
 }

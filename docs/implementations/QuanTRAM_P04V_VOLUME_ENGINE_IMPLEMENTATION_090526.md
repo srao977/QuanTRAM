@@ -1,14 +1,64 @@
-# QuanTRAM P-04V Volume Engine — Implementation Design
+# QuanTRAM P-04V Volume Engine — Implementation Design and Implementation Record
 
-**Title:** QuanTRAM P-04V Volume Engine — Implementation Design  
-**Date:** 2026-09-05  
-**Status:** PROPOSED IMPLEMENTATION DESIGN — GO IMPLEMENTATION NOT AUTHORIZED. HUMAN REVIEW REQUIRED.  
-**Purpose:** Specify exactly how the approved P-04V Volume Engine should later be implemented in Go: package layout, bounded `VolumeState`, consume/prepare/commit/emit, frozen Volume Feature and Volume Interpretation mathematics, host join, tests, and later coding phases.  
-**Scope:** Design only. No production Go. No proto. No StageTransition. No Process Model change. No Phase 1 Volume design change. No P-03/P-04 scientific change. No Snapshot/Persistence/MongoDB. No downstream decision architecture.  
-**Parents:** [Volume Engine scientific/architectural design](../design/QuanTRAM_VOLUME_ENGINE_090526.md) (Phase 1, approved), [Process Model](../design/QuanTRAM_PROCESS_MODEL_082926.md) (Phase 2, approved), [APTF Volume forensic investigation](../investigations/QuanTRAM_APTF_VOLUME_ENGINE_GO_REFACTORABILITY_INVESTIGATION_2026-09-05.md)  
+**Title:** QuanTRAM P-04V Volume Engine — Implementation Design and Implementation Record  
+**Date:** 2026-09-06  
+**Status:** IMPLEMENTED AND VALIDATED THROUGH PHASE G. This file is the implementation design **and** the A–G implementation record. StageTransition Volume publication and Process Model file reconciliation remain **DEFERRED / NOT YET AUTHORIZED**.  
+**Purpose:** Record how P-04V was designed and then implemented in Go: package layout, bounded `VolumeState`, consume/prepare/commit/emit, frozen Volume Feature and Volume Interpretation mathematics, protobuf contract, ModelHost join, tests, and remaining deferred work.  
+**Scope:** Implementation design plus completed A–G chronology. Earlier proposed sections are retained for engineering provenance. Where a proposal conflicts with [Current Validated Implementation](#current-validated-implementation), the current validated implementation is authoritative. This document does not change Volume/Price/Adaptive science, StageTransition, or the Process Model file.  
+**Parents:** [Volume Engine scientific/architectural design](../design/QuanTRAM_VOLUME_ENGINE_090526.md), [Process Model](../design/QuanTRAM_PROCESS_MODEL_V1_082926.md) (filename as of this reconciliation; **contents not edited**), [APTF Volume forensic investigation](../investigations/QuanTRAM_APTF_VOLUME_ENGINE_GO_REFACTORABILITY_INVESTIGATION_2026-09-05.md)  
 **Implementation precedents:** [P-03 Adaptive Model Host](../design/QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md), [P-03 Implementation](../design/QuanTRAM_P03_IMPLEMENTATION_083126.md), [P-04 Price Engine](../design/QuanTRAM_P04_PRICE_ENGINE_090226.md), [P-04 Implementation](../design/QuanTRAM_P04_IMPLEMENTATION_090226.md)  
+**Filename:** `docs/implementations/QuanTRAM_P04V_VOLUME_ENGINE_IMPLEMENTATION_090526.md` (renamed 2026-09-06 from `QuanTRAM_P04V_VOLUME_ENGINE_090526.md` so it is not confused with the scientific design document).  
 **QuanTRAM baseline inspected:** `07417d9c85799949cd3b173067795905513af173` (`quantram-stage-transition-v1.1-validated-2026-09-04`)  
 **Historical executable authority:** APTF commit `ae0dacb2e02c5b80c82f6662d1a3c6863f4b989a`
+
+## Current Validated Implementation
+
+As of **2026-09-06**, P-04V is no longer a proposal. The following is the authoritative runtime result through Phase G.
+
+| Item | Result |
+|---|---|
+| `internal/domain/volume.go` | Exists — domain Volume types and publication envelope (`EventID`, `AcceptedSequence`) |
+| `internal/volume` | Exists — science + Engine |
+| Bounded per-entity `VolumeState` | Implemented |
+| Feature mathematics | Implemented (`V_RAW`, `V_N`, windows, `interval_mean_vn`, `G_V`) |
+| Derivative mathematics | Implemented (positional 3, actual `IntervalStart` minutes) |
+| Interpretation | Implemented (`V_INTERVAL_B10_C2`; Indicator + `raw_color`) |
+| `Engine.PrepareStep` / `Commit` | Implemented |
+| Phase F frozen equivalence | Historical FAIL on Indicator / transition (309 / 55,199) |
+| Phase F-R confirmation repair | PASS — session-sliced 014C Indicator / transition **55,199 / 55,199** |
+| Test010 → Test014C reconciliation | Outcome A; scientific readiness established |
+| Protobuf Volume contract | Implemented on `ModelService` |
+| `ModelService.StreamVolumeEvents` | Implemented; streams Host-produced events |
+| Phase G ModelHost join | Implemented |
+| Volume Engine ownership | One `volume.Engine` per keyed symbol worker |
+| Second `SubscribeModelBars` | None |
+| Second Volume mailbox / science goroutine | None |
+| Same published eligible Bar after common gates | Yes |
+| Volume commit vs A+P `commitA && commitP` | Independent |
+| Volume failure isolation | `volDisc` + nested recover; A+P not rolled back |
+| `ResetSymbol` | Rebuilds Volume engine; clears `volSeq` / `volDisc` |
+| Automatic date/session reset | None |
+| `QUANTRAM_VOLUME` | **Does not exist.** SUPERSEDED PRE-IMPLEMENTATION PROPOSAL |
+| When Volume is present | Whenever Adaptive Host exists (`QUANTRAM_MODEL=adaptive`) |
+| Price configuration | Independent `QUANTRAM_PRICING` |
+| RK45 / Volume EXPM / P/V fusion / BUY/SELL/HOLD | None |
+
+**Phase G topology (actual):**
+
+```text
+Pipeline.fanoutModel
+    → one SubscribeModelBars
+    → keyed worker inbox
+    → common gates
+    → isolated processVolume (independent Volume commit)
+    → Adaptive PrepareStep
+    → Price PrepareStep
+    → existing Adaptive+Price joint commit
+```
+
+`worker.lastAccepted` remains the Adaptive+Price joint scientific-commit cursor. Volume `accepted_sequence` is the 1-based successful Volume-commit count for that worker/engine lifetime.
+
+**DEFERRED / NOT YET AUTHORIZED:** StageTransition Volume publication; Process Model file reconciliation; Snapshot/Persistence/Mongo/Aperture; P/V fusion; trading verbs.
 
 ## Executive Summary
 
@@ -23,9 +73,9 @@ There is no QuanTRAM Volume Policy service, layer, or process. Historical APTF �
 
 **Prepare/commit recommendation (from inspected host facts, corrected 2026-09-05):** P-04V must **not** join the existing Adaptive+Price both-or-neither transaction. Volume failure must not roll back P-03/P-04. Volume’s processing opportunity must **not** depend on Adaptive or Price scientific commit success. After common host gates, the same published eligible Bar is offered to Volume independently. Adaptive+Price `lastAccepted` is a **scientific-commit** cursor, not the P-02 publication boundary.
 
-Current physical execution is **not** concurrent Adaptive/Price science. It is: ingestion publication decoupled from science, then **deterministic sequential** Adaptive then Price inside one keyed worker. P-04V should join that worker. Do not add a second mailbox merely to claim asynchrony.
+Current physical execution is **not** concurrent Adaptive/Price science. It is: ingestion publication decoupled from science, then **deterministic sequential** scientific execution inside one keyed worker. Phase G joined P-04V to that worker after common gates and **before** Adaptive/Price prepare, solely so an A/P panic cannot deny Volume its opportunity. Do not add a second mailbox merely to claim asynchrony.
 
-Implementation is **not** authorized by this document.
+Earlier sections describing proposed implementation choices are retained for engineering provenance. Where a proposal conflicts with [Current Validated Implementation](#current-validated-implementation), the current validated implementation is authoritative.
 
 ## Module / System Overview
 
@@ -60,11 +110,11 @@ Implementation is **not** authorized by this document.
 
 This is **not** `P-03 → P-04 → P-04V`. P-04V does not consume Price Output or Adaptive Output.
 
-Inspected live join point: `internal/modelhost/host.go` `Host.handle`. One keyed worker per symbol **sequentially** invokes Adaptive then Price on the same published eligible bar. P-04V joins that worker after the same common gates, **not** after the Adaptive+Price commit gate. No second `SubscribeModelBars`.
+Inspected live join point: `internal/modelhost/host.go` `Host.handle`. One keyed worker per symbol. After common gates, Phase G invokes isolated `processVolume`, then Adaptive `PrepareStep`, then Price `PrepareStep`, then existing `commitA && commitP`. Volume does **not** join the Adaptive+Price commit gate. No second `SubscribeModelBars`.
 
 See [Accepted-Bar Publication and Scientific Consumption Invariant](#accepted-bar-publication-and-scientific-consumption-invariant).
 
-Proposed production package: `internal/volume`, analogous to `internal/pricing` and `internal/adaptive`. Confirmed: no `internal/volume` package exists today. `internal/adaptive/volume.go` is D01 `updateVolumeInfluence` and **must remain P-03-only**.
+Production package: `internal/volume` exists (2026-09-05 Phases A–E). `internal/adaptive/volume.go` is D01 `updateVolumeInfluence` and **must remain P-03-only**.
 
 ## Inputs
 
@@ -79,9 +129,9 @@ Common host gates (infer off, not eligible, duplicate/regression vs host cursor,
 
 ## Outputs
 
-Internal first-class **Volume Output** only. No proto field numbers. No `StreamVolumeEvents`. No P-05 consumption.
+First-class **Volume Output** as `domain.VolumeEvent`, published on `ModelService.StreamVolumeEvents`. No P-05 consumption. Color / Indicator is a Volume **activity band**, not price direction and not BUY/SELL/HOLD.
 
-Proposed domain type: `domain.VolumeEvent` (`oneof`-style emission or typed maturation/skip). Color is a Volume **activity band**, not price direction and not BUY/SELL/HOLD.
+**HISTORICAL (2026-09-05 pre-contract):** this section originally said “no proto / no StreamVolumeEvents.” That is SUPERSEDED. The contract and Phase G stream are implemented.
 
 ## Parameters / Configuration
 
@@ -105,18 +155,22 @@ Proposed domain type: `domain.VolumeEvent` (`oneof`-style emission or typed matu
 
 Do **not** expose these as `QUANTRAM_*` environment variables.
 
-### Operational configuration (recommended)
+### Operational configuration (CURRENT, Phase G)
 
 Inspected conventions: `QUANTRAM_MODEL=off|adaptive`, `QUANTRAM_PRICING=off|expm`, unknown values fail startup, pricing requires adaptive.
 
-| Variable | Default | Meaning |
-|---|---|---|
-| `QUANTRAM_VOLUME` | `off` | `off` or `on`. Unknown: **fail startup**. |
-| `QUANTRAM_MODEL` | `off` | Must be `adaptive` if volume is `on` (host exists only then). |
-| `QUANTRAM_PRICING` | `off` | **Not** required for Volume. Siblings are independent. |
-| `QUANTRAM_MODEL_DEADLINE` | `200ms` | Shared worker deadline; Volume prepare is in the same handle, not a second mailbox. |
+| Variable | Current meaning |
+|---|---|
+| `QUANTRAM_MODEL` | `adaptive` constructs Adaptive Host. Volume engines are allocated with that Host. `off` → no Host → Volume not wired. |
+| `QUANTRAM_PRICING` | Independent Price opt-in (`off` / `expm`). **Not** required for Volume. |
+| `QUANTRAM_MODEL_DEADLINE` | Shared worker deadline; Volume prepare is in the same handle, not a second mailbox. |
+| `QUANTRAM_VOLUME` | **Does not exist.** |
 
-If `QUANTRAM_VOLUME=on` and `QUANTRAM_MODEL` is not `adaptive`: **fail startup**. If volume is requested but construction fails: Volume component **unavailable**; ingestion, P-03, and P-04 stay up. When `off`, do not allocate `VolumeState`.
+Volume is on whenever Adaptive Host exists. There is no Volume-only env flag.
+
+#### SUPERSEDED PRE-IMPLEMENTATION PROPOSAL — `QUANTRAM_VOLUME`
+
+The 2026-09-05 implementation design proposed `QUANTRAM_VOLUME=off|on` (unknown fail startup; `on` requires `adaptive`). Phase G did **not** implement that flag. Do not treat the old table as operator guidance.
 
 ## Assumptions
 
@@ -131,11 +185,10 @@ If `QUANTRAM_VOLUME=on` and `QUANTRAM_MODEL` is not `adaptive`: **fail startup**
 
 ## Exclusions
 
-Outside P-04V V1 (not rejected forever):
+Outside remaining P-04V V1 work (not rejected forever):
 
-- Go production implementation (this document does not authorize it)
-- `quantram.proto` Volume messages, enums, RPCs, field numbers
-- StageTransition Volume StageID / equality / publication
+- StageTransition Volume StageID / equality / publication (**DEFERRED / NOT YET AUTHORIZED**)
+- Process Model file reconciliation (**DEFERRED / NOT YET AUTHORIZED**)
 - Snapshot, Persistence, MongoDB, Aperture
 - P/V fusion, APTF 015 BUY/SELL/HOLD, APTF 016
 - Decision Neural Network, Forum, Meaning Matrix, voting/quorum
@@ -148,6 +201,9 @@ Outside P-04V V1 (not rejected forever):
 - Moving or replacing P-03 D01 `updateVolumeInfluence`
 - Sharing P-04 Price scientific state or Price derivative window
 - Downstream order/execution changes
+- Adding a `QUANTRAM_VOLUME` flag (proposal SUPERSEDED)
+
+**No longer exclusions of existence:** Go Volume science, proto Volume contract, `StreamVolumeEvents`, ModelHost Phase G join.
 
 ---
 
@@ -156,7 +212,7 @@ Outside P-04V V1 (not rejected forever):
 | Rank | Authority | Wins for |
 |---|---|---|
 | 1 | [QuanTRAM_VOLUME_ENGINE_090526.md](../design/QuanTRAM_VOLUME_ENGINE_090526.md) | Frozen Volume mathematics, lifecycle, maturation vs INVALID, ontology |
-| 2 | [QuanTRAM_PROCESS_MODEL_082926.md](../design/QuanTRAM_PROCESS_MODEL_082926.md) | Process identity P-04V, sibling topology, same accepted Bar |
+| 2 | [QuanTRAM_PROCESS_MODEL_V1_082926.md](../design/QuanTRAM_PROCESS_MODEL_V1_082926.md) | Process identity P-04V, sibling topology, same accepted Bar. File contents not reconciled in this pass. |
 | 3 | Inspected QuanTRAM Go (`internal/modelhost`, `internal/pricing`, `internal/adaptive`, `internal/domain`, `internal/config`) | Host join, prepare/commit, keyed ownership, config style |
 | 4 | Frozen APTF artifacts + [investigation](../investigations/QuanTRAM_APTF_VOLUME_ENGINE_GO_REFACTORABILITY_INVESTIGATION_2026-09-05.md) | Equivalence oracles and historical observe semantics |
 | 5 | P-03/P-04 design and implementation documents | Precedents only; do not copy Price/Adaptive science |
@@ -173,9 +229,11 @@ Canonical terms: P-04V Volume Engine, `VolumeState`, Volume Feature State, Volum
 
 Historical/provenance only: APTF Volume Policy, `V_INTERVAL_B10_C2`, `V_EMISSION_V0_1`, historical `VolumePolicyState`.
 
-## 3. Proposed Go package / file inventory
+## 3. Go package / file inventory
 
-Do **not** create these files until implementation is explicitly authorized.
+**CURRENT (2026-09-06):** `internal/volume` and `internal/domain/volume.go` exist. Phase G added `internal/modelhost/volume.go` and `internal/modelhost/volume_host_test.go`. Proto Volume RPC is live on `internal/server/volume.go`.
+
+The original 2026-09-05 list below is **HISTORICAL IMPLEMENTATION PLAN**. Compare it to what was actually created.
 
 Recommended package: `internal/volume`.
 
@@ -197,11 +255,17 @@ internal/volume/fixture.go          (test helper only)
 internal/volume/*_test.go
 internal/volume/testdata/          (vendored later; not now)
 
-Later coding-only host/config wiring (not created now):
-internal/config/config.go          VolumeMode parse/validate
+Host/RPC wiring (implemented Phase G; no VolumeMode env):
 internal/modelhost/host.go         worker.volume join
-internal/server/                   health component only if needed; no proto Volume RPC
+internal/modelhost/volume.go       processVolume, emit, terminal diagnostics
+internal/modelhost/volume_host_test.go
+internal/server/volume.go          StreamVolumeEvents
+internal/server/server.go          volumeEvents wiring
 ```
+
+**Actual production science files created:** `internal/domain/volume.go`, `config.go`, `mapper.go`, `median.go`, `features.go`, `linalg.go`, `derivatives.go`, `phase.go`, `interpretation.go`, `engine.go`, `state.go`. Proposed `windows.go` / `fixture.go` were **not** created as those names (`state.go` holds rings). `internal/volume/testdata/` exists for equivalence fixtures.
+
+**Not created (and not current work):** `internal/config` `VolumeMode` / `QUANTRAM_VOLUME`.
 
 ### 3.1 Production file responsibilities
 
@@ -232,11 +296,11 @@ internal/server/                   health component only if needed; no proto Vol
 | `engine_test.go` | Prepare/commit atomicity; reset; entity isolation; cold start |
 | `equivalence_test.go` | Frozen 009V/010/014C oracles after fixtures are vendored |
 | `genericity_test.go` | Production types have no SPY/AAPL hard-code |
-| `modelhost` Volume tests (later Phase G) | Same-bar correlation; no second mailbox; infer off does not reset; ResetSymbol clears Volume |
+| `internal/modelhost/volume_host_test.go` | **IMPLEMENTED (Phase G):** same-bar correlation; no second mailbox; infer off does not consume Volume; ResetSymbol clears Volume; failure isolation |
 
-### 3.3 Required code-documentation standard (later coding)
+### 3.3 Required code-documentation standard
 
-When implementation is authorized, every **new** code file must begin with module-level documentation covering: purpose, inputs, outputs, parameters/configuration, ownership, lifecycle, concurrency, failure behavior, invariants, and explicit non-responsibilities.
+Every **new** manually authored Go file created during A–G must begin with module-level documentation covering: purpose, inputs, outputs, parameters/configuration, ownership, lifecycle, concurrency, failure behavior, invariants, and explicit non-responsibilities.
 
 Non-trivial functions must comment scientific or runtime responsibility. Do not hand-edit generated files to add comments.
 
@@ -244,18 +308,18 @@ Non-trivial functions must comment scientific or runtime responsibility. Do not 
 
 Canonical architecture: **`VolumeState`** owns Volume Feature State and Volume Interpretation State.
 
-Proposed Go identifiers (implementation names, not a second ontology):
+Implemented Go identifiers (implementation names, not a second ontology):
 
 ```text
 volume.Engine                 // per-entity engine; owns committed VolumeState
-volume.State                  // proposed Go name for VolumeState
+volume.State                  // implemented Go name for VolumeState
   Feature                     // Volume Feature State
     Raw                       // last ≤15 V_RAW
     VN                        // last ≤15 positional V_N (NaN if unavailable)
     Minutes                   // corresponding IntervalStart minutes
     AcceptedCount             // causal accepted-bar count (not a readiness predicate)
   Interpretation              // Volume Interpretation State
-    Color                     // last committed cockpit color; empty = unset
+    Color                     // last committed Indicator (historical APTF cockpit_color); empty = unset
     PendingColor
     PendingCount
 ```
@@ -528,18 +592,18 @@ Volume consume is gated on **published eligible B_t + common host gates**, not o
 
 Rationale: gating Volume on Adaptive+Price commit would make a Price failure erase B_t from Volume’s positional sequence. Joining the both-or-neither pair would make Volume failure roll back Adaptive and Price. Neither is allowed.
 
-### 6.3 Recommended host sequence (later Phase G)
+### 6.3 Host sequence — IMPLEMENTED (Phase G, 2026-09-06)
 
-Do **not** add a second mailbox. Keep one keyed worker.
+The 2026-09-05 text below this heading was the recommended join. Phase G implemented it as follows. Do **not** add a second mailbox. Keep one keyed worker.
 
 1. Existing **common** gates unchanged (infer, eligibility, host continuity, proven missing, pre-prepare deadline).
-2. If Volume enabled: `volume.PrepareStep` inside a **nested recover**. If Volume prepare succeeds and the shared deadline still holds, `volume.Commit` **without** waiting for Adaptive/Price commit.
-3. Existing Adaptive prepare; existing Price prepare if enabled (order of Adaptive/Price unchanged).
-4. Existing shared deadline check for Adaptive/Price. If exceeded: Adaptive/Price commit none; `lastAccepted` unchanged. Volume already independently committed or explicitly skipped.
+2. Isolated `processVolume`: nested recover; `volume.PrepareStep`; independent `volume.Commit` on success. Volume-only latch `volDisc` on ENGINE_ERROR / panic / injected fail.
+3. Existing Adaptive prepare; existing Price prepare if enabled.
+4. Existing shared deadline check for Adaptive/Price. If exceeded: Adaptive/Price commit none; `lastAccepted` unchanged. Volume already independently committed or explicitly failed.
 5. If `commitA && commitP`: commit Adaptive and Price; set `lastAccepted` (**existing only**; not a Volume gate).
-6. If Volume hard-fails: leave VolumeState unchanged; emit explicit Volume failure; do not rewrite Adaptive/Price events.
+6. If Volume hard-fails: leave VolumeState unchanged; emit explicit Volume `ENGINE_ERROR`; do not rewrite Adaptive/Price events.
 
-If Adaptive **panics** before a later Volume call, current `handle` recover latches worker disc and Volume would not run. To satisfy independent opportunity even then, Phase G should run the nested Volume block **before** Adaptive prepare, or otherwise isolate Adaptive panic from Volume’s opportunity on that B_t. That is host-join structure, not a change to Adaptive/Price science or both-or-neither commit.
+Volume runs **before** Adaptive/Price so an Adaptive panic cannot deny Volume its opportunity on that B_t. Volume panic does not mark worker `disc` and does not deny A+P. That is host-join structure, not a change to Adaptive/Price science or both-or-neither commit.
 
 Do not invent a third shared transaction.
 
@@ -772,23 +836,23 @@ Incoming bars remain immutable. Candidate clones only.
 
 ## 15. Output / internal domain model
 
-Proposed `domain.VolumeEvent` (internal; no proto):
+Implemented `domain.VolumeEvent` (internal) plus proto `quantram.v1.VolumeEvent`. **HISTORICAL:** this table originally said “no proto.” SUPERSEDED.
 
 | Field | Purpose | Historical map |
 |---|---|---|
-| `Symbol` | Entity | 014C payload symbol (production is generic) |
-| `IntervalStart` | Scientific/effective time | — |
-| `SourceTimestamp` | Correlation | 014C timestamp string where applicable |
-| `MarketSnapshotID` | Initiating-bar identity | — |
-| `InitiatingBar` | Value copy of accepted `domain.Bar` if host later needs it | not required for engine math |
-| `Status` | `MATURING_*` / `EMITTED` / `INVALID` / error | — |
+| `EventID`, `AcceptedSequence` | Host publication envelope (Phase G) | not science |
+| `Lineage.Symbol` | Entity | 014C payload symbol (production is generic) |
+| `Lineage.IntervalStart` | Initiating interval (not a Volume EffectiveTime) | — |
+| `Lineage.SourceTimestamp` | Correlation | 014C timestamp string where applicable |
+| `Lineage.MarketSnapshotID` | Initiating-bar identity | — |
+| `Status` | `MATURING` / `AVAILABLE` / `INVALID` / `ENGINE_ERROR` | — |
 | `VRaw` | `V_RAW` | `v_raw` |
 | `VN` | `V_N` | `v` |
 | `V1`, `V2` | derivatives | `v1`, `v2` |
 | `IntervalMeanVN` | activity value | `activity_state_value` / `interval_mean_vn` |
-| `PredictedNextVN` | VOLUME_POINT | `predicted_next_V_N` / `projected_v` |
+| `PredictedNextVN` | VOLUME_POINT / `G_V` | `predicted_next_V_N` / `projected_v` |
 | `RawColor` | pre-hysteresis band | `raw_color` |
-| `CockpitColor` | confirmed / pending-forced AMBER | `cockpit_color` |
+| `Indicator` | confirmation-controlled category | historical APTF `cockpit_color` |
 | `Phase` | frozen phase | `phase` |
 | `TransitionState` | STABLE / PENDING_* / CONFIRMED_* | `transition_state` |
 | `ConfidenceState` | `HIGH` | `confidence_state` |
@@ -801,7 +865,11 @@ Do not emit BUY/SELL/HOLD or an order. Do not emit color-age.
 
 ## 16. Equivalence harness
 
-Fixtures are **not** in the QuanTRAM tree today. Later implementation must vendor copies under `internal/volume/testdata/` and pin SHA-256. Do not treat APTF paths as runtime inputs.
+`internal/volume/testdata/` **exists**. It holds the equivalence fixture material currently used by Volume tests. Production `volume.Engine` does **not** read testdata. There is no runtime dependency on APTF file paths.
+
+Present in that directory (as of 2026-09-06 inspection): `provenance.json`, `APTF_TEST_014C_SPY_V_EMISSION_POLICY_V0_1.json` (exact full copy), and deterministic Level-1 subsets `level1_source_prefix.csv`, `level1_010_prefix.csv`, `level1_014c_first_session.csv`.
+
+Full frozen APTF corpora remain externally hash-verified in the APTF repository (`pre08242026_docs/`). They are not vendored here (86MB+). Full-corpus tests read them only when `QUANTRAM_P04V_FROZEN_DIR` is set.
 
 Full hashes verified from APTF freeze inventories (`pre08242026_docs/APTF_TEST_00{9V,10,14C}_ARTIFACT_HASHES_V0_1.json`), matching investigation prefixes:
 
@@ -820,7 +888,7 @@ Full hashes verified from APTF freeze inventories (`pre08242026_docs/APTF_TEST_0
 Equivalence classes:
 
 1. **Numerical** — `V_N`, V1/V2, `interval_mean_vn` with documented abs/ulp tolerances (follow P-04 pricing equivalence style; do not claim bitwise NumPy identity).
-2. **Categorical** — raw/cockpit color, phase, transition, INVALID **exact**.
+2. **Categorical** — `raw_color`, Indicator (historical APTF `cockpit_color`), phase, transition, INVALID **exact**.
 3. **State-transition** — `Color` / pending fields after each observe.
 4. **Sequence** — contiguous replay vs 010 / 014C row order.
 5. **Maturation alignment** — first full interpretation on a clean series at observation 29.
@@ -877,41 +945,62 @@ Do not retune thresholds to pass. Historical symbol `SPY` may appear **only** in
 | I12 | Adaptive prepare fail (non-panic) | Volume still offered B_t |
 | G01 | No SPY/AAPL in production source | `rg` over `internal/volume` excluding testdata |
 
-### Delivery tests (future implementation)
+### Delivery invariants and Phase G validation
 
-| ID | Requirement | Notes |
+Invariants are unchanged. Disposition is from Phase G Host/server tests and inherited Host overflow behavior. This is **not** a claim that every DELIVERY item has a newly invented Volume-only test.
+
+| ID | Requirement | Phase G disposition |
 |---|---|---|
-| DELIVERY-01 | Every `fanoutModel`-published B_t is offered once, in causal order, to each enabled sibling under healthy operation | Matches current model-path + keyed worker |
-| DELIVERY-02 | P-04 failure does not suppress P-04V’s opportunity for B_t | Must pass without changing A+P transaction |
-| DELIVERY-03 | P-03 failure does not silently suppress P-04V’s opportunity for B_t | **Non-panic prepare fail:** required. **Adaptive panic:** inherited sequential `handle` + shared recover; mark limitation unless Phase G runs Volume in nested recover before Adaptive |
-| DELIVERY-04 | P-04V failure does not change P-03/P-04 outcomes for B_t | Required |
-| DELIVERY-05 | A slow scientific consumer cannot silently replace B_t with B_(t+1) | Model path and inbox overflow keep prefix; overflow is latched, not drop-oldest |
-| DELIVERY-06 | Queue/mailbox overflow is surfaced and counted; no silent omission | `QUEUE_OVERFLOW` + log/skip |
-| DELIVERY-07 | Per-entity causal ordering preserved while healthy | Required |
-| DELIVERY-08 | No duplicate scientific opportunity for one published Bar under healthy operation | Host/modelLast continuity; not distributed exactly-once |
-| DELIVERY-09 | Received-but-not-committed is distinguishable from never-received | Volume skip/failure vs no event |
-| DELIVERY-10 | P-04V windows advance only for observations that satisfy the P-04V consume/commit contract | Not on infer-off / ineligible / overflow-not-enqueued |
-| DELIVERY-11 | If a published positional observation is lost, P-04V does not silently continue as continuous | Explicit skip/failure/discontinuity; no invented auto-reset |
-| DELIVERY-12 | Infer-disabled / ineligible / pre-publish rejection is distinguishable from post-publish delivery/scientific failure | Different skip reasons / no Volume invoke vs explicit Volume skip |
+| DELIVERY-01 | Every `fanoutModel`-published B_t is offered once, in causal order, to each enabled sibling under healthy operation | **VALIDATED on Host path** (`TestG07`, `TestG03`). Inherited `Pipeline.fanoutModel` semantics unchanged. Not distributed exactly-once. |
+| DELIVERY-02 | P-04 failure does not suppress P-04V’s opportunity for B_t | **VALIDATED** (`TestG08`, `TestG16`). A+P joint commit unchanged. |
+| DELIVERY-03 | P-03 failure does not silently suppress P-04V’s opportunity for B_t | **VALIDATED.** Non-panic Adaptive prepare fail: `TestG09`. Adaptive panic: **closed** — Volume nested recover runs first (`TestG11`). |
+| DELIVERY-04 | P-04V failure does not change P-03/P-04 outcomes for B_t | **VALIDATED** (`TestG10`, `TestG12`). |
+| DELIVERY-05 | A slow scientific consumer cannot silently replace B_t with B_(t+1) | **INHERITED HOST:** inbox overflow latches, does not drop-oldest. Phase G `TestG36` proves a slow **RPC Volume subscriber** does not alter science; that is publication backpressure, not a new overflow policy. |
+| DELIVERY-06 | Queue/mailbox overflow is surfaced and counted; no silent omission | **INHERITED HOST:** `QUEUE_OVERFLOW` + skip/log. Phase G did not add a dedicated Volume overflow test. |
+| DELIVERY-07 | Per-entity causal ordering preserved while healthy | **VALIDATED** (`TestG07`). |
+| DELIVERY-08 | No duplicate scientific opportunity for one published Bar under healthy operation | **VALIDATED under healthy Host path** (one Volume event per published bar in `TestG07`). Not distributed exactly-once. |
+| DELIVERY-09 | Received-but-not-committed is distinguishable from never-received | **VALIDATED.** Common-gate: no Volume event (`TestG15`). Post-gate Volume fail: explicit `ENGINE_ERROR` without commit increment (`TestG10`). |
+| DELIVERY-10 | P-04V windows advance only for observations that satisfy the P-04V consume/commit contract | **VALIDATED.** Infer-off does not commit (`TestG15`). Injected Volume fail does not increment `volSeq` (`TestG10`). |
+| DELIVERY-11 | If a published positional observation is lost, P-04V does not silently continue as continuous | **VALIDATED Volume-specific:** `volDisc` + `VOLUME_DISCONTINUOUS` (`TestG10`). Restore via `ResetSymbol`. Shared worker `disc` (overflow/proven gap/Adaptive panic) still blocks all siblings. |
+| DELIVERY-12 | Infer-disabled / ineligible / pre-publish rejection is distinguishable from post-publish delivery/scientific failure | **VALIDATED.** Common gate: no Volume invoke (`TestG15`). Post-publication Volume failure: explicit Volume event (`TestG10` / `TestG12`). |
 
-## 19. Live-validation plan (do not run in Phase 3)
+## 19. Runtime validation and deferred live-market validation
 
-Later, after implementation authorization and local/live enablement:
+This section distinguishes **runtime integration validation** (done in Phase G) from **external / live-market validation** (not complete). Local CSV replay is **not** a live market.
 
-1. Same published eligible Bar correlation (`Symbol`, `IntervalStart`, `MarketSnapshotID`) vs the B_t offered to Adaptive and Price (if on) — **not** only those that Adaptive+Price committed.
-2. One `VolumeState` per active entity; ring lengths ≤ 15.
-3. Causal maturation; no INVALID solely from warm-up.
-4. No unexpected resets across infer pause, source identity, irregular minutes, session clock.
-5. `ResetSymbol` does reset Volume and restarts maturation.
-6. Output retains initiating-bar identity.
-7. Enabling Volume does not change Adaptive/Price scientific hashes on a recorded published-bar sequence (non-interference), including sequences where Price prepare fails.
-8. No additional market subscription / mailbox.
-9. Injected Volume failure is contained; no order is emitted; StageTransition V1.1 behavior unchanged.
-10. Injected Price failure still offers Volume B_t; Adaptive+Price both-or-neither remains.
-11. Overflow/`QUEUE_OVERFLOW` is explicit; Volume does not silently treat the next published bar as contiguous across a lost published B_t.
-12. `QUANTRAM_VOLUME=off` restores pre-Volume runtime (no Volume engine allocated).
+### 19.1 Phase G runtime validation — COMPLETED (2026-09-06)
+
+Deterministic ModelHost / server evidence (`internal/modelhost/volume_host_test.go`, `TestStreamVolumeEventsLive`, frozen `./internal/volume`):
+
+- same-Bar lineage (`MarketSnapshotID`, `IntervalStart`)
+- one VolumeState / Volume Engine per symbol; multi-symbol isolation
+- causal order B1 → B2 → B3 through the Host path
+- independent Volume commit; `lastAccepted` remains A+P-only
+- Adaptive prepare failure / Adaptive panic do not deny or roll back Volume
+- Price prepare failure does not roll back Volume; A+P joint commit unchanged
+- Volume failure / Volume panic do not roll back A+P; Volume hole is explicit
+- `ResetSymbol` clears Volume and restarts maturation; no automatic session reset
+- one `SubscribeModelBars`; no Volume mailbox; no Volume science goroutine
+- `StreamVolumeEvents` streams Host-produced events; slow/cancelled client does not control science
+- terminal diagnostics (`volume engine initialized`, `volume maturing` / `emit` / `invalid` / `error`)
+- scientific noninterference: Volume/Adaptive/Price mathematics packages unchanged by host join
+
+Local CSV QuanTRAM server run (no provider credentials): `QUANTRAM_SOURCE=csv`, `QUANTRAM_MODEL=adaptive`, **`QUANTRAM_PRICING=off`**. Observed Volume startup and MATURING lines on the same process as Adaptive `model skip` / `model decision`. That run overflowed the inherited worker inbox (`STATE_DISCONTINUOUS`) before AVAILABLE. It was **not** a live-market run and did **not** observe Price `pricing emit`.
 
 Success is scientific and architectural evidence, not “the server ran.”
+
+### 19.2 Full live / external-market validation — DEFERRED
+
+Not claimed complete:
+
+- external provider realtime run with Price **and** Volume both active
+- sustained RTH behavior
+- production-scale queue behavior
+- longer-run operational observability
+- dashboard Volume viewer evidence
+- StageTransition Volume publication evidence
+
+`QUANTRAM_VOLUME=off` was never implemented. Volume is present whenever Adaptive Host exists. `QUANTRAM_MODEL=off` → no Host → Volume not wired.
 
 ## 20. Performance / complexity
 
@@ -930,13 +1019,18 @@ CPU: one small SVD plus tiny sorts per published bar per entity. Memory: a few h
 
 ## 21. Observability
 
-Minimum, not a second science path:
+Observational only. Not a second science path. There is **no** independent Volume off mode and **no** `QUANTRAM_VOLUME` switch.
 
-- Volume enabled / off / unavailable (health component, P-04 `PricingHealth` precedent)
-- Entity engine count
-- Accepted Volume steps, maturation counts, emitted counts, INVALID counts
-- Volume resets, numerical failures, panics, latency
-- Last Volume event per symbol for tests
+Current Phase G surfaces:
+
+- Volume engine initialized / active (`volume engine initialized symbols=N mode=discrete_G_V`) when Adaptive Host exists
+- Adaptive Host absent (`QUANTRAM_MODEL=off`) → Volume not wired (`StreamVolumeEvents` `FailedPrecondition`)
+- scientific status: `MATURING` / `AVAILABLE` / `INVALID` / `ENGINE_ERROR`
+- per-symbol Volume event / last-event catch-up (`LastVolumeEvents`)
+- Volume resets (`ResetSymbol` rebuilds the engine)
+- Volume failures / panics / `volDisc` discontinuity (`VOLUME_DISCONTINUOUS`)
+- accepted_sequence / event publication (non-blocking; drop + log on full subscriber buffer)
+- terminal diagnostics (`volume emit` / `maturing` / `invalid` / `error`)
 
 No filesystem log as scientific correctness. No Snapshot/StageTransition dependency.
 
@@ -956,26 +1050,28 @@ Do not consume `PriceEvent`/Price color, share `PriceState`/history, reuse windo
 
 StageTransition V1.1 is frozen. P-04V V1 must not add a StageID, equality field, publisher path, diagnostic, or proto change. Future Volume StageTransition remains **deferred / outside V1 / non-blocking**. Do not design it here.
 
-## 25. Later implementation phases (not authorized now)
+## 25. HISTORICAL IMPLEMENTATION PLAN (A–G executed)
 
-Science first, host second — same discipline as P-03 A–C then D, and P-04 A–G then H.
+Science first, host second — same discipline as P-03 A–C then D, and P-04 A–G then H. This table was the 2026-09-05 plan. **Do not read it as unimplemented.**
 
-| Phase | Work | Entry | Exit |
-|---|---|---|---|
-| **A** | `domain.VolumeEvent` + frozen `Config` + mapper | Design approved | Mapper tests: minutes consecutive differ by 1; `V_RAW` from `uint64` |
-| **B** | Windows, median, `V_N`, interval mean, VOLUME_POINT | A exit | Feature unit tests; positional rule |
-| **C** | Copied lstsq + window-3 V1/V2 | B exit | Regular/irregular derivative tests |
-| **D** | Interpretation machine + phase | C exit | Confirmation table exact |
-| **E** | `Engine` prepare/commit/reset/maturation | D exit | Atomicity tests; no proto |
-| **F** | Vendor frozen fixtures + equivalence harness | E exit + hashed copies in testdata | 010 numerical + 014C categorical/state (session-sliced) |
-| **G** | Config `QUANTRAM_VOLUME` + host join + nested recover + `ResetSymbol` + delivery tests | F exit | Host tests I01–I12 and DELIVERY-01–12; P-03/P-04 tests still pass; A+P both-or-neither unchanged |
-| **H** | Realtime/integration + live validation | G exit | Live plan §19 evidence; default still `off` |
+| Phase | Planned work | Result |
+|---|---|---|
+| **A** | `domain.VolumeEvent` + frozen `Config` + mapper | **IMPLEMENTED** 2026-09-05 |
+| **B** | Windows, median, `V_N`, interval mean, VOLUME_POINT | **IMPLEMENTED** 2026-09-05 |
+| **C** | Copied lstsq + window-3 V1/V2 | **IMPLEMENTED** 2026-09-05 |
+| **D** | Interpretation machine + phase | **IMPLEMENTED** 2026-09-05 |
+| **E** | `Engine` prepare/commit/reset/maturation | **IMPLEMENTED** 2026-09-05 (proto came after E, not “no proto forever”) |
+| **F** | Frozen fixtures + equivalence harness | **EXECUTED** 2026-09-05 — interpretation FAIL (see Phase F) |
+| **F-R** | Frozen confirmation state-write | **IMPLEMENTED / PASS** 2026-09-05 |
+| **Proto** | `VolumeEvent` family + `StreamVolumeEvents` | **IMPLEMENTED** 2026-09-05 |
+| **G** | Host join + isolation + `ResetSymbol` + delivery tests | **IMPLEMENTED** 2026-09-06. Plan’s `QUANTRAM_VOLUME` flag was **not** used. |
+| **H** | Broader live/dashboard validation | **DEFERRED / NOT YET AUTHORIZED** |
 
-Do **not** execute any phase now. Proto and dashboard Volume viewers are **after** V1 unless separately authorized.
+Dashboard Volume viewers and StageTransition Volume publication remain after V1 unless separately authorized.
 
-## 26. Acceptance criteria for a later coding increment
+## 26. Acceptance criteria (original coding increment — now used as completed-work checklist)
 
-A future engineer can implement without inferring fundamentals if this document plus Phase 1 science are followed. In particular the later increment must demonstrate:
+A–G were required to demonstrate:
 
 - what state exists, who owns it, how it is bounded
 - how each accepted Bar changes **candidate** state
@@ -997,10 +1093,10 @@ A future engineer can implement without inferring fundamentals if this document 
 - `uint64`→`float64` mantissa limit.
 - Independent Volume commit can leave a published B_t out of Volume windows if Volume hard-fails; that hole must be explicit, not silent.
 - Inherited: Adaptive+Price both-or-neither and shared `lastAccepted` cursor. P-04V must not use that cursor as its consume gate and must not repair the coupling.
-- Inherited: sequential `handle` + one recover — Adaptive panic can prevent a later Volume call unless Phase G orders nested Volume first.
+- Inherited: sequential `handle` + one recover — **closed by Phase G:** Volume nested recover runs before Adaptive.
 - No bitwise NumPy claim.
 - Color-age out of scope.
-- Fixtures not yet in this repo.
+- Full 009V/010/014C corpora remain hash-verified in APTF; Level-1 subsets live under `internal/volume/testdata/`.
 
 ## 28. Risks
 
@@ -1017,15 +1113,15 @@ A future engineer can implement without inferring fundamentals if this document 
 | R07 | Named-entity hard-code | Genericity test |
 | R08 | Treating 29 as runtime | Readiness from windows only |
 
-## 29. Unresolved implementation questions
+## 29. Implementation questions — disposition after Phase G
 
-No new scientific questions. Remaining **implementation** questions (do not invent science to close them):
+No new scientific questions.
 
-1. **Exact float tolerances** for 010 V1/V2 vs gonum — measure in Phase F; do not preset a fake ulp table.
-2. **Volume vs Adaptive order inside `handle`** — scientific independence requires Volume opportunity not to depend on A+P **commit**. Adaptive **panic** still blocks a later Volume call unless Volume runs first in a nested recover. Phase G must pick an order and record DELIVERY-03’s inherited limit if Adaptive panic remains first.
-3. **Internal Volume fan-out API** — V1 needs `Host` last-event / test accessors. A `SubscribeVolumeEvents` in-process channel may follow the Price subscriber pattern **without proto**. Defer the choice to Phase G; do not add proto.
-4. **Optional later `internal/numutil` extraction** — not required for V1.
-5. **Volume continuity after explicit non-consume of published B_t** — do not invent latch/reset policy beyond “no silent continuity” and existing `ResetSymbol`. Separate review if a Volume-only discontinuity latch is wanted.
+1. **Exact float tolerances** for 010 V1/V2 vs gonum — **closed in Phase F** (measured max abs; see Phase F-R).
+2. **Volume vs Adaptive order inside `handle`** — **closed in Phase G:** isolated `processVolume` before Adaptive/Price.
+3. **Internal Volume fan-out API** — **closed in Phase G / proto:** `SubscribeVolumeEvents` mirrors Price; `StreamVolumeEvents` is live.
+4. **Optional later `internal/numutil` extraction** — still not required for V1.
+5. **Volume continuity after explicit non-consume of published B_t** — **closed in Phase G** with Volume-only `volDisc` (explicit `ENGINE_ERROR` / `VOLUME_DISCONTINUOUS`; restore via `ResetSymbol`; A+P unaffected). Shared worker `disc` still blocks all siblings.
 6. **Inherited Adaptive↔Price both-or-neither** — documented; not repaired by P-04V.
 
 ## Terminology — Indicator (Phase E)
@@ -1034,13 +1130,15 @@ Canonical P-04V Volume Output field: **`Indicator`**.
 
 Historical APTF / Phase D internal name: `cockpit_color` / `CockpitColor`.
 
-Mapping: `VolumeEvent.Indicator = InterpretationResult.CockpitColor` when color interpretation is valid. Phase D internals were not broadly renamed. P-04 Price `CockpitColor`, proto, StageTransition, Process Model, and diagnostics were not migrated.
+Mapping: `VolumeEvent.Indicator` is the confirmation-controlled category. Phase D internals historically used `CockpitColor` as the interpretation-result field name. P-04V proto `VolumeIndicator` / `indicator` is canonical. P-04 Price `CockpitColor` / `cockpit_color` was **not** renamed in this pass.
 
-**Deferred system-wide audit:** a later controlled QuanTRAM pass must examine P-04, P-04V, proto, StageTransition, Process Model, diagnostics/dashboard, and any other applicable pipeline stages for remaining `cockpit` → `Indicator` terminology. That pass is not authorized here.
+**DEFERRED / NOT YET AUTHORIZED:** a controlled QuanTRAM-wide `cockpit` → `Indicator` audit across P-04 Price, StageTransition, Process Model, and dashboard. Do not treat that as part of P-04V V1.
 
-## Phase F — Frozen APTF equivalence (2026-09-05)
+## Phase F — Frozen APTF equivalence (2026-09-05) — HISTORICAL FAIL
 
-**Status:** FAIL for clean APTF interpretation equivalence. Feature / derivative / raw-color / phase / confidence / domain PASS. Production science **not** changed.
+**This is not current status.** Phase F found the confirmation-state mismatch. Phase F-R is the authoritative frozen-equivalence result.
+
+**Status at Phase F close:** FAIL for clean APTF interpretation equivalence. Feature / derivative / raw-color / phase / confidence / domain PASS. Production science was **not** changed in Phase F itself.
 
 **Validation document:** [QuanTRAM_P04V_VOLUME_FROZEN_EQUIVALENCE_VALIDATION_2026-09-05.md](../investigations/QuanTRAM_P04V_VOLUME_FROZEN_EQUIVALENCE_VALIDATION_2026-09-05.md)
 
@@ -1056,7 +1154,9 @@ Mapping: `VolumeEvent.Indicator = InterpretationResult.CockpitColor` when color 
 
 **Unresolved discrepancy at Phase F close (preserved):** frozen HEAD `VolumeEngine.observe` writes emitted cockpit color into `VolumePolicyState.color` while pending. Phase D / production `confirmColor` then kept the last confirmed color. Indicator 309 / 55,199 mismatch. Human review chose frozen APTF.
 
-## Phase F-R — Frozen confirmation state-write repair (2026-09-05)
+## Phase F-R — Frozen confirmation state-write repair (2026-09-05) — CURRENT AUTHORITY
+
+Phase F found the confirmation-state mismatch. Phase F-R corrected the state-write behavior to frozen executable authority. Frozen session-sliced 014C interpretation equivalence then passed exactly.
 
 **Human decision:** preserve the frozen APTF confirmation state machine.
 
@@ -1074,7 +1174,7 @@ First Phase F mismatch `2023-03-30T11:16:00Z` now matches: raw GREEN, Indicator 
 
 ## P-04V Protobuf Contract Implementation
 
-**Purpose:** Add the already-validated P-04V Volume Engine to the canonical QuanTRAM protobuf contract. Science is unchanged. ModelHost is not wired.
+**Purpose:** Add the already-validated P-04V Volume Engine to the canonical QuanTRAM protobuf contract. Science is unchanged. **HISTORICAL (contract phase):** ModelHost was not yet wired. Phase G (2026-09-06) wired `StreamVolumeEvents` to Host-produced events.
 
 **Source proto path:** `api/proto/quantram/v1/quantram.proto`  
 **Package / go_package:** `quantram.v1` / `quantram/gen/quantram/v1;quantramv1`
@@ -1128,7 +1228,7 @@ First Phase F mismatch `2023-03-30T11:16:00Z` now matches: raw GREEN, Indicator 
 rpc StreamVolumeEvents(StreamVolumeEventsRequest) returns (stream VolumeEvent);
 ```
 
-No dedicated Volume protobuf service. `SemanticService` unchanged (read-only vocabulary, not science). The gRPC method is contract-only in this phase: `internal/server/volume.go` returns `FailedPrecondition` (`volume is not wired`). Adapter `toProtoVolumeEvent` translates domain → proto without mathematics.
+No dedicated Volume protobuf service. `SemanticService` unchanged (read-only vocabulary, not science). Adapter `toProtoVolumeEvent` translates domain → proto without mathematics. Phase G wires `StreamVolumeEvents` to Host-produced events.
 
 **Generated artifacts:** `gen/quantram/v1/quantram.pb.go`, `gen/quantram/v1/quantram_grpc.pb.go` via `buf generate`. Not manually edited.
 
@@ -1136,11 +1236,82 @@ No dedicated Volume protobuf service. `SemanticService` unchanged (read-only voc
 
 **Compatibility:** additive only. Existing P-03/P-04 field numbers, enum values, and service methods unchanged.
 
-**Exclusions:** ModelHost, StageTransition, Process Model, Snapshot/Persistence/Mongo/Aperture, P/V fusion, trading verbs, Volume RK/EXPM, scientific change to `internal/volume`.
+**Contract-phase exclusions (historical):** at contract landing, ModelHost was not yet wired. StageTransition, Process Model, Snapshot/Persistence/Mongo/Aperture, P/V fusion, trading verbs, Volume RK/EXPM, and scientific change to `internal/volume` remained out of that increment. Phase G later wired ModelHost; the other exclusions still hold.
 
-**Known limitations:** `StreamVolumeEvents` is not yet live; no host subscriber. Semantic catalog does not yet document P-04V terms (deferred; existing dirty semantic tests left untouched). Dashboard proto copy is not updated in this phase.
+**Known limitations (contract phase, superseded by Phase G for RPC/host):** Semantic catalog does not yet document P-04V terms. Dashboard proto copy is not updated in this phase.
 
-**Next phase:** separately authorized **P-04V ModelHost realtime integration** — attach the existing Go Volume Engine to the per-symbol worker and publish through this contract.
+**Next phase after contract:** Phase G ModelHost realtime integration (landed 2026-09-06).
+
+## Phase G — ModelHost Realtime Runtime Integration
+
+**Purpose:** Attach the validated P-04V Engine to the existing keyed ModelHost worker, publish canonical VolumeEvents on `ModelService.StreamVolumeEvents`, and emit Price-style terminal diagnostics. Science and proto are unchanged.
+
+**Scope:** `internal/modelhost` host join, `internal/server` stream wiring, publication-envelope fields on `domain.VolumeEvent`, Phase G tests, this section. No Volume/Price/Adaptive mathematics. No proto redesign. No StageTransition. No Process Model.
+
+**Runtime topology:**
+
+```text
+Pipeline.fanoutModel
+    → one SubscribeModelBars
+    → keyed worker inbox
+    → common gates
+    → isolated processVolume (independent commit)
+    → Adaptive PrepareStep
+    → Price PrepareStep
+    → existing commitA && commitP
+```
+
+No second subscription, mailbox, or Volume worker goroutine.
+
+**Input:** the same published eligible `domain.Bar` after infer / eligibility / continuity / proven-missing / pre-prepare timeout gates.
+
+**Output:** `domain.VolumeEvent` on Host volume subscribers + last-event catch-up; proto via existing mapper; `log.Printf` lines.
+
+**Configuration:** Volume is on whenever Adaptive Host exists. No `QUANTRAM_VOLUME` flag. Price remains `QUANTRAM_PRICING`. Logging uses the standard library logger with no extra env (same as `pricing emit` / `model skip`).
+
+**Ownership:** one `volume.Engine` per symbol worker. Keyed worker serializes mutation.
+
+**Lifecycle:** constructed in `Host.New`; `ResetSymbol` rebuilds a cold engine and clears `volSeq` / `volDisc`. No automatic session/date/source reset.
+
+**Common gates:** worker `disc`, infer off, not final/not eligible, duplicate/regression/unaligned, proven missing INPUT_GAP, pre-prepare timeout. These deny all siblings, including Volume.
+
+**Processing opportunity:** after those gates, Volume is always offered B_t even if Adaptive or Price later fails or panics.
+
+**Independent Volume commit:** `volume.Commit` is not part of `commitA && commitP`. Price/Adaptive failure cannot roll it back. Volume failure cannot roll back A+P.
+
+**A+P joint commit:** unchanged. `worker.lastAccepted` still advances only on Adaptive+Price joint success.
+
+**accepted_sequence semantics:** 1-based count of successful Volume commits on that worker for this engine lifetime (reset on `ResetSymbol`). It is **not** `worker.lastAccepted` and is not the Host event-id counter. Analogous to Price `AcceptedSequence` (engine observation index), not the A+P cursor.
+
+**Lineage:** `VolumeEvent` copies initiating Bar `MarketSnapshotID`, `IntervalStart`, `IntervalEnd`, `SourceTimestamp`. No invented EffectiveTime.
+
+**Reset:** `ResetSymbol` replaces Adaptive, Price (if enabled), and Volume engines; clears Volume latch/sequence. Other symbols unaffected.
+
+**Failure isolation:** Volume prepare/panic uses `volDisc` (Volume-only). Subsequent Volume observations emit explicit `ENGINE_ERROR` / `VOLUME_DISCONTINUOUS` and do not advance Volume state. A+P continue. Adaptive injected panic still uses the outer recover after Volume has run.
+
+**Positional discontinuity:** Volume ENGINE_ERROR or panic latches Volume only. Common worker `disc` (overflow, proven gap, Adaptive panic) still blocks all siblings.
+
+**RPC publication:** `SubscribeVolumeEvents` / `LastVolumeEvents` / `UnsubscribeVolumeEvents` mirror Price. Non-blocking send; full buffer drops + log. `StreamVolumeEvents` does not ingest Bars. Off Host → `FailedPrecondition` (`volume is not wired`).
+
+**Terminal diagnostics:** `log.Printf` in the Host, same logger as Price.
+
+- Startup: `volume engine initialized symbols=N mode=discrete_G_V`
+- AVAILABLE: `volume emit symbol=... status=AVAILABLE indicator=... raw=... vn=...`
+- MATURING: `volume maturing ... vn=INSUFFICIENT|value ... indicator=UNAVAILABLE`
+- INVALID: `volume invalid ...`
+- ENGINE_ERROR: `volume error ...`
+
+Unavailable quantities print `INSUFFICIENT` / `UNDEFINED` / `UNAVAILABLE`, never a fake `0`. Observational only.
+
+**Backpressure:** drop on full subscriber buffer; science continues (same as Price).
+
+**Tests:** `internal/modelhost/volume_host_test.go`, `internal/server` live `StreamVolumeEvents`.
+
+**Known limitations:** StageTransition still P-03/P-04 only. Semantic catalog still lacks P-04V terms. Dashboard proto copy not updated. Volume is Adaptive-host-scoped (Host is nil when `QUANTRAM_MODEL=off`).
+
+**Exclusions:** StageTransition, Process Model, Snapshot/Persistence/Mongo/Aperture, P/V fusion, trading, Volume RK/EXPM, proto redesign.
+
+**Next phase:** separately authorized StageTransition / Process Model reconciliation. Not started.
 
 ## Change log
 
@@ -1156,3 +1327,6 @@ No dedicated Volume protobuf service. `SemanticService` unchanged (read-only voc
 | 2026-09-05 | Phase F frozen APTF equivalence validation. Hash-verified 009V/010/014C. Feature/derivative Engine replay PASS. Indicator/transition FAIL vs APTF `state.color=cockpit` write (309/55,199). Volume mathematics not changed. Production session reset not added. Host integration not started. |
 | 2026-09-05 | Phase F-R: `confirmColor` writes `next.Color =` emitted Indicator (frozen APTF). Session-sliced 014C Indicator/transition 55,199/55,199. No other Volume mathematics changed. No production session reset. Phase G not started. |
 | 2026-09-05 | P-04V protobuf contract: additive `VolumeEvent` family + `ModelService.StreamVolumeEvents`. Adapter mapper only. Science, ModelHost, StageTransition, and Process Model unchanged. |
+| 2026-09-06 | Phase G: per-worker Volume Engine on ModelHost; independent commit; `StreamVolumeEvents` live; Price-style terminal diagnostics. Science, proto numbering, StageTransition, and Process Model unchanged. |
+| 2026-09-06 | Documentation reconciliation: renamed this file to `QuanTRAM_P04V_VOLUME_ENGINE_IMPLEMENTATION_090526.md`; header/status reconciled; Current Validated Implementation added; stale no-Go/no-proto/no-host claims marked historical; `QUANTRAM_VOLUME` marked SUPERSEDED PRE-IMPLEMENTATION PROPOSAL; Phase F FAIL preserved as history and F-R PASS stated as current; Phase G marked implemented; P-04V Indicator terminology aligned (historical `cockpit_color` retained as provenance). No science/code/proto/Process Model changes in this documentation pass. |
+| 2026-09-06 | Final post-alignment cleanup: reconciled equivalence-fixture status, converted future delivery-test wording to completed Phase G validation, separated completed runtime validation from deferred external/live-market validation, and removed stale implication of an independent Volume off mode. No science/code/proto/Process Model changes. |

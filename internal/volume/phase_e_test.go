@@ -413,10 +413,9 @@ func TestE41PhaseADStillPass(t *testing.T) {
 	}
 }
 
-func TestE42E43NoRuntimeIntegration(t *testing.T) {
-	t.Log("invariant: modelhost and ingestion must not import the Volume Engine")
+func TestE42E43NoIngestionVolumeImport(t *testing.T) {
+	t.Log("invariant: ingestion must not import the Volume Engine; Phase G authorizes modelhost")
 	root := repoRoot(t)
-	assertNoImport(t, filepath.Join(root, "internal", "modelhost"), `"quantram/internal/volume"`, false)
 	assertNoImport(t, filepath.Join(root, "internal", "ingestion"), `"quantram/internal/volume"`, false)
 }
 

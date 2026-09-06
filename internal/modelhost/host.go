@@ -1,9 +1,9 @@
-// Package modelhost owns the collocated P-03/P-04 symbol workers.
+// Package modelhost owns the collocated P-03/P-04/P-04V symbol workers.
 //
-// StageTransition publication is sideways output after an authoritative
-// DecisionEvent or committed PriceEvent is emitted. Bar-driven transitions
-// attach a value copy of the same accepted domain.Bar. It is not a second
-// SubscribeModelBars subscriber and does not alter prepare/commit science.
+// P-04V is an independent scientific sibling. It consumes the same
+// fanoutModel Bar after common gates, commits independently of Adaptive+Price,
+// and does not join commitA && commitP. StageTransition publication remains
+// sideways P-03/P-04 output only. No second SubscribeModelBars.
 package modelhost
 
 import (
@@ -21,6 +21,7 @@ import (
 	"quantram/internal/ingestion"
 	"quantram/internal/pricing"
 	"quantram/internal/stagetransition"
+	"quantram/internal/volume"
 )
 
 const (
@@ -83,9 +84,10 @@ type Options struct {
 	Pricing     config.PricingMode
 	Deadline    time.Duration
 	Delay       time.Duration
-	PanicOn     string
-	InboxSize   int
-	Transitions *stagetransition.Hub
+	PanicOn       string
+	PanicOnVolume string
+	InboxSize     int
+	Transitions   *stagetransition.Hub
 }
 
 type Host struct {
@@ -98,29 +100,37 @@ type Host struct {
 	unavail        atomic.Bool
 	pricingUnavail atomic.Bool
 	failPricing    atomic.Bool
+	failAdaptive   atomic.Bool
+	failVolume     atomic.Bool
 	started        atomic.Bool
 	nextSub        atomic.Uint64
 	nextPriceSub   atomic.Uint64
+	nextVolumeSub  atomic.Uint64
 
-	mu           sync.Mutex
-	closed       bool
-	cancel       context.CancelFunc
-	subs         map[uint64]chan domain.DecisionEvent
-	priceSubs    map[uint64]chan domain.PriceEvent
-	lastBySym    map[string]domain.DecisionEvent
-	lastPriceSym map[string]domain.PriceEvent
-	eventsOnce   sync.Once
-	events       <-chan domain.DecisionEvent
+	mu            sync.Mutex
+	closed        bool
+	cancel        context.CancelFunc
+	subs          map[uint64]chan domain.DecisionEvent
+	priceSubs     map[uint64]chan domain.PriceEvent
+	volumeSubs    map[uint64]chan domain.VolumeEvent
+	lastBySym     map[string]domain.DecisionEvent
+	lastPriceSym  map[string]domain.PriceEvent
+	lastVolumeSym map[string]domain.VolumeEvent
+	eventsOnce    sync.Once
+	events        <-chan domain.DecisionEvent
 }
 
 type worker struct {
 	symbol       string
 	engine       *adaptive.Engine
 	pricing      *pricing.Engine
+	volume       *volume.Engine
 	inbox        chan domain.Bar
 	lastAccepted time.Time
 	hasAccepted  bool
+	volSeq       int
 	disc         atomic.Bool
+	volDisc      atomic.Bool
 	discReason   atomic.Value
 	lastSkip     atomic.Value
 	lastEventAt  atomic.Value
@@ -182,18 +192,27 @@ func New(src BarSource, symbols []string, opts Options) (*Host, error) {
 		symbols:      append([]string(nil), symbols...),
 		opts:         opts,
 		workers:      make(map[string]*worker, len(symbols)),
-		subs:         make(map[uint64]chan domain.DecisionEvent),
-		priceSubs:    make(map[uint64]chan domain.PriceEvent),
-		lastBySym:    make(map[string]domain.DecisionEvent, len(symbols)),
-		lastPriceSym: make(map[string]domain.PriceEvent, len(symbols)),
+		subs:          make(map[uint64]chan domain.DecisionEvent),
+		priceSubs:     make(map[uint64]chan domain.PriceEvent),
+		volumeSubs:    make(map[uint64]chan domain.VolumeEvent),
+		lastBySym:     make(map[string]domain.DecisionEvent, len(symbols)),
+		lastPriceSym:  make(map[string]domain.PriceEvent, len(symbols)),
+		lastVolumeSym: make(map[string]domain.VolumeEvent, len(symbols)),
 	}
 	for _, symbol := range h.symbols {
-		h.workers[symbol] = &worker{
+		w := &worker{
 			symbol: symbol,
 			engine: adaptive.NewEngine(symbol),
 			inbox:  make(chan domain.Bar, inbox),
 		}
+		vol, err := volume.NewEngine(symbol)
+		if err != nil {
+			return nil, fmt.Errorf("volume engine %s: %w", symbol, err)
+		}
+		w.volume = vol
+		h.workers[symbol] = w
 	}
+	log.Printf("volume engine initialized symbols=%d mode=discrete_G_V", len(h.symbols))
 	if opts.Pricing == config.PricingExpm {
 		for _, symbol := range h.symbols {
 			eng, err := pricing.NewEngine(symbol)
@@ -213,9 +232,9 @@ func New(src BarSource, symbols []string, opts Options) (*Host, error) {
 	return h, nil
 }
 
-// ResetSymbol reinitializes one symbol's adaptive and pricing engines.
+// ResetSymbol reinitializes one symbol's Adaptive, Price, and Volume engines.
 // It is an explicit, auditable reinitialization (warm-up restarts). It is not
-// an operator RPC and must not be used to hide a live irregular interval.
+// an operator RPC, session close, or date/source reset.
 func (h *Host) ResetSymbol(symbol string) error {
 	if h == nil {
 		return fmt.Errorf("host is nil")
@@ -234,6 +253,13 @@ func (h *Host) ResetSymbol(symbol string) error {
 	} else {
 		w.pricing = nil
 	}
+	vol, err := volume.NewEngine(symbol)
+	if err != nil {
+		return err
+	}
+	w.volume = vol
+	w.volSeq = 0
+	w.volDisc.Store(false)
 	w.hasAccepted = false
 	w.lastAccepted = time.Time{}
 	w.disc.Store(false)
@@ -254,6 +280,18 @@ func (h *Host) ResetSymbol(symbol string) error {
 func (h *Host) FailNextPricing() {
 	if h != nil {
 		h.failPricing.Store(true)
+	}
+}
+
+func (h *Host) FailNextAdaptive() {
+	if h != nil {
+		h.failAdaptive.Store(true)
+	}
+}
+
+func (h *Host) FailNextVolume() {
+	if h != nil {
+		h.failVolume.Store(true)
 	}
 }
 
@@ -369,8 +407,61 @@ func (h *Host) LastPriceEvents() []domain.PriceEvent {
 	return out
 }
 
+func (h *Host) SubscribeVolumeEvents(buffer int) (uint64, <-chan domain.VolumeEvent) {
+	if h == nil {
+		ch := make(chan domain.VolumeEvent)
+		close(ch)
+		return 0, ch
+	}
+	if buffer <= 0 {
+		buffer = eventBuffer
+	}
+	ch := make(chan domain.VolumeEvent, buffer)
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.closed {
+		close(ch)
+		return 0, ch
+	}
+	id := h.nextVolumeSub.Add(1)
+	h.volumeSubs[id] = ch
+	return id, ch
+}
+
+func (h *Host) UnsubscribeVolumeEvents(id uint64) {
+	if h == nil || id == 0 {
+		return
+	}
+	h.mu.Lock()
+	ch, ok := h.volumeSubs[id]
+	if ok {
+		delete(h.volumeSubs, id)
+	}
+	h.mu.Unlock()
+	if ok {
+		close(ch)
+	}
+}
+
+func (h *Host) LastVolumeEvents() []domain.VolumeEvent {
+	if h == nil {
+		return nil
+	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	out := make([]domain.VolumeEvent, 0, len(h.lastVolumeSym))
+	for _, ev := range h.lastVolumeSym {
+		out = append(out, ev)
+	}
+	return out
+}
+
 func (h *Host) PricingEnabled() bool {
 	return h != nil && h.opts.Pricing == config.PricingExpm && !h.pricingUnavail.Load()
+}
+
+func (h *Host) VolumeEnabled() bool {
+	return h != nil && h.enabled.Load()
 }
 
 func (h *Host) Run(ctx context.Context) error {
@@ -410,11 +501,16 @@ func (h *Host) Run(ctx context.Context) error {
 		h.subs = make(map[uint64]chan domain.DecisionEvent)
 		priceSubs := h.priceSubs
 		h.priceSubs = make(map[uint64]chan domain.PriceEvent)
+		volumeSubs := h.volumeSubs
+		h.volumeSubs = make(map[uint64]chan domain.VolumeEvent)
 		h.mu.Unlock()
 		for _, ch := range subs {
 			close(ch)
 		}
 		for _, ch := range priceSubs {
+			close(ch)
+		}
+		for _, ch := range volumeSubs {
 			close(ch)
 		}
 	}()
@@ -485,24 +581,23 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 			log.Printf("model panic isolated symbol=%s err=%v", w.symbol, rec)
 		}
 	}()
-	if h.opts.PanicOn == bar.Symbol {
-		panic("injected model panic")
-	}
-
 	pre := w.engine.StateHash()
 	w.lastEventAt.Store(time.Now())
 
 	if w.disc.Load() {
+		h.maybeInjectPanic(bar.Symbol)
 		h.emit(h.discontinuousSkip(w, bar, pre), bar)
 		return
 	}
 	if !h.src.Readiness().Infer {
+		h.maybeInjectPanic(bar.Symbol)
 		ev := h.gateSkip(bar, domain.SkipInferOff, pre)
 		w.lastSkip.Store(domain.SkipInferOff)
 		h.emit(ev, bar)
 		return
 	}
 	if !bar.IsFinal || !bar.ModelEligible() {
+		h.maybeInjectPanic(bar.Symbol)
 		ev := h.gateSkip(bar, domain.SkipNotModelEligible, pre)
 		w.lastSkip.Store(domain.SkipNotModelEligible)
 		h.emit(ev, bar)
@@ -513,6 +608,7 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 		if class == domain.ContinuityUnaligned {
 			reason = domain.SkipInvalidInput
 		}
+		h.maybeInjectPanic(bar.Symbol)
 		ev := h.gateSkip(bar, reason, pre)
 		ev.Skip.Detail = continuityDetail(class, w.lastAccepted, bar.IntervalStart, elapsed)
 		w.lastSkip.Store(reason)
@@ -520,6 +616,7 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 		return
 	} else if class == domain.ContinuityIrregular {
 		if inspector, ok := h.src.(provenMissingInspector); ok && inspector.ProvenMissingEligible(w.symbol, w.lastAccepted, bar.IntervalStart) {
+			h.maybeInjectPanic(bar.Symbol)
 			w.markDisc(domain.SkipInputGap)
 			ev := h.gateSkip(bar, domain.SkipInputGap, pre)
 			ev.Skip.Detail = continuityDetail(class, w.lastAccepted, bar.IntervalStart, elapsed) + " proven_missing_eligible"
@@ -535,6 +632,7 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 		time.Sleep(h.opts.Delay)
 	}
 	if time.Since(started) > h.opts.Deadline {
+		h.maybeInjectPanic(bar.Symbol)
 		w.timeouts.Add(1)
 		ev := h.gateSkip(bar, domain.SkipTimeout, pre)
 		ev.Skip.Detail = "step exceeded deadline"
@@ -542,7 +640,25 @@ func (h *Host) handle(w *worker, bar domain.Bar) {
 		h.emit(ev, bar)
 		return
 	}
-	event, working, commitA := w.engine.PrepareStep(bar)
+
+	// Volume runs after common gates and before Adaptive/Price so an A/P
+	// panic cannot deny an already-published B_t. Volume commit is not
+	// part of commitA && commitP.
+	h.processVolume(w, bar)
+
+	if h.opts.PanicOn == bar.Symbol {
+		panic("injected model panic")
+	}
+
+	var event domain.DecisionEvent
+	var working *adaptive.Engine
+	commitA := false
+	if h.failAdaptive.CompareAndSwap(true, false) {
+		event = h.gateSkip(bar, domain.SkipEngineError, pre)
+		event.Skip.Detail = "injected adaptive failure"
+	} else {
+		event, working, commitA = w.engine.PrepareStep(bar)
+	}
 	var priceEv domain.PriceEvent
 	var priceWork *pricing.Engine
 	commitP := true
@@ -660,6 +776,22 @@ func (h *Host) emit(ev domain.DecisionEvent, bar domain.Bar) {
 	}
 }
 
+func (h *Host) emitVolume(ev domain.VolumeEvent) {
+	h.mu.Lock()
+	if !h.closed {
+		h.lastVolumeSym[ev.Lineage.Symbol] = ev
+		for id, ch := range h.volumeSubs {
+			select {
+			case ch <- ev:
+			default:
+				log.Printf("volume event buffer full subscriber=%d symbol=%s", id, ev.Lineage.Symbol)
+			}
+		}
+	}
+	h.mu.Unlock()
+	logVolumeEvent(ev)
+}
+
 func (h *Host) emitPrice(ev domain.PriceEvent, bar domain.Bar) {
 	h.mu.Lock()
 	if !h.closed {
@@ -675,6 +807,12 @@ func (h *Host) emitPrice(ev domain.PriceEvent, bar domain.Bar) {
 	h.mu.Unlock()
 	if h.opts.Transitions != nil {
 		h.opts.Transitions.OnPrice(ev, bar)
+	}
+}
+
+func (h *Host) maybeInjectPanic(symbol string) {
+	if h.opts.PanicOn == symbol {
+		panic("injected model panic")
 	}
 }
 
@@ -791,6 +929,34 @@ func (h *Host) WorkerPricingHash(symbol string) string {
 		return ""
 	}
 	return h.workers[symbol].pricing.StateHash()
+}
+
+func (h *Host) WorkerVolumeCommitted(symbol string) int {
+	if h == nil || h.workers[symbol] == nil {
+		return 0
+	}
+	return h.workers[symbol].volSeq
+}
+
+func (h *Host) WorkerVolumeDiscontinuous(symbol string) bool {
+	if h == nil || h.workers[symbol] == nil {
+		return false
+	}
+	return h.workers[symbol].volDisc.Load()
+}
+
+func (h *Host) WorkerVolumeSnapshot(symbol string) volume.State {
+	if h == nil || h.workers[symbol] == nil || h.workers[symbol].volume == nil {
+		return volume.State{}
+	}
+	return h.workers[symbol].volume.Snapshot()
+}
+
+func (h *Host) WorkerHasAccepted(symbol string) bool {
+	if h == nil || h.workers[symbol] == nil {
+		return false
+	}
+	return h.workers[symbol].hasAccepted
 }
 
 func (h *Host) WorkerPricingReceived(symbol string) int {

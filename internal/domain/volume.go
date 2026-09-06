@@ -109,11 +109,17 @@ func (q VolumeQuantity) Available() bool {
 // VolumeEvent is the internal first-class P-04V Volume Output.
 //
 // Indicator is the canonical interpreted categorical state. Historical APTF
-// artifacts call the same field cockpit_color. This is not a proto message.
+// artifacts call the same field cockpit_color.
+//
+// EventID and AcceptedSequence are publication envelope fields assigned by
+// ModelHost. AcceptedSequence is the 1-based count of Volume scientific
+// commits for that worker, not worker.lastAccepted (A+P joint cursor).
 type VolumeEvent struct {
-	Lineage         VolumeLineage
-	Status          string
-	Reason          string
+	EventID          string
+	AcceptedSequence int
+	Lineage          VolumeLineage
+	Status           string
+	Reason           string
 	VRaw            VolumeQuantity
 	VN              VolumeQuantity
 	V1              VolumeQuantity

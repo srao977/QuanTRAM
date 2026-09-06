@@ -301,8 +301,7 @@ func TestC23NoAdaptiveScientificDependency(t *testing.T) {
 }
 
 func TestC24NoRuntimeIntegration(t *testing.T) {
-	t.Log("invariant: modelhost and ingestion must not import Phase C Volume code")
+	t.Log("invariant: ingestion must not import Phase C Volume code")
 	root := repoRoot(t)
-	assertNoImport(t, filepath.Join(root, "internal", "modelhost"), `"quantram/internal/volume"`, false)
 	assertNoImport(t, filepath.Join(root, "internal", "ingestion"), `"quantram/internal/volume"`, false)
 }

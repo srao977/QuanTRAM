@@ -53,10 +53,9 @@ func TestA14NoProductionEntityHardcoding(t *testing.T) {
 	}
 }
 
-func TestA16NoRuntimeIntegration(t *testing.T) {
-	t.Log("invariant: modelhost and ingestion must not import internal/volume in Phase A")
+func TestA16NoIngestionVolumeImport(t *testing.T) {
+	t.Log("invariant: ingestion must not import internal/volume; Phase G authorizes modelhost")
 	root := repoRoot(t)
-	assertNoImport(t, filepath.Join(root, "internal", "modelhost"), `"quantram/internal/volume"`, false)
 	assertNoImport(t, filepath.Join(root, "internal", "ingestion"), `"quantram/internal/volume"`, false)
 }
 

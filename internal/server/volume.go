@@ -2,28 +2,84 @@ package server
 
 import (
 	quantramv1 "quantram/gen/quantram/v1"
+	"quantram/internal/config"
 	"quantram/internal/domain"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-// StreamVolumeEvents is the canonical P-04V ModelService publication.
-// ModelHost is not wired in this phase; the RPC is present and returns
-// FailedPrecondition until the separately authorized host-integration phase.
-func (s *Server) StreamVolumeEvents(*quantramv1.StreamVolumeEventsRequest, quantramv1.ModelService_StreamVolumeEventsServer) error {
-	return status.Error(codes.FailedPrecondition, "volume is not wired")
+// StreamVolumeEvents publishes Host-produced VolumeEvents. It does not ingest
+// Bars or run Volume science. A slow or cancelled client cannot block ModelHost.
+func (s *Server) StreamVolumeEvents(request *quantramv1.StreamVolumeEventsRequest, stream quantramv1.ModelService_StreamVolumeEventsServer) error {
+	if s.volumes == nil {
+		return status.Error(codes.FailedPrecondition, "volume is not wired")
+	}
+	wanted, err := normalizeSymbols(request.GetSymbols())
+	if err != nil {
+		return err
+	}
+
+	id, events := s.volumes.SubscribeVolumeEvents(config.SubscriberQueue)
+	defer s.volumes.UnsubscribeVolumeEvents(id)
+
+	var sent uint32
+	seen := make(map[string]struct{})
+	for _, ev := range s.volumes.LastVolumeEvents() {
+		if len(wanted) > 0 && !wanted[ev.Lineage.Symbol] {
+			continue
+		}
+		if err := stream.Send(toProtoVolumeEvent(ev)); err != nil {
+			return err
+		}
+		if ev.EventID != "" {
+			seen[ev.EventID] = struct{}{}
+		}
+		sent++
+		if request.GetMaxEvents() > 0 && sent >= request.GetMaxEvents() {
+			return nil
+		}
+	}
+
+	for {
+		select {
+		case <-stream.Context().Done():
+			return status.FromContextError(stream.Context().Err()).Err()
+		case ev, ok := <-events:
+			if !ok {
+				return nil
+			}
+			if ev.EventID != "" {
+				if _, dup := seen[ev.EventID]; dup {
+					delete(seen, ev.EventID)
+					continue
+				}
+			}
+			if len(wanted) > 0 && !wanted[ev.Lineage.Symbol] {
+				continue
+			}
+			if err := stream.Send(toProtoVolumeEvent(ev)); err != nil {
+				return err
+			}
+			sent++
+			if request.GetMaxEvents() > 0 && sent >= request.GetMaxEvents() {
+				return nil
+			}
+		}
+	}
 }
 
 // toProtoVolumeEvent maps validated domain Volume Output to the canonical
 // protobuf contract. It does not recompute Volume science.
 func toProtoVolumeEvent(ev domain.VolumeEvent) *quantramv1.VolumeEvent {
 	out := &quantramv1.VolumeEvent{
+		EventId:             ev.EventID,
 		Symbol:              ev.Lineage.Symbol,
 		IntervalStartUnixMs: unixMilli(ev.Lineage.IntervalStart),
 		IntervalEndUnixMs:   unixMilli(ev.Lineage.IntervalEnd),
 		MarketSnapshotId:    ev.Lineage.MarketSnapshotID,
 		SourceTimestamp:     ev.Lineage.SourceTimestamp,
+		AcceptedSequence:    uint64(ev.AcceptedSequence),
 		Status:              toProtoVolumeStatus(ev.Status),
 		Emitted:             ev.Status == domain.VolumeStatusAvailable,
 		Reason:              ev.Reason,

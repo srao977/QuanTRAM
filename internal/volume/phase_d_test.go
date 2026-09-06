@@ -433,9 +433,8 @@ func TestD36NoAdaptiveImport(t *testing.T) {
 }
 
 func TestD37NoRuntimeIntegration(t *testing.T) {
-	t.Log("invariant: modelhost and ingestion must not import Phase D Volume code")
+	t.Log("invariant: ingestion must not import Phase D Volume code")
 	root := repoRoot(t)
-	assertNoImport(t, filepath.Join(root, "internal", "modelhost"), `"quantram/internal/volume"`, false)
 	assertNoImport(t, filepath.Join(root, "internal", "ingestion"), `"quantram/internal/volume"`, false)
 }
 

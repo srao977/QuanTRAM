@@ -240,6 +240,82 @@ func TestStreamPriceEventsLive(t *testing.T) {
 	}
 }
 
+func TestStreamVolumeEventsLive(t *testing.T) {
+	src := &liveBars{
+		bars:  make(chan domain.Bar, 8),
+		infer: true,
+	}
+	host, err := modelhost.New(src, []string{"AAPL"}, modelhost.Options{
+		Mode:     config.ModelAdaptive,
+		Deadline: 200 * time.Millisecond,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go func() { _ = host.Run(ctx) }()
+	waitUntil(t, time.Second, host.Started)
+
+	lis := bufconn.Listen(1024 * 1024)
+	grpcServer := grpc.NewServer()
+	quantramv1.RegisterModelServiceServer(grpcServer, New(ingestion.NewPipeline(nil, nil, "TEST", []string{"AAPL"}), host))
+	go func() { _ = grpcServer.Serve(lis) }()
+	t.Cleanup(func() {
+		grpcServer.Stop()
+		_ = lis.Close()
+	})
+
+	start := time.Date(2026, 9, 1, 13, 30, 0, 0, time.UTC)
+	src.bars <- domain.Bar{
+		Symbol:           "AAPL",
+		Interval:         domain.Interval1Min,
+		IntervalStart:    start,
+		IntervalEnd:      start.Add(time.Minute),
+		Close:            100,
+		Volume:           1000,
+		QualityStatus:    domain.QualityComplete,
+		IsFinal:          true,
+		Source:           "TEST",
+		MarketSnapshotID: "snap-v",
+		SourceTimestamp:  "src-v",
+	}
+	waitUntil(t, 2*time.Second, func() bool { return len(host.LastVolumeEvents()) > 0 })
+
+	conn, err := grpc.NewClient("passthrough:///bufnet",
+		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return lis.Dial() }),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+
+	client := quantramv1.NewModelServiceClient(conn)
+	streamCtx, streamCancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer streamCancel()
+	stream, err := client.StreamVolumeEvents(streamCtx, &quantramv1.StreamVolumeEventsRequest{MaxEvents: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ev, err := stream.Recv()
+	if err != nil && err != io.EOF {
+		t.Fatal(err)
+	}
+	if ev.GetSymbol() != "AAPL" || ev.GetMarketSnapshotId() != "snap-v" {
+		t.Fatalf("want live VolumeEvent, got %+v", ev)
+	}
+	if ev.GetStatus() != quantramv1.VolumeStatus_VOLUME_STATUS_MATURING {
+		t.Fatalf("want MATURING, got %s", ev.GetStatus())
+	}
+	if ev.GetAcceptedSequence() != 1 {
+		t.Fatalf("accepted_sequence %d", ev.GetAcceptedSequence())
+	}
+	if ev.GetSourceTimestamp() != "src-v" {
+		t.Fatal("source timestamp rewritten")
+	}
+}
+
 type liveBars struct {
 	bars  chan domain.Bar
 	infer bool

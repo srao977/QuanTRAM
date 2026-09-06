@@ -1,11 +1,12 @@
 # QuanTRAM Volume Engine — Scientific and Architectural Design
 
 **Title:** QuanTRAM Volume Engine — Scientific and Architectural Design  
-**Date:** 2026-09-05  
-**Status:** PROPOSED DESIGN — HUMAN REVIEW REQUIRED. IMPLEMENTATION NOT AUTHORIZED.  
+**Date:** 2026-09-06  
+**Status:** IMPLEMENTED AND SCIENTIFICALLY VALIDATED THROUGH PHASE G. This document is the scientific and architectural design authority. Coding chronology lives in the implementation record. StageTransition Volume publication and Process Model file reconciliation remain **DEFERRED / NOT YET AUTHORIZED**.  
 **Purpose:** Define P-04V Volume Engine: validated Volume mathematics, QuanTRAM realtime consume/state/emit architecture, inputs, outputs, bounded per-entity state, timing, invariants, and boundaries.  
-**Scope:** Design only. No Go implementation. No proto. No process-model file change in this document’s authorization. No StageTransition change. No P-03/P-04 scientific change. No renumbering of approved P-01–P-10.  
-**Parents:** [Process Model](QuanTRAM_PROCESS_MODEL_082926.md) (unchanged by this revision), [P-03 Adaptive Model Host](QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md), [P-04 Price Engine](QuanTRAM_P04_PRICE_ENGINE_090226.md), [Stage Transition Publication V1.1](QuanTRAM_STAGE_TRANSITION_PUBLICATION_V1_2026-09-04.md)  
+**Scope:** Scientific and architectural design. Mathematics in this document are frozen. Implementation details, A–G chronology, and host/RPC wiring are recorded in [P-04V implementation record](../implementations/QuanTRAM_P04V_VOLUME_ENGINE_IMPLEMENTATION_090526.md). This pass does not change Go, proto, StageTransition, or the Process Model file.  
+**Parents:** [Process Model](QuanTRAM_PROCESS_MODEL_V1_082926.md) (filename as of this reconciliation; **contents not edited**), [P-03 Adaptive Model Host](QuanTRAM_P03_ADAPTIVE_MODEL_HOST_083126.md), [P-04 Price Engine](QuanTRAM_P04_PRICE_ENGINE_090226.md), [Stage Transition Publication V1.1](QuanTRAM_STAGE_TRANSITION_PUBLICATION_V1_2026-09-04.md)  
+**Implementation record:** [QuanTRAM_P04V_VOLUME_ENGINE_IMPLEMENTATION_090526.md](../implementations/QuanTRAM_P04V_VOLUME_ENGINE_IMPLEMENTATION_090526.md)  
 **Forensic authority:** [APTF Volume Engine Go Refactorability Investigation, 2026-09-05](../investigations/QuanTRAM_APTF_VOLUME_ENGINE_GO_REFACTORABILITY_INVESTIGATION_2026-09-05.md)  
 **Historical executable authority:** APTF commit `ae0dacb2e02c5b80c82f6662d1a3c6863f4b989a`  
 **QuanTRAM baseline:** `07417d9c85799949cd3b173067795905513af173` (`quantram-stage-transition-v1.1-validated-2026-09-04`)
@@ -39,9 +40,26 @@ P-03 already uses raw `Bar.Volume` through D01 `updateVolumeInfluence`. That Ada
 
 P-04V follows the established QuanTRAM realtime model used by Adaptive and Price: consume the existing accepted eligible Bar, own bounded per-entity scientific state, prepare/commit without partial mutation, emit a first-class Volume outcome. It does not create another market subscription.
 
-APTF 015 BUY/HOLD/SELL, P/V fusion, color-age as a required output, proto, Snapshot, and StageTransition Volume publication are outside this increment. StageTransition V1.1 remains frozen.
+APTF 015 BUY/HOLD/SELL, P/V fusion, color-age as a required output, Snapshot, and StageTransition Volume publication remain outside P-04V V1 science. StageTransition V1.1 remains frozen. The Volume protobuf contract and ModelHost join are implemented (see Current Implementation Status); they are not scientific dependencies.
 
-**Implementation is not authorized by this document.**
+## Current Implementation Status
+
+This design is **implemented**. Coding chronology is not duplicated here.
+
+| Item | Status as of 2026-09-06 |
+|---|---|
+| Go Volume science (`internal/domain/volume.go`, `internal/volume`) | Implemented |
+| Frozen feature equivalence (009V / 010) | PASS |
+| Phase F interpretation mismatch | Historical FAIL (confirmation state-write) |
+| Phase F-R frozen confirmation repair | PASS — session-sliced 014C Indicator / transition 55,199 / 55,199 |
+| Test010 → Test014C scientific reconciliation | Outcome A; discrete `G_V` accepted |
+| Canonical protobuf (`VolumeEvent` family on `ModelService`) | Implemented |
+| `ModelService.StreamVolumeEvents` | Implemented |
+| Phase G ModelHost realtime join | Implemented |
+| StageTransition Volume publication | **DEFERRED / NOT YET AUTHORIZED** |
+| Process Model file reconciliation | **DEFERRED / NOT YET AUTHORIZED** (separate pass) |
+
+There is **no** `QUANTRAM_VOLUME` flag. Volume is present whenever Adaptive Host exists (`QUANTRAM_MODEL=adaptive`). Price remains independently `QUANTRAM_PRICING`.
 
 ## Governing principle
 
@@ -61,9 +79,9 @@ The reader must not infer the category.
 
 ## QuanTRAM terminology
 
-**Canonical QuanTRAM:** P-04V Volume Engine · `VolumeState` · Volume Feature State · Volume Interpretation State · Volume Mathematics · Volume Output
+**Canonical QuanTRAM:** P-04V Volume Engine · `VolumeState` · Volume Feature State · Volume Interpretation State · Volume Mathematics · Volume Output · **Indicator** (confirmation-controlled activity category) · `raw_color` (pre-confirmation activity band)
 
-**Historical / provenance only:** APTF Volume Policy · `V_INTERVAL_B10_C2` · `V_EMISSION_V0_1` · historical `VolumePolicyState`
+**Historical / provenance only:** APTF Volume Policy · `V_INTERVAL_B10_C2` · `V_EMISSION_V0_1` · historical `VolumePolicyState` · historical APTF `cockpit_color` (same scientific quantity as Indicator)
 
 Historical names remain where forensic traceability or equivalence testing requires them. They are not QuanTRAM architectural ontology. P-04V does not introduce a Volume Policy Service, layer, or process.
 
@@ -113,6 +131,8 @@ Approved sequence remains: P-01, P-02, P-03, P-04, **P-04V**, P-05, P-06, P-07, 
 ```
 
 This is **not** `P-03 → P-04 → P-04V`. P-04V does not consume Price output.
+
+**QUANTRAM REALTIME BEHAVIOR (Phase G, 2026-09-06):** publication remains `Pipeline.fanoutModel` → one `SubscribeModelBars` → keyed worker. After common host gates, Volume is offered B_t in an isolated `processVolume` block, then Adaptive `PrepareStep`, then Price `PrepareStep`, then the existing Adaptive+Price joint commit. Volume commit is independent. Physical order is **not** scientific precedence; Volume runs first so an Adaptive/Price panic cannot deny an already-published B_t. `worker.lastAccepted` remains the Adaptive+Price joint scientific-commit cursor. Volume `accepted_sequence` is the successful Volume-commit count. There is no second mailbox or Volume worker goroutine.
 
 Architectural symmetry with P-04:
 
@@ -171,7 +191,7 @@ P-04V may internally distinguish feature mathematics from interpretation mathema
 
 This is **one engine**. Volume Interpretation is not a separate service or process.
 
-**QUANTRAM REALTIME BEHAVIOR:** The incoming Bar is immutable. P-04V scientific state is private to P-04V. Candidate calculations must not partially mutate committed scientific state. A failed or non-actionable computation must not leave partially advanced state. Exact prepare/commit API is deferred to a later implementation-design document.
+**QUANTRAM REALTIME BEHAVIOR:** The incoming Bar is immutable. P-04V scientific state is private to P-04V. Candidate calculations must not partially mutate committed scientific state. A failed or non-actionable computation must not leave partially advanced state. Implemented prepare/commit is `volume.Engine.PrepareStep` / `Commit`. Volume commit is independent of Adaptive+Price `commitA && commitP`. API names and host order are in the [implementation record](../implementations/QuanTRAM_P04V_VOLUME_ENGINE_IMPLEMENTATION_090526.md).
 
 ### Volume internal scientific path
 
@@ -215,7 +235,7 @@ accepted eligible Bar.Volume
 
 These paths share only the originating observation.
 
-P-04V uses P-04 / Adaptive as its **realtime architectural reference** (same Bar ingress, per-entity owned state, bounded causal state, incremental processing, prepare/commit, first-class emit, no second subscription). It does **not** copy P-04 mathematics or share P-04 scientific state. Numerical helpers may later be shared. P-04’s 15-observation price derivative window must not be reused as Volume’s 3-observation window.
+P-04V uses P-04 / Adaptive as its **realtime architectural reference** (same Bar ingress, per-entity owned state, bounded causal state, incremental processing, prepare/commit, first-class emit, no second subscription). It does **not** copy P-04 mathematics or share P-04 scientific state. V1 copies the gonum lstsq algorithm locally and does **not** import `internal/pricing`. P-04’s 15-observation price derivative window must not be reused as Volume’s 3-observation window.
 
 ## Inputs
 
@@ -236,18 +256,18 @@ Additional consume input: the current committed per-entity `VolumeState` (featur
 
 ## Outputs
 
-Conceptual first-class Volume outcome. Protobuf field numbers are **not** finalized.
+First-class Volume outcome. Canonical wire names are in `api/proto/quantram/v1/quantram.proto` (`VolumeEvent` / `VolumeEmission`). Field numbers are implemented; this table is scientific meaning, not a proto redesign.
 
 | Output | Meaning |
 |---|---|
 | `v_raw` | Copy of `V_RAW` |
-| `v` | `V_N` |
+| `v` / `v_n` | `V_N` |
 | `v1`, `v2` | Causal quadratic derivatives of `V_N` |
-| `projected_v` | `predicted_next_V_N` = `V_N` (VOLUME_POINT) |
+| `projected_v` / `predicted_next_v_n` | `predicted_next_V_N` = `V_N` (VOLUME_POINT / accepted `G_V`) |
 | `projected_v1`, `projected_v2` | Historically unsupported; remain unset / not fabricated |
 | `activity_state_value` | Frozen interpretation input: `interval_mean_vn` |
 | `raw_color` | Threshold classification before confirmation |
-| `cockpit_color` | Confirmed color after hysteresis (GREEN / AMBER / RED / INVALID) |
+| **Indicator** | Confirmation-controlled activity category (GREEN / AMBER / RED). Historical APTF field: `cockpit_color`. |
 | `phase` | V1/V2 activity-phase label |
 | `transition_state` | STABLE / PENDING_* / CONFIRMED_* |
 | `confidence_state` | HIGH under frozen `INTERVAL_MEAN_V_N` |
@@ -255,9 +275,9 @@ Conceptual first-class Volume outcome. Protobuf field numbers are **not** finali
 | `reason_codes` | Activity + phase + confirmation tags |
 | next Volume Interpretation State | Confirmation-machine fields after commit (inside `VolumeState`) |
 
-Color is **activity band**, not price direction and not BUY/SELL/HOLD.
+`raw_color` and Indicator share the GREEN/AMBER/RED value domain but are scientifically distinct. Color is **activity band**, not price direction and not BUY/SELL/HOLD.
 
-**QUANTRAM REALTIME BEHAVIOR:** expected insufficient causal state produces a typed maturation / non-actionable outcome, not INVALID. INVALID is reserved for genuinely unusable scientific input once the corresponding calculation should otherwise be available. Final proto enum names are not invented here.
+**QUANTRAM REALTIME BEHAVIOR:** expected insufficient causal state produces typed **MATURING**, not INVALID. INVALID is reserved for genuinely unusable scientific input once the corresponding calculation should otherwise be available. Wire statuses: `MATURING`, `AVAILABLE`, `INVALID`, `ENGINE_ERROR`. Unavailable quantities are absent on the wire; available zero is present and zero. Volume has no independent EffectiveTime. Lineage is `symbol`, `market_snapshot_id`, `interval_start`, `interval_end`, `source_timestamp`.
 
 ## Parameters / Configuration
 
@@ -288,9 +308,9 @@ Color is **activity band**, not price direction and not BUY/SELL/HOLD.
 
 `V_INTERVAL_B10_C2` is historical/frozen scientific identity. It is **not** a QuanTRAM Volume Policy Service, layer, or process.
 
-**Canonical QuanTRAM terms:** P-04V Volume Engine, `VolumeState`, Volume Feature State, Volume Interpretation State, Volume Mathematics, Volume Output.
+**Canonical QuanTRAM terms:** P-04V Volume Engine, `VolumeState`, Volume Feature State, Volume Interpretation State, Volume Mathematics, Volume Output, Indicator.
 
-**Historical / provenance terms only:** APTF Volume Policy, `V_INTERVAL_B10_C2`, `V_EMISSION_V0_1`, historical `VolumePolicyState` (maps conceptually to Volume Interpretation State). Eventual Go type names are Phase 3 concerns.
+**Historical / provenance terms only:** APTF Volume Policy, `V_INTERVAL_B10_C2`, `V_EMISSION_V0_1`, historical `VolumePolicyState` (maps conceptually to Volume Interpretation State), historical APTF `cockpit_color`. Implemented Go names include `volume.Engine`, `volume.State`, `InterpretationState`.
 
 D01 Adaptive constants (`reference_alpha = 0.05`, influence bounds `[0, 3]`) belong to P-03 and are **not** P-04V parameters.
 
@@ -317,10 +337,12 @@ Outside this Volume V1 increment (not rejected forever):
 - Redesign of P-05 OMS / Risk, Execution, ledger
 - DNA / Quantram_transaction, Dynamic Meaning Matrix, Decision Engine / Forum
 - Snapshot, Persistence, MongoDB
-- StageTransition Volume contract
-- Proto `VolumeEvent` field numbers
+- StageTransition Volume contract (**DEFERRED / NOT YET AUTHORIZED**)
 - Renumbering P-01–P-10
 - Treating APTF batch files as live inputs
+- A `QUANTRAM_VOLUME` operator flag (not implemented; Volume follows Adaptive Host)
+
+The Volume protobuf contract and ModelHost join are **implemented**. They are no longer exclusions of existence. Process Model file text may still lag; that file is reconciled in a separate pass.
 
 ---
 
@@ -332,7 +354,7 @@ P-04V answers:
 
 It does **not** answer whether Adaptive should BUY/SELL/HOLD, what Price color is, or what order to send.
 
-`Bar.Volume` is raw market participation. Volume `cockpit_color` is a confirmed activity-band interpretation of prepared volume features. They are not interchangeable.
+`Bar.Volume` is raw market participation. Volume **Indicator** is a confirmed activity-band interpretation of prepared volume features (historical APTF name: `cockpit_color`). They are not interchangeable.
 
 ---
 
@@ -480,9 +502,25 @@ Other 010 JSON fields (`persist_baseline`, elevated/extreme counts, raw std, max
 \text{predicted\_next\_V\_N}(t) = V_N(t)
 \]
 
-**VOLUME_POINT** = persistence / carry-forward / point projection.
+**VOLUME_POINT** is the accepted Test010 discrete Volume evolution / state update:
 
-It is not RK45. It is not trajectory integration. Rejected 010 models remain historical only.
+```text
+G_V:
+V_N_hat(n+1) = V_N(n)
+```
+
+`predicted_next_V_N = V_N` is therefore **not** an unfinished placeholder. Test010 accepted discrete `G_V` and explicitly concluded Volume evolution is **not** an ODE.
+
+Historical chronology (do not invert):
+
+- Test010 accepted discrete `G_V` for Volume.
+- Later RK45 experimentation included Price and Volume.
+- RK45 was supported/useful for Price, not Volume.
+- QuanTRAM P-04 Price uses validated analytic EXPM, not RK45.
+- QuanTRAM P-04V remains discrete `G_V`.
+- P-04V uses neither RK45 nor EXPM.
+
+P-04V does **not** need a future continuous evolution model to become complete.
 
 The historical engine required this field finite, copied it to `projected_v`, and did **not** use it for color or confirmation. P-04V preserves that contract.
 
@@ -518,25 +556,36 @@ This is not Price direction.
 
 ### 4.2 Confirmation / hysteresis
 
-Volume Interpretation State is **active causal runtime state** inside `VolumeState`. Historical APTF name: `VolumePolicyState`. Eventual Go type names are not frozen here.
+Volume Interpretation State is **active causal runtime state** inside `VolumeState`. Historical APTF name: `VolumePolicyState`. Implemented Go name: `InterpretationState`.
 
 | Field | Role |
 |---|---|
-| `color` | Last committed cockpit color (or unset / INVALID) |
+| `color` | Last committed **Indicator** (or unset / INVALID). Historical APTF: `VolumePolicyState.color` |
 | `pending_color` | Candidate raw color awaiting confirmation |
 | `pending_count` | Consecutive observations of that candidate |
+
+**FROZEN SCIENTIFIC AUTHORITY** after Phase F-R (frozen executable confirmation state machine):
+
+- `state.Color` **is** the emitted Indicator.
+- While confirmation is pending, Indicator is AMBER and `state.Color` becomes AMBER.
+- `PendingColor` retains the candidate raw color.
+- `PendingCount` advances.
+- On confirmation, `PendingColor` clears.
+- `PendingCount` remains at the confirming increment, matching frozen executable behavior.
 
 **FROZEN SCIENTIFIC AUTHORITY** (engine observe):
 
 1. **First committed evaluation** (`color` unset): accept `raw_color` immediately. `transition_state = STABLE`. No pending.
-2. **Same raw color as committed `color`**: `cockpit_color = raw_color`, clear pending, `STABLE`.
+2. **Same raw color as committed `color`**: Indicator = `raw_color`, clear pending, `STABLE`.
 3. **Raw color differs**:
    - increment `pending_count` if `pending_color` already equals this `raw_color`; otherwise start at 1
-   - if `pending_count < 2`: force **`cockpit_color = AMBER`**, keep `pending_color = raw_color`, `PENDING_{raw_color}`, `STATE_CONFIRMATION_PENDING`
-   - if `pending_count >= 2`: accept `cockpit_color = raw_color`, `CONFIRMED_{raw_color}`, `STATE_CHANGE_CONFIRMED`
+   - if `pending_count < 2`: force **Indicator = AMBER**, keep `pending_color = raw_color`, `PENDING_{raw_color}`, `STATE_CONFIRMATION_PENDING`
+   - if `pending_count >= 2`: accept Indicator = `raw_color`, `CONFIRMED_{raw_color}`, `STATE_CHANGE_CONFIRMED`
 4. **Genuinely nonfinite required inputs when evaluation is otherwise due**: INVALID emission; next state `color = INVALID`.
 
-While pending, cockpit is AMBER even if raw is GREEN or RED.
+While pending, Indicator is AMBER even if raw is GREEN or RED. Historical APTF wrote the same value as `cockpit_color`.
+
+Phase F found a Go vs frozen `state.color` write mismatch. Phase F-R corrected production `confirmColor` to the frozen rule above. Do not reintroduce the pre-F-R “keep last confirmed color while pending” semantics.
 
 **APTF FORENSIC BEHAVIOR:** the 014C batch caller reset historical `VolumePolicyState` at `date:session`. The engine itself has no calendar. That caller mechanic is **not** QuanTRAM runtime. P-04V V1 has **no** independent interpretation-state reset. See [Realtime lifecycle](#7-realtime-lifecycle).
 
@@ -557,7 +606,7 @@ While pending, cockpit is AMBER even if raw is GREEN or RED.
 | Dimension | Source | Role |
 |---|---|---|
 | `raw_color` | activity vs 0.9/1.1 | pre-hysteresis band |
-| `cockpit_color` | raw + confirmation | published activity lamp |
+| Indicator | raw + confirmation | published activity category (historical APTF: `cockpit_color`) |
 | `phase` | V1/V2 | derivative category |
 | `transition_state` | confirmation machine | STABLE / PENDING_* / CONFIRMED_* |
 | `confidence_state` | `state_source` | HIGH under frozen `INTERVAL_MEAN_V_N` |
@@ -625,7 +674,7 @@ VolumeState
             +-- pending_count
 ```
 
-Historical APTF `VolumePolicyState` maps conceptually to Volume Interpretation State. The eventual Go type need not be named `VolumeInterpretationState`.
+Historical APTF `VolumePolicyState` maps conceptually to Volume Interpretation State. Implemented Go type: `InterpretationState`.
 
 This state exists only because the mathematics require preceding causal observations.
 
@@ -713,7 +762,7 @@ Correlation: same `Symbol`, `IntervalStart`, `MarketSnapshotID` as Adaptive and 
 
 No second feed. No PriceEvent input. No DecisionEvent input.
 
-Protobuf shapes are deferred.
+Implemented proto: `ModelService.StreamVolumeEvents` → `VolumeEvent`. No dedicated Volume microservice. No independent Volume EffectiveTime. `accepted_sequence` is the successful Volume-commit count for that worker/engine lifetime, **not** `worker.lastAccepted` (Adaptive+Price joint scientific-commit cursor).
 
 ---
 
@@ -733,7 +782,7 @@ P-04V ──×──▶ P-04
 | Input | raw volume scalar | prepared V features |
 | Math | EMA + log1p relative + log1p absolute / 10, clamped `[0,3]` | 15-median ratio, window-3 quadratic, 15-mean, 0.9/1.1 + confirm 2 |
 | Output | `v*` inside Adaptive | Volume outcome |
-| QuanTRAM today | Implemented | Design only |
+| QuanTRAM today | Implemented | Implemented (science + Phase G host join) |
 
 Do not replace P-03 influence. Do not make either depend on the other scientifically.
 
@@ -759,9 +808,9 @@ P-04V must **not** implement 015.
 
 **D7 DEFERRED — OUTSIDE P-04V V1. NON-BLOCKING FOR IMPLEMENTATION DESIGN.**
 
-Design input only. StageTransition V1.1 remains frozen. No Volume StageTransition contract is approved. This does not block P-04V Phase 1 or later implementation design.
+Design input only. StageTransition V1.1 remains frozen. No Volume StageTransition contract is approved. **DEFERRED / NOT YET AUTHORIZED.** This does not reopen Volume science.
 
-Candidate categorical equality dimensions: `cockpit_color`; possibly `transition_state`; possibly a typed maturation kind.
+Candidate categorical equality dimensions: Indicator (historical APTF `cockpit_color`); possibly `transition_state`; possibly a typed maturation kind.
 
 Candidate facts (not equality): `V_RAW`, `V_N`, `V1`, `V2`, `interval_mean_vn`, `projected_v`, `phase`, `reason_codes`, timestamps, IDs, `InitiatingBar` = the same accepted Bar.
 
@@ -838,9 +887,9 @@ No unresolved human scientific decisions block P-04V Phase 1.
 | D4 | **CLOSED FOR P-04V V1** | Color-age deferred and out of scope. |
 | D7 | **DEFERRED / NON-BLOCKING** | Future StageTransition Volume contract. V1.1 unchanged. Does not block implementation design. |
 
-Exact prepare/commit API names and proto enums remain implementation-design concerns, not open scientific questions.
+Prepare/commit API names and proto enums are implemented (`volume.Engine`, `VolumeEvent` family). They are not open scientific questions.
 
-No new unresolved scientific questions were discovered during this terminology/design-closure pass.
+No new unresolved scientific questions were discovered during this 2026-09-06 documentation reconciliation.
 
 ---
 
@@ -880,3 +929,4 @@ No new unresolved scientific questions were discovered during this terminology/d
 | 2026-09-05 | Initial proposed QuanTRAM Volume Engine design derived from completed APTF Volume forensic investigation. No implementation authorized. |
 | 2026-09-05 | Reconciliation: assigned process identity **P-04V** without renumbering P-01–P-10; adopted QuanTRAM realtime consume/state/emit architecture; separated APTF batch mechanics from frozen scientific authority; clarified bounded per-entity realtime VolumeState; reframed lifecycle for QuanTRAM (no inherited `date:session`); reframed warm-up as causal maturation/readiness; reserved INVALID for genuine invalidity; settled positional all-finite window semantics; `IntervalStart` time coordinate; zero volume preserved as observed. No implementation authorized. |
 | 2026-09-05 | Final Phase 1 terminology/design closure: aligned P-04V terminology with established QuanTRAM Price/Adaptive engine architecture; retained APTF “policy” terminology only as historical/equivalence provenance; consolidated realtime state under VolumeState with feature and interpretation responsibilities; separated Volume Feature Science from Volume Interpretation Science; closed independent interpretation-state reset for V1; deferred color-age; classified future StageTransition integration as non-blocking/deferred. No mathematics changed. No implementation authorized. |
+| 2026-09-06 | Documentation reconciliation: status updated to implemented/validated through Phase G; added Current Implementation Status; canonical P-04V term Indicator (historical APTF `cockpit_color` retained as provenance); Test010 discrete `G_V` stated as accepted authority, not a placeholder; Phase F-R confirmation state-write documented; proto/host existence noted without changing mathematics. Process Model file not edited. |
